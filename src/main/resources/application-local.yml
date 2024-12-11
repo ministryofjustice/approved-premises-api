@@ -8,6 +8,10 @@ spring:
     locations: classpath:db/migration/all,classpath:db/migration/local+dev+test,classpath:db/migration/local,classpath:db/migration/all-except-integration
   jpa:
     database: postgresql
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
   data:
     redis:
       host: localhost
@@ -64,7 +68,8 @@ logging:
     org.hibernate.SQL: DEBUG
     # Uncomment the two entries below to see SQL binding
     #org.hibernate.orm.jdbc.bind: TRACE
-    #org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.type.descriptor.sql: tract
     # allows us to see the JWT token to simplify local API invocation
     uk.gov.justice.digital.hmpps.approvedpremisesapi.config.RequestResponseLoggingFilter: TRACE
     # allows us to see the request URL and method for upstream requests

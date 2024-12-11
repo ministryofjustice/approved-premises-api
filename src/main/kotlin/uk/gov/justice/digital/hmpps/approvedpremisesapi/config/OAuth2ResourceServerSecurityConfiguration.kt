@@ -74,6 +74,17 @@ class OAuth2ResourceServerSecurityConfiguration {
         authorize(HttpMethod.GET, "/cas2/reference-data/**", hasAnyRole("CAS2_ASSESSOR", "POM"))
         authorize(HttpMethod.GET, "/cas2/reports/**", hasRole("CAS2_MI"))
         authorize("/cas2/**", hasAnyAuthority("ROLE_POM", "ROLE_LICENCE_CA"))
+
+        authorize(HttpMethod.PUT, "/cas2bail/assessments/**", hasRole("CAS2_ASSESSOR"))
+        authorize(HttpMethod.GET, "/cas2bail/assessments/**", hasAnyRole("CAS2_ASSESSOR", "CAS2_ADMIN"))
+        authorize(HttpMethod.POST, "/cas2bail/assessments/*/status-updates", hasRole("CAS2_ASSESSOR"))
+        authorize(HttpMethod.POST, "/cas2bail/assessments/*/notes", hasAnyRole("LICENCE_CA", "POM", "CAS2_ASSESSOR"))
+        authorize(HttpMethod.GET, "/cas2bail/submissions/**", hasAnyRole("CAS2_ASSESSOR", "CAS2_ADMIN"))
+        authorize(HttpMethod.POST, "/cas2bail/submissions/*/status-updates", hasRole("CAS2_ASSESSOR"))
+        authorize(HttpMethod.GET, "/cas2bail/reference-data/**", hasAnyRole("CAS2_ASSESSOR", "POM"))
+        authorize(HttpMethod.GET, "/cas2bail/reports/**", hasRole("CAS2_MI"))
+        authorize("/cas2bail/**", hasAnyAuthority("ROLE_POM", "ROLE_LICENCE_CA"))
+
         authorize(HttpMethod.GET, "/cas3-api.yml", permitAll)
         authorize(HttpMethod.GET, "/subject-access-request", hasAnyRole("SAR_DATA_ACCESS"))
         authorize(anyRequest, hasAuthority("ROLE_PROBATION"))

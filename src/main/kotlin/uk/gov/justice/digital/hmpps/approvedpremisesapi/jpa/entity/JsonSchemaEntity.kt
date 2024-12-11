@@ -54,6 +54,16 @@ class Cas2ApplicationJsonSchemaEntity(
 ) : JsonSchemaEntity(id, addedAt, schema)
 
 @Entity
+@DiscriminatorValue("CAS_2_BAIL_APPLICATION")
+@Table(name = "cas_2_bail_application_json_schemas")
+@PrimaryKeyJoinColumn(name = "json_schema_id")
+class Cas2BailApplicationJsonSchemaEntity(
+  id: UUID,
+  addedAt: OffsetDateTime,
+  schema: String,
+) : JsonSchemaEntity(id, addedAt, schema)
+
+@Entity
 @DiscriminatorValue("TEMPORARY_ACCOMMODATION_APPLICATION")
 @Table(name = "temporary_accommodation_application_json_schemas")
 @PrimaryKeyJoinColumn(name = "json_schema_id")

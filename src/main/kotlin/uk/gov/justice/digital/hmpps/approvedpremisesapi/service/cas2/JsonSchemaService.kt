@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2Applicati
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2ApplicationRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.JsonSchemaEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.JsonSchemaRepository
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas2bail.Cas2BailApplicationEntity
 import java.util.Collections.synchronizedMap
 import java.util.UUID
 
@@ -42,6 +43,12 @@ class JsonSchemaService(
   }
 
   fun checkSchemaOutdated(application: Cas2ApplicationEntity): Cas2ApplicationEntity {
+    val newestSchema = getNewestSchema(application.schemaVersion.javaClass)
+
+    return application.apply { application.schemaUpToDate = application.schemaVersion.id == newestSchema.id }
+  }
+
+  fun checkCas2BailSchemaOutdated(application: Cas2BailApplicationEntity): Cas2BailApplicationEntity {
     val newestSchema = getNewestSchema(application.schemaVersion.javaClass)
 
     return application.apply { application.schemaUpToDate = application.schemaVersion.id == newestSchema.id }

@@ -152,7 +152,14 @@ tasks.bootRun {
 }
 
 tasks.withType<Test> {
-  jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED", "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED", "--add-opens", "java.base/java.time=ALL-UNNAMED")
+  jvmArgs(
+    "--add-opens",
+    "java.base/java.lang=ALL-UNNAMED",
+    "--add-opens",
+    "java.base/java.lang.reflect=ALL-UNNAMED",
+    "--add-opens",
+    "java.base/java.time=ALL-UNNAMED",
+  )
 
   afterEvaluate {
     if (environment["CI"] != null) {
@@ -242,6 +249,14 @@ registerAdditionalOpenApiGenerateTask(
 )
 
 registerAdditionalOpenApiGenerateTask(
+  name = "openApiGenerateCas2bailNamespace",
+  ymlPath = "$rootDir/src/main/resources/static/codegen/built-cas2bail-api-spec.yml",
+  apiPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.cas2bail",
+  modelPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model",
+  apiSuffix = "Cas2bail",
+)
+
+registerAdditionalOpenApiGenerateTask(
   name = "openApiGenerateCas2Namespace",
   ymlPath = "$rootDir/src/main/resources/static/codegen/built-cas2-api-spec.yml",
   apiPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.cas2",
@@ -320,6 +335,7 @@ tasks.register("openApiPreCompilation") {
       .readFileToString(file, "UTF-8")
       .replace("_shared.yml#/components", "#/components")
       .replace("cas1-schemas.yml#/components", "#/components")
+      .replace("cas2bail-schemas.yml#/components", "#/components")
     FileUtils.writeStringToFile(file, updatedContents, "UTF-8")
   }
 
@@ -373,6 +389,11 @@ tasks.register("openApiPreCompilation") {
     inputSpec = "cas2-api.yml",
   )
   buildSpecWithSharedComponentsAppended(
+    outputFileName = "built-cas2bail-api-spec.yml",
+    inputSpec = "cas2bail-api.yml",
+    inputSchemas = "cas2bail-schemas.yml",
+  )
+  buildSpecWithSharedComponentsAppended(
     outputFileName = "built-cas3-api-spec.yml",
     inputSpec = "cas3-api.yml",
   )
@@ -385,6 +406,7 @@ tasks.get("openApiGenerate").dependsOn(
   "openApiPreCompilation",
   "openApiGenerateCas1Namespace",
   "openApiGenerateCas2Namespace",
+  "openApiGenerateCas2bailNamespace",
   "openApiGenerateCas3Namespace",
 )
 

@@ -26,6 +26,15 @@ class HttpAuthService {
     return principal
   }
 
+  fun getCas2BailAuthenticatedPrincipalOrThrow(): AuthAwareAuthenticationToken {
+    val principal = SecurityContextHolder.getContext().authentication as AuthAwareAuthenticationToken
+    if (!listOf("nomis", "auth").contains(principal.token.claims["auth_source"])) {
+      throw ForbiddenProblem()
+    }
+
+    return principal
+  }
+
   fun getDeliusPrincipalOrThrow(): AuthAwareAuthenticationToken {
     val principal = SecurityContextHolder.getContext().authentication as AuthAwareAuthenticationToken
 

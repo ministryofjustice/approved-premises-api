@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremi
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesAssessmentJsonSchemaEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesPlacementApplicationJsonSchemaEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2ApplicationJsonSchemaEntity
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2BailApplicationJsonSchemaEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TemporaryAccommodationApplicationJsonSchemaEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TemporaryAccommodationAssessmentJsonSchemaEntity
 import java.util.UUID
@@ -18,6 +19,9 @@ interface TemporaryAccommodationApplicationJsonSchemaTestRepository : JpaReposit
 
 @Repository
 interface Cas2ApplicationJsonSchemaTestRepository : JpaRepository<Cas2ApplicationJsonSchemaEntity, UUID>
+
+@Repository
+interface Cas2BailApplicationJsonSchemaTestRepository : JpaRepository<Cas2BailApplicationJsonSchemaEntity, UUID>
 
 @Repository
 interface ApprovedPremisesAssessmentJsonSchemaTestRepository : JpaRepository<ApprovedPremisesAssessmentJsonSchemaEntity, UUID>

@@ -2046,6 +2046,49 @@ components:
         - personName
         - crn
         - nomsNumber
+    Cas2BailApplicationSummary:
+      type: object
+      properties:
+        type:
+          type: string
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        submittedAt:
+          type: string
+          format: date-time
+        createdByUserId:
+          type: string
+          format: uuid
+        createdByUserName:
+          type: string
+        status:
+          $ref: '#/components/schemas/ApplicationStatus'
+        latestStatusUpdate:
+          $ref: '#/components/schemas/LatestCas2StatusUpdate'
+        risks:
+          $ref: '#/components/schemas/PersonRisks'
+        hdcEligibilityDate:
+          type: string
+          format: date
+        personName:
+          type: string
+        crn:
+          type: string
+        nomsNumber:
+          type: string
+      required:
+        - type
+        - id
+        - createdAt
+        - createdByUserId
+        - status
+        - personName
+        - crn
+        - nomsNumber
     NewCas2ApplicationNote:
       type: object
       properties:
