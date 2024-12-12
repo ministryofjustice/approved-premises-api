@@ -95,6 +95,7 @@ class ApplicationServiceTest {
         latestStatusUpdateLabel = null,
         latestStatusUpdateStatusId = null,
         prisonCode = "BRI",
+        applicationOrigin = "court",
       )
 
       PaginationConfig(defaultPageSize = 10).postInit()
@@ -143,6 +144,7 @@ class ApplicationServiceTest {
       latestStatusUpdateLabel = null,
       latestStatusUpdateStatusId = null,
       prisonCode = "BRI",
+      applicationOrigin = "court",
     )
     val page = mockk<Page<Cas2ApplicationSummaryEntity>>()
     val pageCriteria = PageCriteria(sortBy = "submitted_at", sortDirection = SortDirection.asc, page = 3)
@@ -216,6 +218,7 @@ class ApplicationServiceTest {
       latestStatusUpdateLabel = null,
       latestStatusUpdateStatusId = null,
       prisonCode = "BRI",
+      applicationOrigin = "court",
     )
     val page = mockk<Page<Cas2ApplicationSummaryEntity>>()
     val pageCriteria = PageCriteria(sortBy = "createdAt", sortDirection = SortDirection.asc, page = 3)

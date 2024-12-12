@@ -14,6 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.test.web.reactive.server.returnResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Application
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApplicationOrigin
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2Application
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2ApplicationSummary
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2StatusUpdate
@@ -527,6 +528,7 @@ class Cas2ApplicationTest : IntegrationTestBase() {
               }
 
               val userAPrisonAApplicationIds = mutableListOf<UUID>()
+              val applicationOriginEnum = ApplicationOrigin.court
 
               repeat(5) {
                 userAPrisonAApplicationIds.add(
@@ -537,6 +539,7 @@ class Cas2ApplicationTest : IntegrationTestBase() {
                     withData("{}")
                     withCreatedAt(OffsetDateTime.now().randomDateTimeBefore(14))
                     withReferringPrisonCode(userAPrisonA.activeCaseloadId!!)
+                    withApplicationOrigin(applicationOriginEnum)
                   }.id,
                 )
               }
@@ -559,6 +562,7 @@ class Cas2ApplicationTest : IntegrationTestBase() {
                     withReferringPrisonCode(userAPrisonA.activeCaseloadId!!)
                     withSubmittedAt(OffsetDateTime.now().minusDays(it.toLong()))
                     withConditionalReleaseDate(LocalDate.now().randomDateAfter(14))
+                    withApplicationOrigin(applicationOriginEnum)
                   }.id,
                 )
               }
@@ -575,6 +579,7 @@ class Cas2ApplicationTest : IntegrationTestBase() {
                     withReferringPrisonCode(userAPrisonA.activeCaseloadId!!)
                     withSubmittedAt(OffsetDateTime.now().minusDays(it.toLong() + 6))
                     withConditionalReleaseDate(LocalDate.now())
+                    withApplicationOrigin(applicationOriginEnum)
                   }.id,
                 )
               }
@@ -589,6 +594,7 @@ class Cas2ApplicationTest : IntegrationTestBase() {
                 withReferringPrisonCode(userAPrisonA.activeCaseloadId!!)
                 withSubmittedAt(OffsetDateTime.now())
                 withConditionalReleaseDate(LocalDate.now().randomDateBefore(14))
+                withApplicationOrigin(applicationOriginEnum)
               }.id
 
               addStatusUpdates(userBPrisonAApplicationIds.first(), assessor)
@@ -604,6 +610,7 @@ class Cas2ApplicationTest : IntegrationTestBase() {
                 withData("{}")
                 withCreatedAt(OffsetDateTime.now().randomDateTimeBefore(14))
                 withReferringPrisonCode(userCPrisonB.activeCaseloadId!!)
+                withApplicationOrigin(applicationOriginEnum)
               }
 
               val rawResponseBody = webTestClient.get()
@@ -636,6 +643,7 @@ class Cas2ApplicationTest : IntegrationTestBase() {
 
               Assertions.assertThat(responseBody[0].latestStatusUpdate?.label).isEqualTo("Awaiting decision")
               Assertions.assertThat(responseBody[0].latestStatusUpdate?.statusId).isEqualTo(UUID.fromString("c74c3e54-52d8-4aa2-86f6-05190985efee"))
+              Assertions.assertThat(responseBody[0].applicationOrigin).isEqualTo(applicationOriginEnum)
             }
           }
         }

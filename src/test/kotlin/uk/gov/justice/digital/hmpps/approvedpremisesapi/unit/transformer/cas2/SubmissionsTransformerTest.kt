@@ -10,6 +10,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApplicationOrigin
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2Assessment
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2StatusUpdate
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2SubmittedApplicationSummary
@@ -111,6 +112,7 @@ class SubmissionsTransformerTest {
         "telephoneNumber",
         "timelineEvents",
         "assessment",
+        "applicationOrigin",
       )
     }
   }
@@ -131,6 +133,7 @@ class SubmissionsTransformerTest {
         latestStatusUpdateLabel = null,
         latestStatusUpdateStatusId = null,
         prisonCode = "BRI",
+        applicationOrigin = "court",
       )
 
       val expectedSubmittedApplicationSummary = Cas2SubmittedApplicationSummary(
@@ -141,6 +144,7 @@ class SubmissionsTransformerTest {
         createdAt = Instant.parse("2023-04-19T13:25:00+01:00"),
         submittedAt = Instant.parse("2023-04-19T13:25:30+01:00"),
         personName = "Example Offender",
+        applicationOrigin = ApplicationOrigin.court,
       )
 
       val transformation = applicationTransformer.transformJpaSummaryToApiRepresentation(

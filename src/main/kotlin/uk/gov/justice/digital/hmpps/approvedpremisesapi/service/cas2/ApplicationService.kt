@@ -290,6 +290,7 @@ class ApplicationService(
         hdcEligibilityDate = submitApplication.hdcEligibilityDate
         conditionalReleaseDate = submitApplication.conditionalReleaseDate
         telephoneNumber = submitApplication.telephoneNumber
+        applicationOrigin = submitApplication.applicationOrigin.toString()
       }
     } catch (error: UpstreamApiException) {
       return AuthorisableActionResult.Success(
@@ -345,6 +346,7 @@ class ApplicationService(
                 username = application.createdByUser.nomisUsername,
               ),
             ),
+            applicationOrigin = application.applicationOrigin,
           ),
         ),
       ),

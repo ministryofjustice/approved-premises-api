@@ -1819,6 +1819,8 @@ components:
               format: uuid
             outdatedSchema:
               type: boolean
+            applicationOrigin:
+              $ref: '#/components/schemas/ApplicationOrigin'
             data:
               $ref: '#/components/schemas/AnyValue'
             document:
@@ -1873,6 +1875,8 @@ components:
         assessment:
           type: object
           $ref: '#/components/schemas/Cas2Assessment'
+        applicationOrigin:
+          $ref: '#/components/schemas/ApplicationOrigin'
       required:
         - id
         - person
@@ -2037,6 +2041,8 @@ components:
           type: string
         nomsNumber:
           type: string
+        applicationOrigin:
+          $ref: '#/components/schemas/ApplicationOrigin'
       required:
         - type
         - id
@@ -2155,6 +2161,8 @@ components:
         submittedAt:
           type: string
           format: date-time
+        applicationOrigin:
+          $ref: '#/components/schemas/ApplicationOrigin'
       required:
         - createdByUserId
         - status
@@ -2457,6 +2465,8 @@ components:
           format: date
         telephoneNumber:
           type: string
+        applicationOrigin:
+          $ref: '#/components/schemas/ApplicationOrigin'
       required:
         - translatedDocument
         - applicationId
@@ -5034,3 +5044,8 @@ components:
         - sharedProperty
         - singleOccupancy
         - wheelchairAccessible
+    ApplicationOrigin:
+      type: string
+      enum:
+        - bail
+        - court

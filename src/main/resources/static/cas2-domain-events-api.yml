@@ -141,6 +141,8 @@ components:
               $ref: '#/components/schemas/Cas2StaffMember'
           required:
             - staffMember
+        applicationOrigin:
+          type: string
       required:
         - applicationId
         - applicationUrl

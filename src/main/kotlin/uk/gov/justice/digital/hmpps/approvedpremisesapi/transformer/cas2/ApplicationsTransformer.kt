@@ -2,8 +2,10 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.cas2
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApplicationOrigin
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApplicationStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2Application
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2ApplicationSummary
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2ApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2ApplicationSummaryEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonInfoResult
@@ -43,22 +45,22 @@ class ApplicationsTransformer(
   fun transformJpaSummaryToSummary(
     jpaSummary: Cas2ApplicationSummaryEntity,
     personName: String,
-  ): uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2ApplicationSummary {
-    return uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model
-      .Cas2ApplicationSummary(
-        id = jpaSummary.id,
-        createdByUserId = UUID.fromString(jpaSummary.userId),
-        createdByUserName = jpaSummary.userName,
-        createdAt = jpaSummary.createdAt.toInstant(),
-        submittedAt = jpaSummary.submittedAt?.toInstant(),
-        status = getStatusFromSummary(jpaSummary),
-        latestStatusUpdate = statusUpdateTransformer.transformJpaSummaryToLatestStatusUpdateApi(jpaSummary),
-        type = "CAS2",
-        hdcEligibilityDate = jpaSummary.hdcEligibilityDate,
-        crn = jpaSummary.crn,
-        nomsNumber = jpaSummary.nomsNumber,
-        personName = personName,
-      )
+  ): Cas2ApplicationSummary {
+    return Cas2ApplicationSummary(
+      id = jpaSummary.id,
+      createdByUserId = UUID.fromString(jpaSummary.userId),
+      createdByUserName = jpaSummary.userName,
+      createdAt = jpaSummary.createdAt.toInstant(),
+      submittedAt = jpaSummary.submittedAt?.toInstant(),
+      status = getStatusFromSummary(jpaSummary),
+      latestStatusUpdate = statusUpdateTransformer.transformJpaSummaryToLatestStatusUpdateApi(jpaSummary),
+      type = "CAS2",
+      hdcEligibilityDate = jpaSummary.hdcEligibilityDate,
+      crn = jpaSummary.crn,
+      nomsNumber = jpaSummary.nomsNumber,
+      personName = personName,
+      applicationOrigin = getApplicationOriginFromJpa(jpaSummary),
+    )
   }
 
   private fun getStatus(entity: Cas2ApplicationEntity): ApplicationStatus {
@@ -67,6 +69,13 @@ class ApplicationsTransformer(
     }
 
     return ApplicationStatus.inProgress
+  }
+
+  private fun getApplicationOriginFromJpa(summary: Cas2ApplicationSummaryEntity): ApplicationOrigin {
+    return when {
+      summary.applicationOrigin == "bail" -> ApplicationOrigin.bail
+      else -> ApplicationOrigin.court
+    }
   }
 
   private fun getStatusFromSummary(summary: Cas2ApplicationSummaryEntity): ApplicationStatus {
