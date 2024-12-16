@@ -87,6 +87,7 @@ class ApplicationsController(
       body.crn,
       user,
       nomisPrincipal.token.tokenValue,
+      body.applicationOrigin,
     )
 
     val application = when (applicationResult) {

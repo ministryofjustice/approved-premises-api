@@ -2792,6 +2792,8 @@ components:
         offenceId:
           type: string
           example: "M1502750438"
+        applicationOrigin:
+          $ref: '#/components/schemas/ApplicationOrigin'
       required:
         - crn
     UpdateApplicationType:
@@ -5535,6 +5537,7 @@ components:
         - wheelchairAccessible
     ApplicationOrigin:
       type: string
+      default: homeDetentionCurfew
       enum:
         - courtBail
         - prisonBail

@@ -102,6 +102,8 @@ class DomainEventTest : InitialiseDatabasePerClassTestBase() {
       .expectBody(domainEventAndJson.envelope::class.java)
       .returnResult()
 
+    val xxx = response.responseBody
+
     assertThat(response.responseBody).isEqualTo(domainEventAndJson.envelope)
   }
 }

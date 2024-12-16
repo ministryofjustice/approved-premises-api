@@ -459,7 +459,7 @@ class ApplicationServiceTest {
       assertThat(resultCourtBail.entity.applicationOrigin).isEqualTo(ApplicationOrigin.courtBail.toString())
       assertThat(resultPrisonBail.entity.applicationOrigin).isEqualTo(ApplicationOrigin.prisonBail.toString())
       assertThat(resultHDC.entity.applicationOrigin).isEqualTo(ApplicationOrigin.homeDetentionCurfew.toString())
-      assertThat(resultNull.entity.applicationOrigin).isNull()
+      assertThat(resultNull.entity.applicationOrigin).isEqualTo(ApplicationOrigin.homeDetentionCurfew.toString())
     }
   }
 
