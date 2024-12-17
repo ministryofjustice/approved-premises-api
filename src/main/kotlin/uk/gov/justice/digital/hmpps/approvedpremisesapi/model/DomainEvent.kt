@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.model
 
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApplicationOrigin
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.MetaDataName
 import java.time.Instant
 import java.util.UUID
@@ -16,4 +17,5 @@ data class DomainEvent<T>(
   val data: T,
   val metadata: Map<MetaDataName, String?> = emptyMap(),
   val schemaVersion: Int? = null,
+  val applicationOrigin: String? = null,
 )

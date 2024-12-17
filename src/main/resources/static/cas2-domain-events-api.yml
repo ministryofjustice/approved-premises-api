@@ -78,6 +78,8 @@ components:
           format: date-time
         eventType:
           $ref: '#/components/schemas/EventType'
+        applicationOrigin:
+          $ref: '_shared.yml#/components/schemas/ApplicationOrigin'
       required:
         - id
         - timestamp
