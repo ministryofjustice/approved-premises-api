@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.IntegrationT
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenACas2PomUser
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnOffender
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apOASysContextMockSuccessfulRoshRatingsCall
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockNotFoundOffenderDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.oasyscontext.RiskLevel
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -63,8 +62,6 @@ class Cas2BailPersonRisksTest : IntegrationTestBase() {
   fun `Getting cas2bail risks for a CRN that does not exist returns 404`() {
     givenACas2PomUser { userEntity, jwt ->
       val crn = "CRN123"
-
-      communityAPIMockNotFoundOffenderDetailsCall(crn)
 
       webTestClient.get()
         .uri("/cas2bail/people/$crn/risks")

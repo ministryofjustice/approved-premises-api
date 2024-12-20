@@ -10,7 +10,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.given
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apOASysContextMockSuccessfulOffenceDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apOASysContextMockSuccessfulRiskToTheIndividualCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apOASysContextMockUnsuccessfulRisksToTheIndividualCallWithDelay
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockNotFoundOffenderDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.OASysSectionsTransformer
 
 class Cas2BailPersonOASysRiskToSelfTest : IntegrationTestBase() {
@@ -61,8 +60,6 @@ class Cas2BailPersonOASysRiskToSelfTest : IntegrationTestBase() {
   fun `Getting cas2bail Risk To Self for a CRN that does not exist returns 404`() {
     givenACas2PomUser { userEntity, jwt ->
       val crn = "CRN123"
-
-      communityAPIMockNotFoundOffenderDetailsCall(crn)
 
       webTestClient.get()
         .uri("/cas2bail/people/$crn/oasys/risk-to-self")
