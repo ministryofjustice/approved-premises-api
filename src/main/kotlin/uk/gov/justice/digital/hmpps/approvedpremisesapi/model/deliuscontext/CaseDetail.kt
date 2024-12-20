@@ -19,8 +19,8 @@ data class CaseSummary(
   val gender: String?,
   val profile: Profile?,
   val manager: Manager,
-  val currentExclusion: Boolean?,
-  val currentRestriction: Boolean?,
+  val currentExclusion: Boolean,
+  val currentRestriction: Boolean,
 )
 
 data class Name(
@@ -92,6 +92,12 @@ data class CaseSummaries(
 )
 
 data class ReferralDetail(
+  /*
+  Note that the time element is typically 00:00
+   */
   val arrivedAt: ZonedDateTime?,
+  /*
+  Note that the time element is typically 00:00
+   */
   val departedAt: ZonedDateTime?,
 )

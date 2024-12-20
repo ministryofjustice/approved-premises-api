@@ -2,24 +2,18 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.events
 
 import io.github.bluegroundltd.kfactory.Factory
 import io.github.bluegroundltd.kfactory.Yielded
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.StaffMember
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomInt
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.StaffMember
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringMultiCaseWithNumbers
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringUpperCase
 
 class StaffMemberFactory : Factory<StaffMember> {
   private var staffCode: Yielded<String> = { randomStringMultiCaseWithNumbers(6) }
-  private var staffIdentifier: Yielded<Long> = { randomInt(1000, 5000).toLong() }
   private var forenames: Yielded<String> = { randomStringUpperCase(6) }
   private var surname: Yielded<String> = { randomStringUpperCase(6) }
   private var username: Yielded<String> = { randomStringUpperCase(8) }
 
   fun withStaffCode(staffCode: String) = apply {
     this.staffCode = { staffCode }
-  }
-
-  fun withStaffIdentifier(staffIdentifier: Long) = apply {
-    this.staffIdentifier = { staffIdentifier }
   }
 
   fun withForenames(forenames: String) = apply {
@@ -36,7 +30,6 @@ class StaffMemberFactory : Factory<StaffMember> {
 
   override fun produce(): StaffMember = StaffMember(
     staffCode = this.staffCode(),
-    staffIdentifier = this.staffIdentifier(),
     forenames = this.forenames(),
     surname = this.surname(),
     username = this.username(),

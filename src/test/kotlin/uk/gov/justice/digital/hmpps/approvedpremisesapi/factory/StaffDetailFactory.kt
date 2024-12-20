@@ -7,7 +7,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.Prob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.StaffDetail
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.Team
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomEmailAddress
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomInt
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomNumberChars
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringLowerCase
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringMultiCaseWithNumbers
@@ -19,7 +18,6 @@ object StaffDetailFactory {
   fun staffDetail(
     email: String? = randomEmailAddress(),
     telephoneNumber: String? = randomNumberChars(11),
-    staffIdentifier: Long = randomInt(Int.MIN_VALUE, Int.MAX_VALUE).toLong(),
     teams: List<Team> = listOf(team()),
     probationArea: ProbationArea = probationArea(),
     deliusUsername: String? = randomStringUpperCase(10),
@@ -30,7 +28,6 @@ object StaffDetailFactory {
     StaffDetail(
       email = email,
       telephoneNumber = telephoneNumber,
-      staffIdentifier = staffIdentifier,
       teams = teams,
       probationArea = probationArea,
       username = deliusUsername,

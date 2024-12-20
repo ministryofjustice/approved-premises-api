@@ -1,14 +1,15 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1
 
 import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedJob
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.DomainEventService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1DomainEventService
 import java.util.UUID
 
+@Component
 class Cas1DomainEventReplaySeedJob(
-  private val domainEventService: DomainEventService,
+  private val domainEventService: Cas1DomainEventService,
 ) : SeedJob<Cas1DomainEventReplaySeedCsvRow>(
-  id = UUID.randomUUID(),
   requiredHeaders = setOf(
     "domain_event_id",
   ),

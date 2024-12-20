@@ -23,8 +23,8 @@ class Cas1SpaceBookingStatusTransformerTest {
       SpaceBookingDates(
         testCaseForSpaceBookingSummaryStatus.expectedArrivalDate,
         testCaseForSpaceBookingSummaryStatus.expectedDepartureDate,
-        testCaseForSpaceBookingSummaryStatus.actualArrivalDateTime,
-        testCaseForSpaceBookingSummaryStatus.actualDepartureDateTime,
+        testCaseForSpaceBookingSummaryStatus.actualArrivalDate,
+        testCaseForSpaceBookingSummaryStatus.actualDepartureDate,
         testCaseForSpaceBookingSummaryStatus.nonArrivalConfirmedAtDateTime,
       ),
     )

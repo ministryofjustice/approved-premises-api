@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 import org.springframework.web.util.pattern.PathPatternParser
 
 @Component
-class TracesSamplerCallback() : SentryOptions.TracesSamplerCallback {
+class TracesSamplerCallback : SentryOptions.TracesSamplerCallback {
   private val ignoredPathPatterns = listOf("/health/**").let {
     val parser = PathPatternParser()
 

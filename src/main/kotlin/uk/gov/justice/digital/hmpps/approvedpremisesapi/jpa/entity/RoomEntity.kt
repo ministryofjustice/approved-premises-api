@@ -17,6 +17,8 @@ import java.util.UUID
 interface RoomRepository : JpaRepository<RoomEntity, UUID> {
   fun findByCode(roomCode: String): RoomEntity?
 
+  fun findByCodeAndPremisesId(roomCode: String, premisesId: UUID): RoomEntity?
+
   @Query("SELECT COUNT(r) = 0 FROM RoomEntity r WHERE r.name = :name AND r.premises.id = :premisesId")
   fun nameIsUniqueForPremises(name: String, premisesId: UUID): Boolean
 }

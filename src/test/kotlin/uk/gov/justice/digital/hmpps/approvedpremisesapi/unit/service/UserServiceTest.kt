@@ -170,7 +170,6 @@ class UserServiceTest {
       val deliusUser = StaffDetailFactory.staffDetail(
         deliusUsername = username,
         name = PersonName("Jim", "Jimmerson"),
-        staffIdentifier = 5678,
         probationArea = ProbationArea(code = "AREACODE", description = "description"),
         teams = listOf(
           TeamFactoryDeliusContext.team(code = "TC1", borough = borough),
@@ -233,7 +232,6 @@ class UserServiceTest {
       val deliusUser = StaffDetailFactory.staffDetail(
         deliusUsername = username,
         name = PersonName("Jim", "Jimmerson"),
-        staffIdentifier = 5678,
         probationArea = ProbationArea(code = "AREACODE", description = "Description"),
         teams = listOf(
           TeamFactoryDeliusContext.team(code = "TC1", borough = borough),
@@ -297,7 +295,6 @@ class UserServiceTest {
       val deliusUser = StaffDetailFactory.staffDetail(
         deliusUsername = username,
         name = PersonName("Jim", "Jimmerson"),
-        staffIdentifier = 5678,
         probationArea = ProbationArea(code = "AREACODE", description = "AREADESCRIPTION"),
         teams = emptyList(),
       )
@@ -788,7 +785,6 @@ class UserServiceTest {
     private val username = "DeliusAPIUser"
     private val forename = "Jim"
     private val surname = "Jimmerson"
-    private val staffIdentifier = 5678
     private val staffCode = "STAFF1"
 
     private val staffDetail = StaffDetailFactory.staffDetail().copy(username = username)
@@ -807,7 +803,6 @@ class UserServiceTest {
         .withDeliusUsername(username)
         .withName("$forename $surname")
         .withEmail(email)
-        .withDeliusStaffIdentifier(staffIdentifier.toLong())
         .withTelephoneNumber(telephoneNumber)
         .withDeliusStaffCode(staffCode)
         .withProbationRegion(probationRegion)
@@ -1004,7 +999,7 @@ class UserServiceTest {
 
       val result = userService.updateUser(
         id = user.id,
-        roles = listOf(ApprovedPremisesUserRole.assessor, ApprovedPremisesUserRole.roleAdmin),
+        roles = listOf(ApprovedPremisesUserRole.assessor, ApprovedPremisesUserRole.cruMember),
         qualifications = listOf(APIUserQualification.emergency, APIUserQualification.pipe),
         cruManagementAreaOverrideId = null,
       )
@@ -1013,7 +1008,7 @@ class UserServiceTest {
       val updatedUser = (result as CasResult.Success).value
 
       assertThat(updatedUser.id).isEqualTo(user.id)
-      assertThat(updatedUser.roles.map { it.role }).containsExactlyInAnyOrder(UserRole.CAS1_ASSESSOR, UserRole.CAS1_ADMIN)
+      assertThat(updatedUser.roles.map { it.role }).containsExactlyInAnyOrder(UserRole.CAS1_ASSESSOR, UserRole.CAS1_CRU_MEMBER)
       assertThat(updatedUser.qualifications.map { it.qualification }).containsExactlyInAnyOrder(UserQualification.EMERGENCY, UserQualification.PIPE)
       assertThat(updatedUser.cruManagementAreaOverride).isNull()
     }
@@ -1208,7 +1203,7 @@ class UserServiceTest {
         .withDefaults()
         .produce()
 
-      userService.removeRoleFromUser(user, UserRole.CAS1_MANAGER)
+      userService.removeRoleFromUser(user, UserRole.CAS1_FUTURE_MANAGER)
 
       verify { mockUserRoleAssignmentRepository wasNot Called }
     }
@@ -1221,7 +1216,7 @@ class UserServiceTest {
 
       val managerRoleAssignment = UserRoleAssignmentEntityFactory()
         .withUser(user)
-        .withRole(UserRole.CAS1_MANAGER)
+        .withRole(UserRole.CAS1_FUTURE_MANAGER)
         .withId(UUID.randomUUID())
         .produce()
 
@@ -1236,7 +1231,7 @@ class UserServiceTest {
 
       every { mockUserRoleAssignmentRepository.delete(managerRoleAssignment) } returns Unit
 
-      userService.removeRoleFromUser(user, UserRole.CAS1_MANAGER)
+      userService.removeRoleFromUser(user, UserRole.CAS1_FUTURE_MANAGER)
 
       verify { mockUserRoleAssignmentRepository.delete(managerRoleAssignment) }
     }
@@ -1249,7 +1244,7 @@ class UserServiceTest {
 
       val managerRoleAssignment = UserRoleAssignmentEntityFactory()
         .withUser(user)
-        .withRole(UserRole.CAS1_MANAGER)
+        .withRole(UserRole.CAS1_FUTURE_MANAGER)
         .withId(UUID.randomUUID())
         .produce()
 

@@ -87,14 +87,13 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationServi
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationService.Cas1ApplicationUpdateFields
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationTimelineNoteService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.AssessmentService
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.DomainEventService
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.FeatureFlagService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.JsonSchemaService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.OffenderService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserAccessService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1ApplicationDomainEventService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1ApplicationEmailService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1DomainEventService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.ApplicationTimelineNoteTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.ApplicationTimelineTransformer
 import java.time.Clock
@@ -116,7 +115,7 @@ class ApplicationServiceTest {
   private val mockOfflineApplicationRepository = mockk<OfflineApplicationRepository>()
   private val mockApplicationTimelineNoteService = mockk<ApplicationTimelineNoteService>()
   private val mockApplicationTimelineNoteTransformer = mockk<ApplicationTimelineNoteTransformer>()
-  private val mockDomainEventService = mockk<DomainEventService>()
+  private val mockDomainEventService = mockk<Cas1DomainEventService>()
   private val mockCas3DomainEventService = mockk<Cas3DomainEventService>()
   private val mockApDeliusContextApiClient = mockk<ApDeliusContextApiClient>()
   private val mockApplicationTeamCodeRepository = mockk<ApplicationTeamCodeRepository>()
@@ -132,7 +131,6 @@ class ApplicationServiceTest {
   private val mockLockableApplicationRepository = mockk<LockableApplicationRepository>()
   private val mockProbationDeliveryUnitRepository = mockk<ProbationDeliveryUnitRepository>()
   private val mockCas1CruManagementAreaRepository = mockk<Cas1CruManagementAreaRepository>()
-  private val mockFeatureFlagService = mockk<FeatureFlagService>()
 
   private val applicationService = ApplicationService(
     mockUserRepository,
@@ -161,7 +159,6 @@ class ApplicationServiceTest {
     mockLockableApplicationRepository,
     mockProbationDeliveryUnitRepository,
     mockCas1CruManagementAreaRepository,
-    mockFeatureFlagService,
   )
 
   @Test
@@ -238,7 +235,7 @@ class ApplicationServiceTest {
       applicationService.getApplicationForUsername(
         applicationId,
         distinguishedName,
-      ) is AuthorisableActionResult.NotFound,
+      ) is CasResult.NotFound,
     ).isTrue
   }
 
@@ -274,7 +271,7 @@ class ApplicationServiceTest {
       applicationService.getApplicationForUsername(
         applicationId,
         distinguishedName,
-      ) is AuthorisableActionResult.Unauthorised,
+      ) is CasResult.Unauthorised,
     ).isTrue
   }
 
@@ -310,10 +307,10 @@ class ApplicationServiceTest {
 
     val result = applicationService.getApplicationForUsername(applicationId, distinguishedName)
 
-    assertThat(result is AuthorisableActionResult.Success).isTrue
-    result as AuthorisableActionResult.Success
+    assertThat(result is CasResult.Success).isTrue
+    result as CasResult.Success
 
-    assertThat(result.entity).isEqualTo(applicationEntity)
+    assertThat(result.value).isEqualTo(applicationEntity)
   }
 
   @Test
@@ -951,7 +948,7 @@ class ApplicationServiceTest {
             noticeType = Cas1ApplicationTimelinessCategory.standard,
           ),
           userForRequest = user,
-        ) is AuthorisableActionResult.NotFound,
+        ) is CasResult.NotFound,
       ).isTrue
     }
 
@@ -984,7 +981,7 @@ class ApplicationServiceTest {
             noticeType = Cas1ApplicationTimelinessCategory.standard,
           ),
           userForRequest = otherUser,
-        ) is AuthorisableActionResult.Unauthorised,
+        ) is CasResult.Unauthorised,
       ).isTrue
     }
 
@@ -1013,13 +1010,9 @@ class ApplicationServiceTest {
         userForRequest = user,
       )
 
-      assertThat(result is AuthorisableActionResult.Success).isTrue
-      result as AuthorisableActionResult.Success
-
-      assertThat(result.entity is ValidatableActionResult.GeneralValidationError).isTrue
-      val validatableActionResult = result.entity as ValidatableActionResult.GeneralValidationError
-
-      assertThat(validatableActionResult.message).isEqualTo("The schema version is outdated")
+      assertThat(result is CasResult.GeneralValidationError).isTrue
+      result as CasResult.GeneralValidationError
+      assertThat(result.message).isEqualTo("The schema version is outdated")
     }
 
     @Test
@@ -1047,13 +1040,10 @@ class ApplicationServiceTest {
         userForRequest = user,
       )
 
-      assertThat(result is AuthorisableActionResult.Success).isTrue
-      result as AuthorisableActionResult.Success
+      assertThat(result is CasResult.GeneralValidationError).isTrue
+      result as CasResult.GeneralValidationError
 
-      assertThat(result.entity is ValidatableActionResult.GeneralValidationError).isTrue
-      val validatableActionResult = result.entity as ValidatableActionResult.GeneralValidationError
-
-      assertThat(validatableActionResult.message).isEqualTo("This application has already been submitted")
+      assertThat(result.message).isEqualTo("This application has already been submitted")
     }
 
     @Test
@@ -1081,13 +1071,9 @@ class ApplicationServiceTest {
         userForRequest = user,
       )
 
-      assertThat(result is AuthorisableActionResult.Success).isTrue
-      result as AuthorisableActionResult.Success
-
-      assertThat(result.entity is ValidatableActionResult.GeneralValidationError).isTrue
-      val validatableActionResult = result.entity as ValidatableActionResult.GeneralValidationError
-
-      assertThat(validatableActionResult.message).isEqualTo("`isPipeApplication`/`isEsapApplication` should not be used in conjunction with `apType`")
+      assertThat(result is CasResult.GeneralValidationError).isTrue
+      result as CasResult.GeneralValidationError
+      assertThat(result.message).isEqualTo("`isPipeApplication`/`isEsapApplication` should not be used in conjunction with `apType`")
     }
 
     @Test
@@ -1125,13 +1111,10 @@ class ApplicationServiceTest {
         userForRequest = user,
       )
 
-      assertThat(result is AuthorisableActionResult.Success).isTrue
-      result as AuthorisableActionResult.Success
+      assertThat(result is CasResult.Success).isTrue
+      result as CasResult.Success
 
-      assertThat(result.entity is ValidatableActionResult.Success).isTrue
-      val validatableActionResult = result.entity as ValidatableActionResult.Success
-
-      val approvedPremisesApplication = validatableActionResult.entity as ApprovedPremisesApplicationEntity
+      val approvedPremisesApplication = result.value as ApprovedPremisesApplicationEntity
 
       assertThat(approvedPremisesApplication.data).isEqualTo(updatedData)
       assertThat(approvedPremisesApplication.isWomensApplication).isEqualTo(false)
@@ -1181,13 +1164,9 @@ class ApplicationServiceTest {
         userForRequest = user,
       )
 
-      assertThat(result is AuthorisableActionResult.Success).isTrue
-      result as AuthorisableActionResult.Success
-
-      assertThat(result.entity is ValidatableActionResult.Success).isTrue
-      val validatableActionResult = result.entity as ValidatableActionResult.Success
-
-      val approvedPremisesApplication = validatableActionResult.entity as ApprovedPremisesApplicationEntity
+      assertThat(result is CasResult.Success).isTrue
+      result as CasResult.Success
+      val approvedPremisesApplication = result.value as ApprovedPremisesApplicationEntity
 
       assertThat(approvedPremisesApplication.data).isEqualTo(updatedData)
       assertThat(approvedPremisesApplication.isWomensApplication).isEqualTo(false)
@@ -1243,13 +1222,10 @@ class ApplicationServiceTest {
         userForRequest = user,
       )
 
-      assertThat(result is AuthorisableActionResult.Success).isTrue
-      result as AuthorisableActionResult.Success
+      assertThat(result is CasResult.Success).isTrue
+      result as CasResult.Success
 
-      assertThat(result.entity is ValidatableActionResult.Success).isTrue
-      val validatableActionResult = result.entity as ValidatableActionResult.Success
-
-      val approvedPremisesApplication = validatableActionResult.entity as ApprovedPremisesApplicationEntity
+      val approvedPremisesApplication = result.value as ApprovedPremisesApplicationEntity
 
       assertThat(approvedPremisesApplication.noticeType).isEqualTo(noticeType)
     }
@@ -1275,7 +1251,7 @@ class ApplicationServiceTest {
       applicationService.updateTemporaryAccommodationApplication(
         applicationId = applicationId,
         data = "{}",
-      ) is AuthorisableActionResult.NotFound,
+      ) is CasResult.NotFound,
     ).isTrue
   }
 
@@ -1312,7 +1288,7 @@ class ApplicationServiceTest {
       applicationService.updateTemporaryAccommodationApplication(
         applicationId = applicationId,
         data = "{}",
-      ) is AuthorisableActionResult.Unauthorised,
+      ) is CasResult.Unauthorised,
     ).isTrue
   }
 
@@ -1349,13 +1325,10 @@ class ApplicationServiceTest {
       data = "{}",
     )
 
-    assertThat(result is AuthorisableActionResult.Success).isTrue
-    result as AuthorisableActionResult.Success
+    assertThat(result is CasResult.GeneralValidationError).isTrue
+    result as CasResult.GeneralValidationError
 
-    assertThat(result.entity is ValidatableActionResult.GeneralValidationError).isTrue
-    val validatableActionResult = result.entity as ValidatableActionResult.GeneralValidationError
-
-    assertThat(validatableActionResult.message).isEqualTo("The schema version is outdated")
+    assertThat(result.message).isEqualTo("The schema version is outdated")
   }
 
   @Test
@@ -1394,13 +1367,10 @@ class ApplicationServiceTest {
       data = "{}",
     )
 
-    assertThat(result is AuthorisableActionResult.Success).isTrue
-    result as AuthorisableActionResult.Success
+    assertThat(result is CasResult.GeneralValidationError).isTrue
+    result as CasResult.GeneralValidationError
 
-    assertThat(result.entity is ValidatableActionResult.GeneralValidationError).isTrue
-    val validatableActionResult = result.entity as ValidatableActionResult.GeneralValidationError
-
-    assertThat(validatableActionResult.message).isEqualTo("This application has already been submitted")
+    assertThat(result.message).isEqualTo("This application has already been submitted")
   }
 
   @Test
@@ -1445,13 +1415,10 @@ class ApplicationServiceTest {
       data = updatedData,
     )
 
-    assertThat(result is AuthorisableActionResult.Success).isTrue
-    result as AuthorisableActionResult.Success
+    assertThat(result is CasResult.Success).isTrue
+    result as CasResult.Success
 
-    assertThat(result.entity is ValidatableActionResult.Success).isTrue
-    val validatableActionResult = result.entity as ValidatableActionResult.Success
-
-    val approvedPremisesApplication = validatableActionResult.entity as TemporaryAccommodationApplicationEntity
+    val approvedPremisesApplication = result.value as TemporaryAccommodationApplicationEntity
 
     assertThat(approvedPremisesApplication.data).isEqualTo(updatedData)
   }
@@ -1741,8 +1708,6 @@ class ApplicationServiceTest {
         )
       } returns theCaseManagerUserDetailsEntity
 
-      every { mockFeatureFlagService.getBooleanFlag("cas1-womens-estate-enabled") } returns true
-
       val result =
         applicationService.submitApprovedPremisesApplication(
           applicationId,
@@ -1773,6 +1738,7 @@ class ApplicationServiceTest {
       assertThat(persistedApplication.noticeType).isEqualTo(Cas1ApplicationTimelinessCategory.standard)
       assertThat(persistedApplication.apArea).isEqualTo(apArea)
       assertThat(persistedApplication.cruManagementArea).isEqualTo(apArea.defaultCruManagementArea)
+      assertThat(persistedApplication.licenceExpiryDate).isNull()
 
       verify { mockApplicationRepository.save(any()) }
       verify(exactly = 1) { mockAssessmentService.createApprovedPremisesAssessment(application) }
@@ -1839,8 +1805,6 @@ class ApplicationServiceTest {
           match { it.name == "caseManagerName" && it.email == "caseManagerEmail" && it.telephoneNumber == "caseManagerPhone" },
         )
       } returns theCaseManagerUserDetailsEntity
-
-      every { mockFeatureFlagService.getBooleanFlag("cas1-womens-estate-enabled") } returns true
 
       val result =
         applicationService.submitApprovedPremisesApplication(
@@ -1928,8 +1892,6 @@ class ApplicationServiceTest {
           match { it.name == "caseManagerName" && it.email == "caseManagerEmail" && it.telephoneNumber == "caseManagerPhone" },
         )
       } returns theCaseManagerUserDetailsEntity
-
-      every { mockFeatureFlagService.getBooleanFlag("cas1-womens-estate-enabled") } returns true
 
       val result =
         applicationService.submitApprovedPremisesApplication(
@@ -2041,8 +2003,6 @@ class ApplicationServiceTest {
       application.applicantUserDetails = existingApplicantUserDetails
       application.caseManagerUserDetails = existingCaseManagerUserDetails
 
-      every { mockFeatureFlagService.getBooleanFlag("cas1-womens-estate-enabled") } returns true
-
       val result =
         applicationService.submitApprovedPremisesApplication(
           applicationId,
@@ -2094,8 +2054,6 @@ class ApplicationServiceTest {
 
       val existingApplicantUserDetails = application.applicantUserDetails!!
       val existingCaseManagerUserDetails = application.caseManagerUserDetails!!
-
-      every { mockFeatureFlagService.getBooleanFlag("cas1-womens-estate-enabled") } returns true
 
       every {
         mockCas1ApplicationUserDetailsRepository.save(match { it.id == existingApplicantUserDetails.id })
@@ -2479,7 +2437,7 @@ class ApplicationServiceTest {
       applicationService.getOfflineApplicationForUsername(
         applicationId,
         distinguishedName,
-      ) is AuthorisableActionResult.NotFound,
+      ) is CasResult.NotFound,
     ).isTrue
   }
 
@@ -2502,16 +2460,16 @@ class ApplicationServiceTest {
       applicationService.getOfflineApplicationForUsername(
         applicationId,
         distinguishedName,
-      ) is AuthorisableActionResult.Unauthorised,
+      ) is CasResult.Unauthorised,
     ).isTrue
   }
 
   @ParameterizedTest
   @EnumSource(
     value = UserRole::class,
-    names = ["CAS1_WORKFLOW_MANAGER", "CAS1_ASSESSOR", "CAS1_MATCHER", "CAS1_MANAGER"],
+    names = ["CAS1_WORKFLOW_MANAGER", "CAS1_ASSESSOR", "CAS1_MATCHER", "CAS1_FUTURE_MANAGER"],
   )
-  fun `getOfflineApplicationForUsername where user has one of roles WORKFLOW_MANAGER, ASSESSOR, MATCHER, MANAGER but does not pass LAO check returns Unauthorised result`(
+  fun `getOfflineApplicationForUsername where user has one of roles WORKFLOW_MANAGER, ASSESSOR, MATCHER, FUTURE_MANAGER but does not pass LAO check returns Unauthorised result`(
     role: UserRole,
   ) {
     val distinguishedName = "SOMEPERSON"
@@ -2543,16 +2501,16 @@ class ApplicationServiceTest {
 
     val result = applicationService.getOfflineApplicationForUsername(applicationId, distinguishedName)
 
-    assertThat(result is AuthorisableActionResult.Unauthorised).isTrue
+    assertThat(result is CasResult.Unauthorised).isTrue
   }
 
   @Test
-  fun `getOfflineApplicationForUsername where user has any of roles WORKFLOW_MANAGER, ASSESSOR, MATCHER, MANAGER and passes LAO check returns Success result with entity from db`() {
+  fun `getOfflineApplicationForUsername where user has any of roles WORKFLOW_MANAGER, ASSESSOR, MATCHER, FUTURE_MANAGER and passes LAO check returns Success result with entity from db`() {
     listOf(
       UserRole.CAS1_WORKFLOW_MANAGER,
       UserRole.CAS1_ASSESSOR,
       UserRole.CAS1_MATCHER,
-      UserRole.CAS1_MANAGER,
+      UserRole.CAS1_FUTURE_MANAGER,
     ).forEach { role ->
       val distinguishedName = "SOMEPERSON"
       val userId = UUID.fromString("239b5e41-f83e-409e-8fc0-8f1e058d417e")
@@ -2583,10 +2541,10 @@ class ApplicationServiceTest {
 
       val result = applicationService.getOfflineApplicationForUsername(applicationId, distinguishedName)
 
-      assertThat(result is AuthorisableActionResult.Success).isTrue
-      result as AuthorisableActionResult.Success
+      assertThat(result is CasResult.Success).isTrue
+      result as CasResult.Success
 
-      assertThat(result.entity).isEqualTo(applicationEntity)
+      assertThat(result.value).isEqualTo(applicationEntity)
     }
   }
 

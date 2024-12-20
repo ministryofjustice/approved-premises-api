@@ -51,7 +51,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.CaseAccessFactor
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.CaseDetailFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.NeedsDetailsFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PersonRisksFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.RegistrationClientResponseFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.StaffDetailFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.TeamFactoryDeliusContext
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenACas1CruManagementArea
@@ -64,7 +63,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.ap
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextMockSuccessfulTeamsManagingCaseCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextMockUserAccess
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apOASysContextMockSuccessfulNeedsDetailsCall
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockSuccessfulRegistrationsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApplicationRepository
@@ -86,8 +84,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonInfoResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.RiskTier
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.RiskWithStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.OffenderDetailSummary
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.RegistrationKeyValue
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.Registrations
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.ManagingTeamsResponse
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.domainevent.SnsEventPersonReference
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.AssignedLivingUnit
@@ -561,7 +557,7 @@ class ApplicationTest : IntegrationTestBase() {
   inner class Cas1GetApplication {
 
     @Test
-    fun `Get single application returns 200 with correct body`() {
+    fun `Get single non LAO application returns 200 with correct body`() {
       givenAUser { userEntity, jwt ->
         givenAnOffender { offenderDetails, _ ->
           val newestJsonSchema = approvedPremisesApplicationJsonSchemaEntityFactory.produceAndPersist {
@@ -599,7 +595,7 @@ class ApplicationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Get single LAO application for application creator with LAO access returns 200`() {
+    fun `Get single LAO application for creator, LAO Access, no LAO Qualification returns 200`() {
       givenAUser { applicationCreator, jwt ->
         givenAnOffender(
           offenderDetailsConfigBlock = {
@@ -650,7 +646,49 @@ class ApplicationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Get single LAO application for user who is not creator returns 403`() {
+    fun `Get single LAO application for creator, no LAO Access, has LAO Qualification returns 200`() {
+      givenAUser(qualifications = listOf(UserQualification.LAO)) { applicationCreator, jwt ->
+        givenAnOffender(
+          offenderDetailsConfigBlock = {
+            withCurrentRestriction(true)
+          },
+        ) { offenderDetails, _ ->
+          val applicationEntity = approvedPremisesApplicationEntityFactory.produceAndPersist {
+            withApplicationSchema(
+              approvedPremisesApplicationJsonSchemaEntityFactory.produceAndPersist {
+                withPermissiveSchema()
+              },
+            )
+            withCrn(offenderDetails.otherIds.crn)
+            withCreatedByUser(applicationCreator)
+            withData(
+              """
+          {
+             "thingId": 123
+          }
+          """,
+            )
+          }
+
+          val rawResponseBody = webTestClient.get()
+            .uri("/applications/${applicationEntity.id}")
+            .header("Authorization", "Bearer $jwt")
+            .exchange()
+            .expectStatus()
+            .isOk
+            .returnResult<String>()
+            .responseBody
+            .blockFirst()
+
+          val responseBody = objectMapper.readValue(rawResponseBody, ApprovedPremisesApplication::class.java)
+
+          assertThat(responseBody.person).isInstanceOf(FullPerson::class.java)
+        }
+      }
+    }
+
+    @Test
+    fun `Get single LAO application for non creator, no LAO Access, no LAO Qualification returns 403`() {
       givenAUser { applicationCreator, _ ->
         givenAUser { _, otherUserJwt ->
           givenAnOffender(
@@ -687,7 +725,7 @@ class ApplicationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Get single LAO application for user who is not creator but has LAO Qualification returns FullPerson`() {
+    fun `Get single LAO application for non creator, no LAO Access, has LAO Qualification returns 200`() {
       givenAUser { applicationCreator, _ ->
         givenAUser(qualifications = listOf(UserQualification.LAO)) { _, otherUserJwt ->
           givenAnOffender(
@@ -731,38 +769,35 @@ class ApplicationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Get single application returns 403 when caller not in a managing team and user is not one of roles WORKFLOW_MANAGER, ASSESSOR, MATCHER, MANAGER`() {
+    fun `Get single non LAO application for non creator returns 200`() {
       givenAUser(
         staffDetail = StaffDetailFactory.staffDetail(teams = listOf(TeamFactoryDeliusContext.team(code = "TEAM2"))),
-      ) { userEntity, jwt ->
+      ) { _, jwt ->
         givenAUser { otherUser, _ ->
-          givenAnOffender { offenderDetails, _ ->
-            val crn = "X1234"
-
+          val crn = "X1234"
+          givenAnOffender(offenderDetailsConfigBlock = { withCrn(crn) }) { offenderDetails, _ ->
             val application = produceAndPersistBasicApplication(crn, otherUser, "TEAM1")
 
-            apDeliusContextAddResponseToUserAccessCall(
-              listOf(
-                CaseAccessFactory()
-                  .withCrn(offenderDetails.otherIds.crn)
-                  .produce(),
-              ),
-              userEntity.deliusUsername,
-            )
-
-            webTestClient.get()
+            val rawResponseBody = webTestClient.get()
               .uri("/applications/${application.id}")
               .header("Authorization", "Bearer $jwt")
               .exchange()
               .expectStatus()
-              .isForbidden
+              .isOk
+              .returnResult<String>()
+              .responseBody
+              .blockFirst()
+
+            val responseBody = objectMapper.readValue(rawResponseBody, ApprovedPremisesApplication::class.java)
+
+            assertThat(responseBody.person).isInstanceOf(FullPerson::class.java)
           }
         }
       }
     }
 
     @Test
-    fun `Get single application returns 200 when a person has no NOMS number`() {
+    fun `Get single non LAO application returns 200 when a person has no NOMS number`() {
       givenAUser(
         staffDetail = StaffDetailFactory.staffDetail(teams = listOf(TeamFactoryDeliusContext.team(code = "TEAM1"))),
       ) { userEntity, jwt ->
@@ -807,7 +842,7 @@ class ApplicationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Get single application returns 200 when the person cannot be fetched from the prisons API`() {
+    fun `Get single non LAO application returns 200 when the person cannot be fetched from the prisons API`() {
       givenAUser(
         staffDetail = StaffDetailFactory.staffDetail(teams = listOf(TeamFactoryDeliusContext.team(code = "TEAM1"))),
 
@@ -1271,7 +1306,7 @@ class ApplicationTest : IntegrationTestBase() {
 
   @Test
   fun `Get single offline application returns 200 with correct body`() {
-    givenAUser(roles = listOf(UserRole.CAS1_MANAGER)) { userEntity, jwt ->
+    givenAUser(roles = listOf(UserRole.CAS1_FUTURE_MANAGER)) { userEntity, jwt ->
       givenAnOffender { offenderDetails, _ ->
         val offlineApplicationEntity = offlineApplicationEntityFactory.produceAndPersist {
           withCrn(offenderDetails.otherIds.crn)
@@ -1303,6 +1338,64 @@ class ApplicationTest : IntegrationTestBase() {
             offlineApplicationEntity.crn == it.person.crn &&
             offlineApplicationEntity.createdAt.toInstant() == it.createdAt
         }
+      }
+    }
+  }
+
+  @Test
+  fun `GET submitted CAS3 application includes assessmentId in the response`() {
+    givenAUser { submittingUser, jwt ->
+      givenAnOffender { offenderDetails, _ ->
+        val applicationId = UUID.fromString("22ceda56-98b2-411d-91cc-ace0ab8be872")
+        val offenderName = "${offenderDetails.firstName} ${offenderDetails.surname}"
+
+        val applicationSchema = temporaryAccommodationApplicationJsonSchemaEntityFactory.produceAndPersist {
+          withAddedAt(OffsetDateTime.now())
+          withId(UUID.randomUUID())
+          withSchema(schemaText())
+        }
+
+        temporaryAccommodationApplicationEntityFactory.produceAndPersist {
+          withCrn(offenderDetails.otherIds.crn)
+          withId(applicationId)
+          withApplicationSchema(applicationSchema)
+          withCreatedByUser(submittingUser)
+          withProbationRegion(submittingUser.probationRegion)
+          withName(offenderName)
+          withData("{}")
+        }
+
+        webTestClient.post()
+          .uri("/applications/$applicationId/submission")
+          .header("Authorization", "Bearer $jwt")
+          .header("X-Service-Name", ServiceName.temporaryAccommodation.value)
+          .bodyValue(
+            SubmitTemporaryAccommodationApplication(
+              translatedDocument = {},
+              type = "CAS3",
+              arrivalDate = LocalDate.now(),
+              summaryData = object {
+                val num = 50
+                val text = "Hello world!"
+              },
+            ),
+          )
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        val result = webTestClient.get()
+          .uri("/applications/$applicationId")
+          .header("Authorization", "Bearer $jwt")
+          .header("X-Service-Name", ServiceName.temporaryAccommodation.value)
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody(TemporaryAccommodationApplication::class.java)
+          .returnResult()
+          .responseBody
+
+        assertThat(result!!.assessmentId).isNotNull()
       }
     }
   }
@@ -1873,20 +1966,6 @@ class ApplicationTest : IntegrationTestBase() {
         withCreatedByUser(submittingUser)
       }.id
 
-      communityAPIMockSuccessfulRegistrationsCall(
-        offenderDetails.otherIds.crn,
-        Registrations(
-          registrations = listOf(
-            RegistrationClientResponseFactory()
-              .withType(RegistrationKeyValue(code = "MAPP", description = "MAPPA"))
-              .withRegisterCategory(RegistrationKeyValue(code = "M2", description = "M2"))
-              .withRegisterLevel(RegistrationKeyValue(code = "M2", description = "M2"))
-              .withStartDate(LocalDate.parse("2022-09-06"))
-              .produce(),
-          ),
-        ),
-      )
-
       apDeliusContextMockSuccessfulCaseDetailCall(
         offenderDetails.otherIds.crn,
         CaseDetailFactory().produce(),
@@ -1920,6 +1999,7 @@ class ApplicationTest : IntegrationTestBase() {
             ),
             reasonForShortNotice = "reasonForShort",
             reasonForShortNoticeOther = "reasonForShortOther",
+            licenseExpiryDate = LocalDate.of(2026, 12, 1),
           ),
         )
         .exchange()
@@ -1934,6 +2014,7 @@ class ApplicationTest : IntegrationTestBase() {
       assertThat(persistedApplication.targetLocation).isEqualTo("SW1A 1AA")
       assertThat(persistedApplication.sentenceType).isEqualTo(SentenceTypeOption.nonStatutory.toString())
       assertThat(persistedApplication.apArea?.id).isEqualTo(submittingUser.apArea!!.id)
+      assertThat(persistedApplication.licenceExpiryDate).isEqualTo(LocalDate.of(2026, 12, 1))
 
       val createdAssessment =
         approvedPremisesAssessmentRepository.findAll().first { it.application.id == applicationId }
@@ -1994,28 +2075,12 @@ class ApplicationTest : IntegrationTestBase() {
         withCreatedByUser(submittingUser)
       }.id
 
-      communityAPIMockSuccessfulRegistrationsCall(
-        offenderDetails.otherIds.crn,
-        Registrations(
-          registrations = listOf(
-            RegistrationClientResponseFactory()
-              .withType(RegistrationKeyValue(code = "MAPP", description = "MAPPA"))
-              .withRegisterCategory(RegistrationKeyValue(code = "M2", description = "M2"))
-              .withRegisterLevel(RegistrationKeyValue(code = "M2", description = "M2"))
-              .withStartDate(LocalDate.parse("2022-09-06"))
-              .produce(),
-          ),
-        ),
-      )
-
       apDeliusContextMockSuccessfulCaseDetailCall(
         offenderDetails.otherIds.crn,
         CaseDetailFactory().produce(),
       )
 
       govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
-
-      mockFeatureFlagService.setFlag("cas1-womens-estate-enabled", true)
 
       webTestClient.post()
         .uri("/applications/$applicationId/submission")
@@ -2118,20 +2183,6 @@ class ApplicationTest : IntegrationTestBase() {
         withCreatedByUser(submittingUser)
       }.id
 
-      communityAPIMockSuccessfulRegistrationsCall(
-        offenderDetails.otherIds.crn,
-        Registrations(
-          registrations = listOf(
-            RegistrationClientResponseFactory()
-              .withType(RegistrationKeyValue(code = "MAPP", description = "MAPPA"))
-              .withRegisterCategory(RegistrationKeyValue(code = "M2", description = "M2"))
-              .withRegisterLevel(RegistrationKeyValue(code = "M2", description = "M2"))
-              .withStartDate(LocalDate.parse("2022-09-06"))
-              .produce(),
-          ),
-        ),
-      )
-
       apDeliusContextMockSuccessfulCaseDetailCall(
         offenderDetails.otherIds.crn,
         CaseDetailFactory().produce(),
@@ -2232,20 +2283,6 @@ class ApplicationTest : IntegrationTestBase() {
         withCreatedByUser(submittingUser)
       }.id
 
-      communityAPIMockSuccessfulRegistrationsCall(
-        offenderDetails.otherIds.crn,
-        Registrations(
-          registrations = listOf(
-            RegistrationClientResponseFactory()
-              .withType(RegistrationKeyValue(code = "MAPP", description = "MAPPA"))
-              .withRegisterCategory(RegistrationKeyValue(code = "M2", description = "M2"))
-              .withRegisterLevel(RegistrationKeyValue(code = "M2", description = "M2"))
-              .withStartDate(LocalDate.parse("2022-09-06"))
-              .produce(),
-          ),
-        ),
-      )
-
       apDeliusContextMockSuccessfulCaseDetailCall(
         offenderDetails.otherIds.crn,
         CaseDetailFactory().produce(),
@@ -2337,20 +2374,6 @@ class ApplicationTest : IntegrationTestBase() {
         withCreatedByUser(submittingUser)
       }.id
 
-      communityAPIMockSuccessfulRegistrationsCall(
-        offenderDetails.otherIds.crn,
-        Registrations(
-          registrations = listOf(
-            RegistrationClientResponseFactory()
-              .withType(RegistrationKeyValue(code = "MAPP", description = "MAPPA"))
-              .withRegisterCategory(RegistrationKeyValue(code = "M2", description = "M2"))
-              .withRegisterLevel(RegistrationKeyValue(code = "M2", description = "M2"))
-              .withStartDate(LocalDate.parse("2022-09-06"))
-              .produce(),
-          ),
-        ),
-      )
-
       apDeliusContextMockSuccessfulCaseDetailCall(
         offenderDetails.otherIds.crn,
         CaseDetailFactory().produce(),
@@ -2438,34 +2461,6 @@ class ApplicationTest : IntegrationTestBase() {
             """,
               )
             }.id
-
-            communityAPIMockSuccessfulRegistrationsCall(
-              offenderDetails.otherIds.crn,
-              Registrations(
-                registrations = listOf(
-                  RegistrationClientResponseFactory()
-                    .withType(
-                      RegistrationKeyValue(
-                        code = "MAPP",
-                        description = "MAPPA",
-                      ),
-                    )
-                    .withRegisterCategory(
-                      RegistrationKeyValue(
-                        code = "A",
-                        description = "A",
-                      ),
-                    )
-                    .withRegisterLevel(
-                      RegistrationKeyValue(
-                        code = "1",
-                        description = "1",
-                      ),
-                    )
-                    .produce(),
-                ),
-              ),
-            )
 
             every { realApplicationRepository.save(any()) } answers {
               Thread.sleep(1000)

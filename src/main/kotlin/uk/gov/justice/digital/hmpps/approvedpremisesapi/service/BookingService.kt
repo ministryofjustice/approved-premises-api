@@ -1,21 +1,12 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.service
 
-import arrow.core.Either
 import io.sentry.Sentry
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.BookingChanged
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.BookingChangedEnvelope
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.EventType
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.PersonReference
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.Premises
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.BookingStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.client.ApDeliusContextApiClient
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.client.ClientResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesEntity
@@ -44,7 +35,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ExtensionEnti
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ExtensionRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.LostBedsRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.MoveOnCategoryRepository
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.OfflineApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementRequestRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PremisesEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PremisesRepository
@@ -54,9 +44,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TurnaroundRep
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserPermission
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualification
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.serviceScopeMatches
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.DomainEvent
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonInfoResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.validated
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.InternalServerErrorProblem
@@ -83,11 +71,8 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas3.DomainEvent
 class BookingService(
   private val premisesService: PremisesService,
   private val offenderService: OffenderService,
-  private val domainEventService: DomainEventService,
   private val cas3DomainEventService: Cas3DomainEventService,
-  private val applicationService: ApplicationService,
   private val workingDayService: WorkingDayService,
-  private val apDeliusContextApiClient: ApDeliusContextApiClient,
   private val bookingRepository: BookingRepository,
   private val arrivalRepository: ArrivalRepository,
   private val cancellationRepository: CancellationRepository,
@@ -104,7 +89,6 @@ class BookingService(
   private val turnaroundRepository: TurnaroundRepository,
   private val premisesRepository: PremisesRepository,
   private val assessmentRepository: AssessmentRepository,
-  @Value("\${url-templates.frontend.application}") private val applicationUrlTemplate: String,
   private val userService: UserService,
   private val userAccessService: UserAccessService,
   private val assessmentService: AssessmentService,
@@ -266,215 +250,6 @@ class BookingService(
     }
 
     return AuthorisableActionResult.Success(validationResult)
-  }
-
-  @Suppress("CyclomaticComplexMethod")
-  @Transactional
-  fun createApprovedPremisesAdHocBooking(
-    user: UserEntity? = null,
-    crn: String,
-    nomsNumber: String?,
-    arrivalDate: LocalDate,
-    departureDate: LocalDate,
-    premises: PremisesEntity,
-    bedId: UUID?,
-    eventNumber: String?,
-    bookingId: UUID = UUID.randomUUID(),
-  ): AuthorisableActionResult<ValidatableActionResult<BookingEntity>> {
-    if (user != null && (!user.hasAnyRole(UserRole.CAS1_MANAGER, UserRole.CAS1_MATCHER))) {
-      return AuthorisableActionResult.Unauthorised()
-    }
-
-    val isCalledFromSeeder = user == null
-
-    val validationResult = validated {
-      if (departureDate.isBefore(arrivalDate)) {
-        "$.departureDate" hasValidationError "beforeBookingArrivalDate"
-      }
-
-      val bed = bedId?.let {
-        getLostBedWithConflictingDates(arrivalDate, departureDate, null, bedId)?.let {
-          return@validated it.id hasConflictError "A Lost Bed already exists for dates from ${it.startDate} to ${it.endDate} which overlaps with the desired dates"
-        }
-
-        val bed = bedRepository.findByIdOrNull(bedId)
-
-        if (bed == null) {
-          "$.bedId" hasValidationError "doesNotExist"
-        } else if (bed.room.premises !is ApprovedPremisesEntity) {
-          "$.bedId" hasValidationError "mustBelongToApprovedPremises"
-        } else if (bed.room.premises != premises) {
-          "$.bedId" hasValidationError "mustBelongToProvidedPremise"
-        }
-
-        bed
-      }
-
-      if (!isCalledFromSeeder && eventNumber == null) {
-        "$.eventNumber" hasValidationError "empty"
-      }
-
-      if (validationErrors.any()) {
-        return@validated fieldValidationError
-      }
-
-      val application = fetchApplication(crn, eventNumber)
-      val onlineApplication =
-        if (application is Either.Left<ApprovedPremisesApplicationEntity>) application.value else null
-      val offlineApplication = if (application is Either.Right<OfflineApplicationEntity>) application.value else null
-
-      val bookingCreatedAt = OffsetDateTime.now()
-
-      val bookingPrePersist = BookingEntity(
-        id = bookingId,
-        crn = crn,
-        arrivalDate = arrivalDate,
-        departureDate = departureDate,
-        keyWorkerStaffCode = null,
-        arrivals = mutableListOf(),
-        departures = mutableListOf(),
-        nonArrival = null,
-        cancellations = mutableListOf(),
-        confirmation = null,
-        extensions = mutableListOf(),
-        premises = premises,
-        bed = bed,
-        service = ServiceName.approvedPremises.value,
-        originalArrivalDate = arrivalDate,
-        originalDepartureDate = departureDate,
-        createdAt = bookingCreatedAt,
-        application = onlineApplication,
-        offlineApplication = offlineApplication,
-        turnarounds = mutableListOf(),
-        dateChanges = mutableListOf(),
-        nomsNumber = nomsNumber,
-        placementRequest = null,
-        status = BookingStatus.confirmed,
-        adhoc = true,
-      )
-
-      cas1ApplicationStatusService.bookingMade(bookingPrePersist)
-      val booking = bookingRepository.save(bookingPrePersist)
-
-      if (!isCalledFromSeeder) {
-        cas1BookingDomainEventService.adhocBookingMade(
-          onlineApplication,
-          offlineApplication,
-          eventNumber,
-          booking,
-          user!!,
-        )
-
-        if (onlineApplication != null) {
-          cas1BookingEmailService.bookingMade(
-            application = onlineApplication,
-            booking = booking,
-            placementApplication = null,
-          )
-        }
-      }
-
-      success(booking)
-    }
-
-    return AuthorisableActionResult.Success(validationResult)
-  }
-
-  private fun fetchApplication(
-    crn: String,
-    eventNumber: String?,
-  ): Either<ApprovedPremisesApplicationEntity, OfflineApplicationEntity> {
-    val newestSubmittedOnlineApplication = applicationService.getApplicationsForCrn(crn, ServiceName.approvedPremises)
-      .filter { it.submittedAt != null }
-      .maxByOrNull { it.submittedAt!! } as ApprovedPremisesApplicationEntity?
-    var newestOfflineApplication = applicationService.getOfflineApplicationsForCrn(crn, ServiceName.approvedPremises)
-      .maxByOrNull { it.createdAt }
-
-    if (newestSubmittedOnlineApplication == null && newestOfflineApplication == null) {
-      log.info("No online or offline application, so we create a new offline application")
-      newestOfflineApplication = applicationService.createOfflineApplication(
-        OfflineApplicationEntity(
-          id = UUID.randomUUID(),
-          crn = crn,
-          service = ServiceName.approvedPremises.value,
-          createdAt = OffsetDateTime.now(),
-          eventNumber = eventNumber,
-        ),
-      )
-    }
-
-    return if (newestOfflineApplication != null && newestSubmittedOnlineApplication != null && newestOfflineApplication.createdAt.isBefore(
-        newestSubmittedOnlineApplication.submittedAt,
-      )
-    ) {
-      log.info("Offline application is created before the online application, so returning the offline application with id ${newestOfflineApplication.id}")
-      Either.Right(newestOfflineApplication)
-    } else if (newestSubmittedOnlineApplication != null) {
-      log.info("Returning online application with id ${newestSubmittedOnlineApplication.id}")
-      Either.Left(newestSubmittedOnlineApplication)
-    } else {
-      log.info("Returning offline application with id ${newestOfflineApplication!!.id}")
-      Either.Right(newestOfflineApplication)
-    }
-  }
-
-  private fun saveBookingChangedDomainEvent(
-    booking: BookingEntity,
-    user: UserEntity,
-    bookingChangedAt: OffsetDateTime,
-  ) {
-    val domainEventId = UUID.randomUUID()
-    val (applicationId, eventNumber) = getApplicationDetailsForBooking(booking)
-
-    val offenderDetails =
-      when (val offenderDetailsResult = offenderService.getOffenderByCrn(booking.crn, user.deliusUsername, true)) {
-        is AuthorisableActionResult.Success -> offenderDetailsResult.entity
-        else -> null
-      }
-
-    val staffDetails = when (val staffDetailsResult = apDeliusContextApiClient.getStaffDetail(user.deliusUsername)) {
-      is ClientResult.Success -> staffDetailsResult.body
-      is ClientResult.Failure -> staffDetailsResult.throwException()
-    }
-
-    val approvedPremises = booking.premises as ApprovedPremisesEntity
-
-    domainEventService.saveBookingChangedEvent(
-      DomainEvent(
-        id = domainEventId,
-        applicationId = applicationId,
-        crn = booking.crn,
-        nomsNumber = offenderDetails?.otherIds?.nomsNumber,
-        occurredAt = bookingChangedAt.toInstant(),
-        bookingId = booking.id,
-        data = BookingChangedEnvelope(
-          id = domainEventId,
-          timestamp = bookingChangedAt.toInstant(),
-          eventType = EventType.bookingChanged,
-          eventDetails = BookingChanged(
-            applicationId = applicationId,
-            applicationUrl = applicationUrlTemplate.replace("#id", applicationId.toString()),
-            bookingId = booking.id,
-            personReference = PersonReference(
-              crn = booking.application?.crn ?: booking.offlineApplication!!.crn,
-              noms = offenderDetails?.otherIds?.nomsNumber ?: "Unknown NOMS Number",
-            ),
-            deliusEventNumber = eventNumber,
-            changedAt = bookingChangedAt.toInstant(),
-            changedBy = staffDetails.toStaffMember(),
-            premises = Premises(
-              id = approvedPremises.id,
-              name = approvedPremises.name,
-              apCode = approvedPremises.apCode,
-              legacyApCode = approvedPremises.qCode,
-              localAuthorityAreaName = approvedPremises.localAuthorityArea!!.name,
-            ),
-            arrivalOn = booking.arrivalDate,
-            departureOn = booking.departureDate,
-          ),
-        ),
-      ),
-    )
   }
 
   @Transactional
@@ -987,25 +762,26 @@ class BookingService(
 
   @Transactional
   fun createExtension(
-    user: UserEntity?,
     booking: BookingEntity,
     newDepartureDate: LocalDate,
     notes: String?,
   ) = validated {
+    if (booking.service != ServiceName.temporaryAccommodation.value) {
+      return generalError("Extensions are only supported by CAS3")
+    }
+
     val expectedLastUnavailableDate =
       workingDayService.addWorkingDays(newDepartureDate, booking.turnaround?.workingDayCount ?: 0)
 
-    if (booking.service != ServiceName.approvedPremises.value) {
-      val bedId = booking.bed?.id
-        ?: throw InternalServerErrorProblem("No bed ID present on Booking: ${booking.id}")
+    val bedId = booking.bed?.id
+      ?: throw InternalServerErrorProblem("No bed ID present on Booking: ${booking.id}")
 
-      getBookingWithConflictingDates(booking.arrivalDate, expectedLastUnavailableDate, booking.id, bedId)?.let {
-        return@validated it.id hasConflictError "A Booking already exists for dates from ${it.arrivalDate} to ${it.lastUnavailableDate} which overlaps with the desired dates"
-      }
+    getBookingWithConflictingDates(booking.arrivalDate, expectedLastUnavailableDate, booking.id, bedId)?.let {
+      return@validated it.id hasConflictError "A Booking already exists for dates from ${it.arrivalDate} to ${it.lastUnavailableDate} which overlaps with the desired dates"
+    }
 
-      getLostBedWithConflictingDates(booking.arrivalDate, expectedLastUnavailableDate, null, bedId)?.let {
-        return@validated it.id hasConflictError "A Lost Bed already exists for dates from ${it.startDate} to ${it.endDate} which overlaps with the desired dates"
-      }
+    getLostBedWithConflictingDates(booking.arrivalDate, expectedLastUnavailableDate, null, bedId)?.let {
+      return@validated it.id hasConflictError "A Lost Bed already exists for dates from ${it.startDate} to ${it.endDate} which overlaps with the desired dates"
     }
 
     if (booking.arrivalDate.isAfter(newDepartureDate)) {
@@ -1025,14 +801,6 @@ class BookingService(
     booking.departureDate = extensionEntity.newDepartureDate
     booking.extensions.add(extension)
     updateBooking(booking)
-
-    if (shouldCreateDomainEventForBooking(booking, user)) {
-      saveBookingChangedDomainEvent(
-        booking = booking,
-        user = user!!,
-        bookingChangedAt = OffsetDateTime.now(),
-      )
-    }
 
     return success(extensionEntity)
   }
@@ -1102,9 +870,9 @@ class BookingService(
     )
 
     if (shouldCreateDomainEventForBooking(booking, user)) {
-      saveBookingChangedDomainEvent(
+      cas1BookingDomainEventService.bookingChanged(
         booking = booking,
-        user = user,
+        changedBy = user,
         bookingChangedAt = OffsetDateTime.now(),
       )
     }
@@ -1151,17 +919,6 @@ class BookingService(
 
   val BookingEntity.lastUnavailableDate: LocalDate
     get() = workingDayService.addWorkingDays(this.departureDate, this.turnaround?.workingDayCount ?: 0)
-
-  fun getApplicationDetailsForBooking(booking: BookingEntity): Triple<UUID, String, OffsetDateTime> {
-    val application = (booking.application as ApprovedPremisesApplicationEntity?)
-    val offlineApplication = booking.offlineApplication
-
-    val applicationId = application?.id ?: offlineApplication?.id as UUID
-    val eventNumber = application?.eventNumber ?: offlineApplication?.eventNumber as String
-    val submittedAt = application?.submittedAt ?: offlineApplication?.createdAt as OffsetDateTime
-
-    return Triple(applicationId, eventNumber, submittedAt)
-  }
 
   private fun findAndCloseCAS3Assessment(booking: BookingEntity, user: UserEntity) {
     booking.application?.let {

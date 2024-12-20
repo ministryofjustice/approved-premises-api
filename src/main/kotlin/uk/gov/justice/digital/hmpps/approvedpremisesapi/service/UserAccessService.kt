@@ -16,11 +16,9 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TemporaryAcco
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TemporaryAccommodationPremisesEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserPermission
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualification
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole.CAS3_REPORTER
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ForbiddenProblem
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActionResult
 import java.util.UUID
 
 @Service
@@ -79,7 +77,7 @@ class UserAccessService(
   }
 
   fun userCanManagePremisesBookings(user: UserEntity, premises: PremisesEntity) = when (premises) {
-    is ApprovedPremisesEntity -> user.hasAnyRole(UserRole.CAS1_FUTURE_MANAGER, UserRole.CAS1_LEGACY_MANAGER, UserRole.CAS1_MANAGER, UserRole.CAS1_MATCHER, UserRole.CAS1_WORKFLOW_MANAGER)
+    is ApprovedPremisesEntity -> user.hasAnyRole(UserRole.CAS1_FUTURE_MANAGER, UserRole.CAS1_MATCHER, UserRole.CAS1_WORKFLOW_MANAGER)
     is TemporaryAccommodationPremisesEntity -> userCanAccessRegion(user, premises.probationRegion.id) && user.hasRole(UserRole.CAS3_ASSESSOR)
     else -> false
   }
@@ -95,35 +93,10 @@ class UserAccessService(
     else -> false
   }
 
-  /**
-   * Currently delegates to the lost bed logic. May depend on different roles in the future.
-   */
-  fun currentUserCanManagePremisesOutOfServiceBed(premises: PremisesEntity) =
-    userCanManagePremisesOutOfServiceBed(userService.getUserForRequest(), premises)
-
-  /**
-   * Currently delegates to the lost bed logic. May depend on different roles in the future.
-   */
-  fun userCanManagePremisesOutOfServiceBed(user: UserEntity, premises: PremisesEntity) =
-    userCanManagePremisesLostBeds(user, premises)
-
-  fun currentUserCanCancelOutOfServiceBed() =
-    userCanCancelOutOfServiceBed(userService.getUserForRequest())
-
-  fun userCanCancelOutOfServiceBed(user: UserEntity) =
-    user.hasRole(UserRole.CAS1_JANITOR)
-
-  fun currentUserCanViewOutOfServiceBeds() =
-    userCanViewOutOfServiceBeds(userService.getUserForRequest())
-
-  fun userCanViewOutOfServiceBeds(user: UserEntity) =
-    user.hasAnyRole(UserRole.CAS1_WORKFLOW_MANAGER, UserRole.CAS1_FUTURE_MANAGER, UserRole.CAS1_CRU_MEMBER)
-
   fun currentUserCanManagePremisesLostBeds(premises: PremisesEntity) =
     userCanManagePremisesLostBeds(userService.getUserForRequest(), premises)
 
   fun userCanManagePremisesLostBeds(user: UserEntity, premises: PremisesEntity) = when (premises) {
-    is ApprovedPremisesEntity -> user.hasAnyRole(UserRole.CAS1_FUTURE_MANAGER, UserRole.CAS1_LEGACY_MANAGER, UserRole.CAS1_MANAGER, UserRole.CAS1_MATCHER)
     is TemporaryAccommodationPremisesEntity -> userCanAccessRegion(user, premises.probationRegion.id) && user.hasRole(UserRole.CAS3_ASSESSOR)
     else -> false
   }
@@ -132,7 +105,7 @@ class UserAccessService(
     userCanViewPremisesStaff(userService.getUserForRequest(), premises)
 
   fun userCanViewPremisesStaff(user: UserEntity, premises: PremisesEntity) = when (premises) {
-    is ApprovedPremisesEntity -> user.hasAnyRole(UserRole.CAS1_FUTURE_MANAGER, UserRole.CAS1_LEGACY_MANAGER, UserRole.CAS1_MANAGER, UserRole.CAS1_MATCHER)
+    is ApprovedPremisesEntity -> user.hasAnyRole(UserRole.CAS1_FUTURE_MANAGER, UserRole.CAS1_MATCHER)
     is TemporaryAccommodationPremisesEntity -> userCanAccessRegion(user, premises.probationRegion.id) && user.hasRole(UserRole.CAS3_ASSESSOR)
     else -> false
   }
@@ -167,7 +140,7 @@ class UserAccessService(
   private fun userCanViewApprovedPremisesApplicationCreatedBySomeoneElse(
     user: UserEntity,
     application: ApprovedPremisesApplicationEntity,
-  ) = offenderService.getOffenderByCrn(application.crn, user.deliusUsername, user.hasQualification(UserQualification.LAO)) is AuthorisableActionResult.Success
+  ) = offenderService.canAccessOffender(application.crn, user.cas1LimitedAccessStrategy())
 
   private fun userCanViewTemporaryAccommodationApplicationCreatedBySomeoneElse(
     user: UserEntity,

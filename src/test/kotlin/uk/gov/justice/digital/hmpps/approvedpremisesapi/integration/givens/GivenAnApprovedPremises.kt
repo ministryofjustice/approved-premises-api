@@ -6,11 +6,13 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringMultiCa
 
 fun IntegrationTestBase.givenAnApprovedPremises(
   name: String = randomStringMultiCaseWithNumbers(8),
+  supportsSpaceBookings: Boolean = false,
 ): ApprovedPremisesEntity {
   return approvedPremisesEntityFactory
     .produceAndPersist {
       withName(name)
       withProbationRegion(probationRegionEntityFactory.produceAndPersist())
       withLocalAuthorityArea(localAuthorityEntityFactory.produceAndPersist())
+      withSupportsSpaceBookings(supportsSpaceBookings)
     }
 }

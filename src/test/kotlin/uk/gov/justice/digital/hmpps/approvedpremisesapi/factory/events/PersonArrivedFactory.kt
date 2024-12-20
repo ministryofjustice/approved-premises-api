@@ -2,10 +2,10 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.events
 
 import io.github.bluegroundltd.kfactory.Factory
 import io.github.bluegroundltd.kfactory.Yielded
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.PersonArrived
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.PersonReference
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.Premises
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.StaffMember
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.PersonArrived
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.PersonReference
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.Premises
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.StaffMember
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomDateTimeBefore
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringMultiCaseWithNumbers
 import java.time.Instant
@@ -24,6 +24,7 @@ class PersonArrivedFactory : Factory<PersonArrived> {
   private var arrivedAt: Yielded<Instant> = { Instant.now().randomDateTimeBefore(5) }
   private var expectedDepartureOn: Yielded<LocalDate> = { LocalDate.now().minusDays(5) }
   private var notes: Yielded<String?> = { null }
+  private var recordedBy: Yielded<StaffMember> = { StaffMemberFactory().produce() }
 
   fun withApplicationId(applicationId: UUID) = apply {
     this.applicationId = { applicationId }
@@ -81,5 +82,6 @@ class PersonArrivedFactory : Factory<PersonArrived> {
     arrivedAt = this.arrivedAt(),
     expectedDepartureOn = this.expectedDepartureOn(),
     notes = this.notes(),
+    recordedBy = this.recordedBy(),
   )
 }

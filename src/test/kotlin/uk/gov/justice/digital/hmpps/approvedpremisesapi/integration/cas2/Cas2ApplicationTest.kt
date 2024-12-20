@@ -28,7 +28,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.given
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenACas2LicenceCaseAdminUser
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenACas2PomUser
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnOffender
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockNotFoundOffenderDetailsCall
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextEmptyCaseSummaryToBulkResponse
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.prisonAPIMockNotFoundInmateDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApplicationRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2ApplicationEntity
@@ -474,9 +474,9 @@ class Cas2ApplicationTest : IntegrationTestBase() {
       givenACas2PomUser { userEntity, jwt ->
         val crn = "X1234"
 
-        produceAndPersistBasicApplication(crn, userEntity)
-        communityAPIMockNotFoundOffenderDetailsCall(crn)
+        apDeliusContextEmptyCaseSummaryToBulkResponse(crn)
 
+        produceAndPersistBasicApplication(crn, userEntity)
         webTestClient.get()
           .uri("/cas2/applications")
           .header("Authorization", "Bearer $jwt")
@@ -1481,8 +1481,6 @@ class Cas2ApplicationTest : IntegrationTestBase() {
         givenACas2PomUser { userEntity, jwt ->
           val crn = "X1234"
 
-          communityAPIMockNotFoundOffenderDetailsCall(crn)
-
           cas2ApplicationJsonSchemaEntityFactory.produceAndPersist {
             withAddedAt(OffsetDateTime.now())
             withId(UUID.randomUUID())
@@ -1547,8 +1545,6 @@ class Cas2ApplicationTest : IntegrationTestBase() {
       fun `Create new application returns 404 when a person cannot be found`() {
         givenACas2LicenceCaseAdminUser { _, jwt ->
           val crn = "X1234"
-
-          communityAPIMockNotFoundOffenderDetailsCall(crn)
 
           cas2ApplicationJsonSchemaEntityFactory.produceAndPersist {
             withAddedAt(OffsetDateTime.now())

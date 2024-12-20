@@ -21,9 +21,9 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEventT
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.DomainEventSummary
 import java.time.OffsetDateTime
 import java.util.UUID
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.EventType as Cas1EventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.EventType as Cas2EventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas3.model.EventType as Cas3EventType
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.EventType as Cas1EventType
 
 @Repository
 interface DomainEventRepository : JpaRepository<DomainEventEntity, UUID> {
@@ -82,8 +82,6 @@ interface DomainEventRepository : JpaRepository<DomainEventEntity, UUID> {
   )
   fun findIdsByTypeAndBookingId(type: DomainEventType, bookingId: UUID): List<UUID>
 
-  fun getByApplicationIdAndType(applicationId: UUID, type: DomainEventType): DomainEventEntity
-
   fun findByAssessmentIdAndType(assessmentId: UUID, type: DomainEventType): List<DomainEventEntity>
 
   @Modifying
@@ -97,6 +95,19 @@ interface DomainEventRepository : JpaRepository<DomainEventEntity, UUID> {
     nativeQuery = true,
   )
   fun updateData(id: UUID, updatedData: String)
+
+  @Modifying
+  @Query(
+    """
+      UPDATE domain_events
+      SET 
+        booking_id = null,
+        cas1_space_booking_id = booking_id
+      WHERE booking_id = :bookingId  
+    """,
+    nativeQuery = true,
+  )
+  fun replaceBookingIdWithSpaceBookingId(bookingId: UUID)
 }
 
 @Entity
@@ -202,6 +213,10 @@ enum class DomainEventType(
     Cas1EventType.personArrived.value,
     "Someone has arrived at an Approved Premises for their Booking",
     TimelineEventType.approvedPremisesPersonArrived,
+    schemaVersions = listOf(
+      DEFAULT_DOMAIN_EVENT_SCHEMA_VERSION,
+      DomainEventSchemaVersion(2, "Added recordedBy field"),
+    ),
   ),
   APPROVED_PREMISES_PERSON_NOT_ARRIVED(
     DomainEventCas.CAS1,
@@ -214,6 +229,10 @@ enum class DomainEventType(
     Cas1EventType.personDeparted.value,
     "Someone has left an Approved Premises",
     TimelineEventType.approvedPremisesPersonDeparted,
+    schemaVersions = listOf(
+      DEFAULT_DOMAIN_EVENT_SCHEMA_VERSION,
+      DomainEventSchemaVersion(2, "Added recordedBy field"),
+    ),
   ),
   APPROVED_PREMISES_BOOKING_NOT_MADE(
     DomainEventCas.CAS1,

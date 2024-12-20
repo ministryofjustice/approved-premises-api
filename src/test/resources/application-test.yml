@@ -81,8 +81,6 @@ hmpps:
     client-secret: secret
 
 services:
-  community-api:
-    base-url: http://localhost:#WIREMOCK_PORT
   hmpps-tier:
     base-url: http://localhost:#WIREMOCK_PORT
   prisons-api:
@@ -204,8 +202,3 @@ scheduling:
 logging.level.org.springframework.jdbc.core.JdbcTemplate: debug
 
 feature-flags:
-  cas1-only-list-adjudications-up-to-12-months: true
-  cas1-only-list-specific-prison-note-types: true
-  cas1-expired-applications-enabled: true
-  get-documents-from-ap-delius: false
-  get-offences-from-ap-delius: false

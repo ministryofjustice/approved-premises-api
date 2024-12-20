@@ -90,7 +90,7 @@ class Cas1FixPlacementApplicationLinksJobTest {
   }
 
   @Test
-  fun `applyManualFix`() {
+  fun applyManualFix() {
     every { applicationRepository.findByIdOrNull(applicationWithNoArrivalDate.id) } returns applicationWithNoArrivalDate
 
     val placementApp1 = placementApp()

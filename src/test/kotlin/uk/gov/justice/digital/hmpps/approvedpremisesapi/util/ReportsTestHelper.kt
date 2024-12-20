@@ -68,7 +68,7 @@ fun List<BookingEntity>.toBookingsReportData(): List<BookingsReportData> = this
         get() = temporaryAccommodationPremises?.probationDeliveryUnit?.name
       override val town: String?
         get() = it.premises.town
-      override val postCode: String?
+      override val postCode: String
         get() = it.premises.postcode
     }
   }

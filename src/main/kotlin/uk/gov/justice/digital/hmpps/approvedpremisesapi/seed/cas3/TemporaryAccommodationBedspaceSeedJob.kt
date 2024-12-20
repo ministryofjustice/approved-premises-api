@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas3
 
 import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PremisesRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.RoomEntity
@@ -11,15 +12,13 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.trimToNull
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.CharacteristicService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.RoomService
 import java.lang.RuntimeException
-import java.util.UUID
 
+@Component
 class TemporaryAccommodationBedspaceSeedJob(
   private val premisesRepository: PremisesRepository,
   private val characteristicService: CharacteristicService,
   private val roomService: RoomService,
-) : SeedJob<TemporaryAccommodationBedspaceSeedCsvRow>(
-  id = UUID.randomUUID(),
-) {
+) : SeedJob<TemporaryAccommodationBedspaceSeedCsvRow>() {
   private val log = LoggerFactory.getLogger(this::class.java)
 
   override fun deserializeRow(columns: Map<String, String>) = TemporaryAccommodationBedspaceSeedCsvRow(

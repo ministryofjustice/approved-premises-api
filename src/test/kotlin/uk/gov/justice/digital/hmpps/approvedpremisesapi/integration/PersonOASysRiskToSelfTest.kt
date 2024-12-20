@@ -9,7 +9,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.given
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apOASysContextMockSuccessfulOffenceDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apOASysContextMockSuccessfulRiskToTheIndividualCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apOASysContextMockUnsuccessfulRisksToTheIndividualCallWithDelay
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockNotFoundOffenderDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.OASysSectionsTransformer
 
 class PersonOASysRiskToSelfTest : InitialiseDatabasePerClassTestBase() {
@@ -76,8 +75,6 @@ class PersonOASysRiskToSelfTest : InitialiseDatabasePerClassTestBase() {
   fun `Getting Risk To Self for a CRN that does not exist returns 404`() {
     givenAUser { userEntity, jwt ->
       val crn = "CRN123"
-
-      communityAPIMockNotFoundOffenderDetailsCall(crn)
 
       webTestClient.get()
         .uri("/people/$crn/oasys/risk-to-self")

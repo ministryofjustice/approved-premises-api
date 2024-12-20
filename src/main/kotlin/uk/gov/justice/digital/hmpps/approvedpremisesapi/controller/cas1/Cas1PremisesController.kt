@@ -5,8 +5,12 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.cas1.PremisesCas1Delegate
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1ApprovedPremisesGender
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1PremiseCapacity
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1PremiseDaySummary
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1PremisesBasicSummary
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1PremisesSummary
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBookingCharacteristic
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBookingDaySummarySortField
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SortDirection
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesGender
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserPermission
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserAccessService
@@ -26,7 +30,7 @@ class Cas1PremisesController(
 ) : PremisesCas1Delegate {
 
   override fun getPremisesById(premisesId: UUID): ResponseEntity<Cas1PremisesSummary> {
-    userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_PREMISES_VIEW_SUMMARY)
+    userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_PREMISES_VIEW)
 
     return ResponseEntity
       .ok()
@@ -61,11 +65,17 @@ class Cas1PremisesController(
     premisesId: UUID,
     startDate: LocalDate,
     endDate: LocalDate,
+    excludeSpaceBookingId: UUID?,
   ): ResponseEntity<Cas1PremiseCapacity> {
-    userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_PREMISES_VIEW_CAPACITY)
+    userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_PREMISES_VIEW)
 
     val premiseSummaryInfo = cas1PremisesService.getPremisesSummary(premisesId)
-    val premiseCapacity = cas1PremisesService.getPremiseCapacity(premisesId, startDate, endDate)
+    val premiseCapacity = cas1PremisesService.getPremiseCapacity(
+      premisesId = premisesId,
+      startDate = startDate,
+      endDate = endDate,
+      excludeSpaceBookingId = excludeSpaceBookingId,
+    )
 
     return ResponseEntity.ok().body(
       cas1PremiseCapacityTransformer.toCas1PremiseCapacitySummary(
@@ -73,5 +83,15 @@ class Cas1PremisesController(
         premiseCapacity = extractEntityFromCasResult(premiseCapacity),
       ),
     )
+  }
+
+  override fun getDaySummary(
+    premisesId: UUID,
+    date: LocalDate,
+    bookingsCriteriaFilter: List<Cas1SpaceBookingCharacteristic>?,
+    bookingsSortDirection: SortDirection?,
+    bookingsSortBy: Cas1SpaceBookingDaySummarySortField?,
+  ): ResponseEntity<Cas1PremiseDaySummary> {
+    return super.getDaySummary(premisesId, date, bookingsCriteriaFilter, bookingsSortDirection, bookingsSortBy)
   }
 }

@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.ApplicationAssessedEnvelope
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.ApplicationSubmittedEnvelope
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.BookingMadeEnvelope
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.EventType
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.ApplicationAssessedEnvelope
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.ApplicationSubmittedEnvelope
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.BookingMadeEnvelope
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.EventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.events.ApplicationAssessedAssessedByFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.events.ApplicationAssessedFactory
@@ -27,7 +27,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.reporting.generator.DailyMetricsReportGenerator
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.reporting.model.ApprovedPremisesApplicationMetricsSummaryDto
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.reporting.model.DailyMetricReportRow
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.DomainEventService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1DomainEventService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1ReportService.MonthSpecificReportParams
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.toLocalDateTime
 import java.time.LocalDate
@@ -37,7 +37,7 @@ import java.util.UUID
 class DailyMetricsReportTest : IntegrationTestBase() {
 
   @Autowired
-  lateinit var domainEventService: DomainEventService
+  lateinit var domainEventService: Cas1DomainEventService
 
   @Test
   fun `Get daily metrics report for returns 403 Forbidden if user does not have access`() {
@@ -113,8 +113,8 @@ class DailyMetricsReportTest : IntegrationTestBase() {
                 eventDetails = ApplicationSubmittedFactory()
                   .withSubmittedByStaffMember(
                     StaffMemberFactory()
-                      .withStaffIdentifier(
-                        user.deliusStaffIdentifier,
+                      .withStaffCode(
+                        user.deliusStaffCode,
                       )
                       .produce(),
                   )
@@ -139,8 +139,8 @@ class DailyMetricsReportTest : IntegrationTestBase() {
                     ApplicationAssessedAssessedByFactory()
                       .withStaffMember(
                         StaffMemberFactory()
-                          .withStaffIdentifier(
-                            user.deliusStaffIdentifier,
+                          .withStaffCode(
+                            user.deliusStaffCode,
                           ).produce(),
                       ).produce(),
                   )
@@ -166,8 +166,8 @@ class DailyMetricsReportTest : IntegrationTestBase() {
                     BookingMadeBookedByFactory()
                       .withStaffMember(
                         StaffMemberFactory()
-                          .withStaffIdentifier(
-                            user.deliusStaffIdentifier,
+                          .withStaffCode(
+                            user.deliusStaffCode,
                           ).produce(),
                       ).produce(),
                   )

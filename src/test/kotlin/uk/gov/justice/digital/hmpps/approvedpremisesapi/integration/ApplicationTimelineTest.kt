@@ -17,11 +17,10 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventCa
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.ApplicationTimelineNoteTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.ApplicationTimelineTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.unit.domainevents.DomainEventSummaryImpl
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.createCas1DomainEventEnvelopeWithLatestJson
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.Cas1DomainEventsFactory
 
 class ApplicationTimelineTest : InitialiseDatabasePerClassTestBase() {
   @Autowired
@@ -92,7 +91,7 @@ class ApplicationTimelineTest : InitialiseDatabasePerClassTestBase() {
 
   @Test
   fun `Get application timeline returns 501 not implemented when not approved premises service`() {
-    givenAUser(roles = listOf(UserRole.CAS1_ADMIN)) { _, jwt ->
+    givenAUser { _, jwt ->
       webTestClient.get()
         .uri("/applications/${application.id}/timeline")
         .header("Authorization", "Bearer $jwt")
@@ -157,15 +156,17 @@ class ApplicationTimelineTest : InitialiseDatabasePerClassTestBase() {
     assessmentEntity: ApprovedPremisesAssessmentEntity,
     userEntity: UserEntity,
   ): DomainEventEntity {
+    val domainEventsFactory = Cas1DomainEventsFactory(objectMapper)
+
     val data = if (type == DomainEventType.APPROVED_PREMISES_ASSESSMENT_INFO_REQUESTED) {
       val clarificationNote = assessmentClarificationNoteEntityFactory.produceAndPersist {
         withAssessment(assessmentEntity)
         withCreatedBy(userEntity)
       }
 
-      createCas1DomainEventEnvelopeWithLatestJson(type, clarificationNote.id)
+      domainEventsFactory.createEnvelopeForLatestSchemaVersion(type, clarificationNote.id)
     } else {
-      createCas1DomainEventEnvelopeWithLatestJson(type)
+      domainEventsFactory.createEnvelopeForLatestSchemaVersion(type)
     }
 
     return domainEventFactory.produceAndPersist {

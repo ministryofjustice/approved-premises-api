@@ -1,10 +1,6 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.migration
 
-import java.util.UUID
-
-abstract class MigrationJob(
-  val id: UUID = UUID.randomUUID(),
-) {
+abstract class MigrationJob {
   abstract val shouldRunInTransaction: Boolean
-  abstract fun process()
+  abstract fun process(pageSize: Int = 10)
 }

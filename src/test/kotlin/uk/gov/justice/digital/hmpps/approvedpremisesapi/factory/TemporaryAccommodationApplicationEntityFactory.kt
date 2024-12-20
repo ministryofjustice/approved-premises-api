@@ -31,7 +31,7 @@ class TemporaryAccommodationApplicationEntityFactory : Factory<TemporaryAccommod
   private var createdAt: Yielded<OffsetDateTime> = { OffsetDateTime.now().randomDateTimeBefore(30) }
   private var submittedAt: Yielded<OffsetDateTime?> = { null }
   private var deletedAt: Yielded<OffsetDateTime?> = { null }
-  private var assessments: Yielded<MutableList<AssessmentEntity>> = { mutableListOf<AssessmentEntity>() }
+  private var assessments: Yielded<MutableList<AssessmentEntity>> = { mutableListOf() }
   private var convictionId: Yielded<Long> = { randomInt(0, 1000).toLong() }
   private var eventNumber: Yielded<String> = { randomInt(1, 9).toString() }
   private var offenceId: Yielded<String> = { randomStringMultiCaseWithNumbers(5) }

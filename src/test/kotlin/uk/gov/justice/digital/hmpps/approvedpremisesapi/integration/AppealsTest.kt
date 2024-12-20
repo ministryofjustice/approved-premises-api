@@ -54,8 +54,19 @@ class AppealsTest : InitialiseDatabasePerClassTestBase() {
 
   @Test
   fun `Get appeal returns 403 when application is not accessible to user`() {
+    govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
+
     givenAUser { createdByUser, _ ->
-      givenAnAssessmentForApprovedPremises(createdByUser, createdByUser) { _, application ->
+      val offender = givenAnOffender(
+        offenderDetailsConfigBlock = {
+          withCurrentRestriction(true)
+        },
+      ).first
+      givenAnAssessmentForApprovedPremises(
+        allocatedToUser = createdByUser,
+        createdByUser = createdByUser,
+        crn = offender.otherIds.crn,
+      ) { _, application ->
         givenAUser(roles = listOf(UserRole.CAS1_APPEALS_MANAGER)) { _, jwt ->
           webTestClient.get()
             .uri("/applications/${application.id}/appeals/${UUID.randomUUID()}")
@@ -152,8 +163,19 @@ class AppealsTest : InitialiseDatabasePerClassTestBase() {
 
   @Test
   fun `Create new appeal returns 403 when application is not accessible to user`() {
+    govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
+
     givenAUser { createdByUser, _ ->
-      givenAnAssessmentForApprovedPremises(createdByUser, createdByUser) { _, application ->
+      val offender = givenAnOffender(
+        offenderDetailsConfigBlock = {
+          withCurrentRestriction(true)
+        },
+      ).first
+      givenAnAssessmentForApprovedPremises(
+        allocatedToUser = createdByUser,
+        createdByUser = createdByUser,
+        crn = offender.otherIds.crn,
+      ) { _, application ->
         givenAUser(roles = listOf(UserRole.CAS1_APPEALS_MANAGER)) { _, jwt ->
           webTestClient.post()
             .uri("/applications/${application.id}/appeals")

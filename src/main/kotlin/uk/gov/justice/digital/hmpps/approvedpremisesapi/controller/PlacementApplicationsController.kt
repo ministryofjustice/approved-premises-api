@@ -41,7 +41,7 @@ class PlacementApplicationsController(
   override fun placementApplicationsPost(newPlacementApplication: NewPlacementApplication): ResponseEntity<PlacementApplication> {
     val user = userService.getUserForRequest()
 
-    val application = extractEntityFromAuthorisableActionResult(
+    val application = extractEntityFromCasResult(
       applicationService.getApplicationForUsername(newPlacementApplication.applicationId, user.deliusUsername),
     )
 

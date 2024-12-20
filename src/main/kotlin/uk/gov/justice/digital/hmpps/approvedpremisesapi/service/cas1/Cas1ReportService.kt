@@ -23,7 +23,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.reporting.model.Approved
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.reporting.properties.LostBedReportProperties
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.reporting.util.CsvJdbcResultSetConsumer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.reporting.util.ExcelJdbcResultSetConsumer
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.DomainEventService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.toLocalDate
 import java.io.OutputStream
 import java.time.LocalDate
@@ -42,7 +41,7 @@ class Cas1ReportService(
   private val domainEventRepository: DomainEventRepository,
   private val lostBedsRepository: LostBedsRepository,
   private val cas1OutOfServiceBedRepository: Cas1OutOfServiceBedRepository,
-  private val domainEventService: DomainEventService,
+  private val domainEventService: Cas1DomainEventService,
   private val placementApplicationEntityReportRowRepository: PlacementApplicationEntityReportRowRepository,
 ) {
 
@@ -155,7 +154,6 @@ class Cas1ReportService(
     }
   }
 
-  @Deprecated("This report is not currently in use and will be superseded by the space bookings placement report")
   fun createPlacementMatchingOutcomesReport(properties: MonthSpecificReportParams, outputStream: OutputStream) {
     ExcelJdbcResultSetConsumer().use { consumer ->
       cas1PlacementMatchingOutcomesReportRepository.generateReportRowsForExpectedArrivalMonth(

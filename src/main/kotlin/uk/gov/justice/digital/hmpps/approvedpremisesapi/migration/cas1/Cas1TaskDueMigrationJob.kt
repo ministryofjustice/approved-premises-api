@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Slice
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesAssessmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementApplicationEntity
@@ -13,26 +14,26 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementRequ
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.migration.MigrationJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.TaskDeadlineService
 
+@Component
 class Cas1TaskDueMigrationJob(
   private val assessmentRepository: AssessmentRepository,
   private val placementApplicationRepository: PlacementApplicationRepository,
   private val placementRequestRepository: PlacementRequestRepository,
   private val entityManager: EntityManager,
   private val taskDeadlineService: TaskDeadlineService,
-  private val pageSize: Int,
 ) : MigrationJob() {
   private val log = LoggerFactory.getLogger(this::class.java)
   override val shouldRunInTransaction = true
 
-  override fun process() {
+  override fun process(pageSize: Int) {
     log.info("Starting Migration process...")
 
-    this.updateAssessments()
-    this.updatePlacementApplications()
-    this.updatePlacementRequests()
+    this.updateAssessments(pageSize)
+    this.updatePlacementApplications(pageSize)
+    this.updatePlacementRequests(pageSize)
   }
 
-  private fun updateAssessments() {
+  private fun updateAssessments(pageSize: Int) {
     log.info("Updating assessments....")
     var page = 1
     var hasNext = true
@@ -51,7 +52,7 @@ class Cas1TaskDueMigrationJob(
     }
   }
 
-  private fun updatePlacementApplications() {
+  private fun updatePlacementApplications(pageSize: Int) {
     log.info("Updating placement applications....")
     var page = 1
     var hasNext = true
@@ -70,7 +71,7 @@ class Cas1TaskDueMigrationJob(
     }
   }
 
-  private fun updatePlacementRequests() {
+  private fun updatePlacementRequests(pageSize: Int) {
     log.info("Updating placement requests....")
     var page = 1
     var hasNext = true

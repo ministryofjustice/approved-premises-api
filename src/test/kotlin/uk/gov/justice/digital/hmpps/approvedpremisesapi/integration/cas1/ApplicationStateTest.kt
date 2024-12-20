@@ -11,13 +11,13 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.AssessmentAcce
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.AssessmentRejection
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Booking
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1ApplicationUserDetails
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NewSpaceBooking
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NewSpaceBookingCancellation
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBooking
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBookingRequirements
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Gender
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewApplication
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewCancellation
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewCas1SpaceBooking
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewCas1SpaceBookingCancellation
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewClarificationNote
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewPlacementRequestBooking
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewReallocation
@@ -89,7 +89,7 @@ class ApplicationStateTest : InitialiseDatabasePerClassTestBase() {
         UserRole.CAS1_ASSESSOR,
         UserRole.CAS1_MATCHER,
         UserRole.CAS1_WORKFLOW_MANAGER,
-        UserRole.CAS1_CRU_MEMBER,
+        UserRole.CAS1_CRU_MEMBER_FIND_AND_BOOK_BETA,
       ),
     )
     approvedPremisesApplicationJsonSchemaEntityFactory.produceAndPersist {
@@ -367,7 +367,7 @@ class ApplicationStateTest : InitialiseDatabasePerClassTestBase() {
       .uri("cas1/premises/${premises.id}/space-bookings/${booking.id}/cancellations")
       .header("Authorization", "Bearer $jwt")
       .bodyValue(
-        NewCas1SpaceBookingCancellation(
+        Cas1NewSpaceBookingCancellation(
           occurredAt = LocalDate.parse("2023-03-29"),
           reasonId = cancellationReason.id,
         ),
@@ -428,7 +428,7 @@ class ApplicationStateTest : InitialiseDatabasePerClassTestBase() {
       .uri("/cas1/placement-requests/${placementRequest.id}/space-bookings")
       .header("Authorization", "Bearer $jwt")
       .bodyValue(
-        NewCas1SpaceBooking(
+        Cas1NewSpaceBooking(
           arrivalDate = LocalDate.parse("2023-03-29"),
           departureDate = LocalDate.parse("2023-04-01"),
           premisesId = premises.id,

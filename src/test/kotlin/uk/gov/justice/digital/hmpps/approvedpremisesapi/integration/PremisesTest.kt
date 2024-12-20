@@ -1728,7 +1728,7 @@ class PremisesTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = UserRole::class, names = [ "CAS1_MANAGER", "CAS1_MATCHER" ])
+    @EnumSource(value = UserRole::class, names = [ "CAS1_FUTURE_MANAGER", "CAS1_MATCHER" ])
     fun `Get premises staff where delius team cannot be found returns 404`(role: UserRole) {
       givenAUser(roles = listOf(role)) { _, jwt ->
         val qCode = "NON_EXISTENT_TEAM_QCODE"
@@ -1795,8 +1795,8 @@ class PremisesTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = UserRole::class, names = [ "CAS1_MANAGER", "CAS1_MATCHER" ])
-    fun `Get Approved Premises Staff for Approved Premises returns 200 with correct body when user has one of roles MANAGER, MATCHER`(role: UserRole) {
+    @EnumSource(value = UserRole::class, names = [ "CAS1_FUTURE_MANAGER", "CAS1_MATCHER" ])
+    fun `Get Approved Premises Staff for Approved Premises returns 200 with correct body when user has one of roles FUTURE_MANAGER, MATCHER`(role: UserRole) {
       givenAUser(roles = listOf(role)) { userEntity, jwt ->
         val qCode = "FOUND"
 
@@ -1815,7 +1815,7 @@ class PremisesTest {
         )
 
         wiremockServer.stubFor(
-          WireMock.get(WireMock.urlEqualTo("/approved-premises/$qCode/staff"))
+          WireMock.get(urlEqualTo("/approved-premises/$qCode/staff"))
             .willReturn(
               WireMock.aResponse()
                 .withHeader("Content-Type", "application/json")
@@ -1846,9 +1846,9 @@ class PremisesTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = UserRole::class, names = [ "CAS1_MANAGER", "CAS1_MATCHER" ])
+    @EnumSource(value = UserRole::class, names = [ "CAS1_FUTURE_MANAGER", "CAS1_MATCHER" ])
     @Disabled
-    fun `Get Approved Premises Staff caches response when user has one of roles MANAGER, MATCHER`(role: UserRole) {
+    fun `Get Approved Premises Staff caches response when user has one of roles FUTURE_MANAGER, MATCHER`(role: UserRole) {
       givenAUser(roles = listOf(role)) { userEntity, jwt ->
         val qCode = "FOUND"
 
@@ -1867,7 +1867,7 @@ class PremisesTest {
         )
 
         wiremockServer.stubFor(
-          WireMock.get(WireMock.urlEqualTo("/approved-premises/$qCode/staff"))
+          WireMock.get(urlEqualTo("/approved-premises/$qCode/staff"))
             .willReturn(
               WireMock.aResponse()
                 .withHeader("Content-Type", "application/json")
@@ -2023,7 +2023,7 @@ class PremisesTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = UserRole::class, names = [ "CAS1_MANAGER" ])
+    @EnumSource(value = UserRole::class, names = [ "CAS1_FUTURE_MANAGER" ])
     fun `Get Premises Summary by ID that does not exist returns 404`(role: UserRole) {
       givenAUser(roles = listOf(role)) { _, jwt ->
         val id = UUID.randomUUID()
@@ -2037,7 +2037,7 @@ class PremisesTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = UserRole::class, names = ["CAS1_MANAGER", "CAS1_MATCHER", "CAS1_WORKFLOW_MANAGER"])
+    @EnumSource(value = UserRole::class, names = ["CAS1_FUTURE_MANAGER", "CAS1_MATCHER", "CAS1_WORKFLOW_MANAGER"])
     fun `Get Premises Summary by ID returns OK with correct body`(role: UserRole) {
       givenAUser(roles = listOf(role)) { user, jwt ->
         bookings.forEach {

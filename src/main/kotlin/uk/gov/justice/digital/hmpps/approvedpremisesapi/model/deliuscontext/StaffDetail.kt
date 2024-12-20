@@ -1,11 +1,10 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext
 
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.StaffMember
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.StaffMember
 
 data class StaffDetail(
   val email: String?,
   val telephoneNumber: String?,
-  val staffIdentifier: Long,
   val teams: List<Team> = emptyList(),
   val probationArea: ProbationArea,
   val username: String?,
@@ -21,7 +20,6 @@ data class StaffDetail(
 
   fun toStaffMember() = StaffMember(
     staffCode = this.code,
-    staffIdentifier = this.staffIdentifier,
     forenames = this.name.forenames(),
     surname = this.name.surname,
     username = this.username,

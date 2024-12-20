@@ -22,8 +22,6 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1AssignKeyWorker
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NewArrival
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NewDeparture
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NonArrival
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBookingResidency
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBookingSummarySortField
@@ -56,11 +54,10 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.MoveOnCategor
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.MoveOnCategoryRepository.Constants.NOT_APPLICABLE_MOVE_ON_CATEGORY_ID
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.NonArrivalReasonRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserPermission
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas1.Cas1SpaceSearchRepository
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas1.SpaceAvailability
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.CasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.PlacementRequestService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.StaffMemberService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.BlockingReason
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1ApplicationStatusService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1BookingDomainEventService
@@ -68,16 +65,15 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1Booking
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1PremisesService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1SpaceBookingManagementDomainEventService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1SpaceBookingService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1SpaceBookingService.DepartureInfo
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.WithdrawableEntityType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.WithdrawalContext
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.WithdrawalTriggeredByUser
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.isWithinTheLastMinute
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.toLocalDate
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.OffsetDateTime
-import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.UUID
 import java.util.stream.Stream
@@ -92,9 +88,6 @@ class Cas1SpaceBookingServiceTest {
 
   @MockK
   private lateinit var spaceBookingRepository: Cas1SpaceBookingRepository
-
-  @MockK
-  private lateinit var spaceSearchRepository: Cas1SpaceSearchRepository
 
   @MockK
   private lateinit var cas1BookingDomainEventService: Cas1BookingDomainEventService
@@ -124,7 +117,10 @@ class Cas1SpaceBookingServiceTest {
   private lateinit var nonArrivalReasonRepository: NonArrivalReasonRepository
 
   @MockK
-  private val lockablePlacementRequestRepository = mockk<LockablePlacementRequestRepository>()
+  private lateinit var lockablePlacementRequestRepository: LockablePlacementRequestRepository
+
+  @MockK
+  private lateinit var userService: UserService
 
   @InjectMockKs
   private lateinit var service: Cas1SpaceBookingService
@@ -333,19 +329,11 @@ class Cas1SpaceBookingServiceTest {
       val durationInDays = 1
       val departureDate = arrivalDate.plusDays(durationInDays.toLong())
 
-      val spaceAvailability = SpaceAvailability(
-        premisesId = premises.id,
-      )
-
       every { cas1PremisesService.findPremiseById(premises.id) } returns premises
       every { placementRequestService.getPlacementRequestOrNull(placementRequest.id) } returns placementRequest
       every { spaceBookingRepository.findByPlacementRequestId(placementRequest.id) } returns emptyList()
       every { lockablePlacementRequestRepository.acquirePessimisticLock(placementRequest.id) } returns
         LockablePlacementRequestEntity(placementRequest.id)
-
-      every {
-        spaceSearchRepository.getSpaceAvailabilityForCandidatePremises(listOf(premises.id), arrivalDate, durationInDays)
-      } returns listOf(spaceAvailability)
 
       every { cas1ApplicationStatusService.spaceBookingMade(any()) } returns Unit
 
@@ -386,8 +374,10 @@ class Cas1SpaceBookingServiceTest {
       assertThat(persistedBooking.createdBy).isEqualTo(user)
       assertThat(persistedBooking.expectedArrivalDate).isEqualTo(arrivalDate)
       assertThat(persistedBooking.expectedDepartureDate).isEqualTo(departureDate)
-      assertThat(persistedBooking.actualArrivalDateTime).isNull()
-      assertThat(persistedBooking.actualDepartureDateTime).isNull()
+      assertThat(persistedBooking.actualArrivalDate).isNull()
+      assertThat(persistedBooking.actualArrivalTime).isNull()
+      assertThat(persistedBooking.actualDepartureDate).isNull()
+      assertThat(persistedBooking.actualDepartureTime).isNull()
       assertThat(persistedBooking.canonicalArrivalDate).isEqualTo(arrivalDate)
       assertThat(persistedBooking.canonicalDepartureDate).isEqualTo(departureDate)
       assertThat(persistedBooking.crn).isEqualTo(application.crn)
@@ -440,19 +430,11 @@ class Cas1SpaceBookingServiceTest {
       val durationInDays = 1
       val departureDate = arrivalDate.plusDays(durationInDays.toLong())
 
-      val spaceAvailability = SpaceAvailability(
-        premisesId = premises.id,
-      )
-
       every { cas1PremisesService.findPremiseById(premises.id) } returns premises
       every { placementRequestService.getPlacementRequestOrNull(placementRequest.id) } returns placementRequest
       every { spaceBookingRepository.findByPlacementRequestId(placementRequest.id) } returns emptyList()
       every { lockablePlacementRequestRepository.acquirePessimisticLock(placementRequest.id) } returns
         LockablePlacementRequestEntity(placementRequest.id)
-
-      every {
-        spaceSearchRepository.getSpaceAvailabilityForCandidatePremises(listOf(premises.id), arrivalDate, durationInDays)
-      } returns listOf(spaceAvailability)
 
       every { cas1ApplicationStatusService.spaceBookingMade(any()) } returns Unit
 
@@ -611,10 +593,10 @@ class Cas1SpaceBookingServiceTest {
 
   @Nested
   inner class RecordArrival {
-
-    private val existingArrivalDateTime = LocalDateTime.now().minusDays(10).toInstant(ZoneOffset.UTC)
-    private val arrivalDateTime = LocalDateTime.of(2024, 1, 2, 3, 4, 5)
-    private val arrivalDateTimeInstant = arrivalDateTime.toInstant(ZoneOffset.UTC)
+    private val existingArrivalDate = LocalDate.of(2024, 1, 1)
+    private val existingArrivalTime = LocalTime.of(3, 4, 5)
+    private val arrivalDate = LocalDate.of(2024, 1, 2)
+    private val arrivalTime = LocalTime.of(3, 4, 5)
 
     private val existingSpaceBooking = Cas1SpaceBookingEntityFactory()
       .produce()
@@ -631,7 +613,8 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordArrivalForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewArrival = Cas1NewArrival(arrivalDateTimeInstant),
+        arrivalDate = arrivalDate,
+        arrivalTime = arrivalTime,
       )
 
       assertThat(result).isInstanceOf(CasResult.FieldValidationError::class.java)
@@ -650,7 +633,8 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordArrivalForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewArrival = Cas1NewArrival(arrivalDateTimeInstant),
+        arrivalDate = arrivalDate,
+        arrivalTime = arrivalTime,
       )
 
       assertThat(result).isInstanceOf(CasResult.FieldValidationError::class.java)
@@ -663,7 +647,10 @@ class Cas1SpaceBookingServiceTest {
 
     @Test
     fun `Returns conflict error if the space booking record already has an arrival date recorded that does not match the received arrival date or arrival time`() {
-      val existingSpaceBookingWithArrivalDate = existingSpaceBooking.copy(actualArrivalDateTime = existingArrivalDateTime)
+      val existingSpaceBookingWithArrivalDate = existingSpaceBooking.copy(
+        actualArrivalDate = existingArrivalDate,
+        actualArrivalTime = existingArrivalTime,
+      )
 
       every { cas1PremisesService.findPremiseById(any()) } returns premises
       every { spaceBookingRepository.findByIdOrNull(any()) } returns existingSpaceBookingWithArrivalDate
@@ -671,7 +658,8 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordArrivalForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewArrival = Cas1NewArrival(arrivalDateTimeInstant),
+        arrivalDate = arrivalDate,
+        arrivalTime = arrivalTime,
       )
 
       assertThat(result).isInstanceOf(CasResult.ConflictError::class.java)
@@ -683,8 +671,9 @@ class Cas1SpaceBookingServiceTest {
     @Test
     fun `Returns conflict error if the space booking record already has an arrival date recorded that doesn't match the requested arrival date time`() {
       val existingSpaceBookingWithArrivalDate = existingSpaceBooking.copy(
-        actualArrivalDateTime = existingArrivalDateTime,
-        canonicalArrivalDate = existingArrivalDateTime.toLocalDate(),
+        actualArrivalDate = existingArrivalDate,
+        actualArrivalTime = existingArrivalTime,
+        canonicalArrivalDate = existingArrivalDate,
       )
 
       every { cas1PremisesService.findPremiseById(any()) } returns premises
@@ -693,7 +682,8 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordArrivalForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewArrival = Cas1NewArrival(existingArrivalDateTime.plusMillis(1)),
+        arrivalDate = arrivalDate,
+        arrivalTime = arrivalTime.plusSeconds(1),
       )
 
       assertThat(result).isInstanceOf(CasResult.ConflictError::class.java)
@@ -703,10 +693,11 @@ class Cas1SpaceBookingServiceTest {
     }
 
     @Test
-    fun `Updates space booking with arrival information if the space booking record already has the exact same arrival date recorded`() {
+    fun `Returns success without updates if the space booking record already has the exact same arrival date and time recorded`() {
       val existingSpaceBookingWithArrivalDate = existingSpaceBooking.copy(
-        actualArrivalDateTime = existingArrivalDateTime,
-        canonicalArrivalDate = existingArrivalDateTime.toLocalDate(),
+        actualArrivalDate = existingArrivalDate,
+        actualArrivalTime = existingArrivalTime,
+        canonicalArrivalDate = existingArrivalDate,
       )
 
       every { cas1PremisesService.findPremiseById(any()) } returns premises
@@ -715,30 +706,38 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordArrivalForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewArrival = Cas1NewArrival(existingArrivalDateTime),
+        arrivalDate = existingArrivalDate,
+        arrivalTime = existingArrivalTime,
       )
 
       assertThat(result).isInstanceOf(CasResult.Success::class.java)
 
       val extractedResult = (result as CasResult.Success).value
 
-      assertThat(extractedResult.actualArrivalDateTime).isEqualTo(existingArrivalDateTime)
-      assertThat(extractedResult.canonicalArrivalDate).isEqualTo(existingArrivalDateTime.toLocalDate())
+      assertThat(extractedResult.actualArrivalDate).isEqualTo(existingArrivalDate)
+      assertThat(extractedResult.actualArrivalTime).isEqualTo(existingArrivalTime)
+      assertThat(extractedResult.canonicalArrivalDate).isEqualTo(existingArrivalDate)
     }
 
     @Test
     fun `Updates space booking with arrival information and raises domain event`() {
-      val updatedSpaceBookingCaptor = slot<Cas1SpaceBookingEntity>()
+      val user = UserEntityFactory().withDefaults().produce()
 
       every { cas1PremisesService.findPremiseById(any()) } returns premises
       every { spaceBookingRepository.findByIdOrNull(any()) } returns existingSpaceBooking
+
+      val updatedSpaceBookingCaptor = slot<Cas1SpaceBookingEntity>()
       every { spaceBookingRepository.save(capture(updatedSpaceBookingCaptor)) } returnsArgument 0
-      every { cas1SpaceBookingManagementDomainEventService.arrivalRecorded(any()) } returns Unit
+
+      val arrivalInfoCaptor = slot<Cas1SpaceBookingManagementDomainEventService.ArrivalInfo>()
+      every { cas1SpaceBookingManagementDomainEventService.arrivalRecorded(capture(arrivalInfoCaptor)) } returns Unit
+      every { userService.getUserForRequest() } returns user
 
       val result = service.recordArrivalForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewArrival = Cas1NewArrival(arrivalDateTimeInstant),
+        arrivalDate = arrivalDate,
+        arrivalTime = arrivalTime,
       )
 
       assertThat(result).isInstanceOf(CasResult.Success::class.java)
@@ -746,8 +745,15 @@ class Cas1SpaceBookingServiceTest {
 
       val updatedSpaceBooking = updatedSpaceBookingCaptor.captured
       assertThat(updatedSpaceBooking.expectedArrivalDate).isEqualTo(existingSpaceBooking.expectedArrivalDate)
-      assertThat(updatedSpaceBooking.actualArrivalDateTime).isEqualTo(LocalDateTime.of(2024, 1, 2, 3, 4, 5).toInstant(ZoneOffset.UTC))
+      assertThat(updatedSpaceBooking.actualArrivalDate).isEqualTo(LocalDate.of(2024, 1, 2))
+      assertThat(updatedSpaceBooking.actualArrivalTime).isEqualTo(LocalTime.of(3, 4, 5))
       assertThat(updatedSpaceBooking.canonicalArrivalDate).isEqualTo(LocalDate.of(2024, 1, 2))
+
+      val arrivalInfo = arrivalInfoCaptor.captured
+      assertThat(arrivalInfo.updatedCas1SpaceBooking).isEqualTo(updatedSpaceBooking)
+      assertThat(arrivalInfo.actualArrivalDate).isEqualTo(LocalDate.of(2024, 1, 2))
+      assertThat(arrivalInfo.actualArrivalTime).isEqualTo(LocalTime.of(3, 4, 5))
+      assertThat(arrivalInfo.recordedBy).isEqualTo(user)
     }
   }
 
@@ -907,17 +913,6 @@ class Cas1SpaceBookingServiceTest {
       result as CasResult.Success
 
       val updatedSpaceBooking = updatedSpaceBookingCaptor.captured
-      assertThat(existingSpaceBooking.premises).isEqualTo(updatedSpaceBooking.premises)
-      assertThat(existingSpaceBooking.placementRequest).isEqualTo(updatedSpaceBooking.placementRequest)
-      assertThat(existingSpaceBooking.application).isEqualTo(updatedSpaceBooking.application)
-      assertThat(existingSpaceBooking.createdAt).isEqualTo(updatedSpaceBooking.createdAt)
-      assertThat(existingSpaceBooking.createdBy).isEqualTo(updatedSpaceBooking.createdBy)
-      assertThat(existingSpaceBooking.actualDepartureDateTime).isEqualTo(updatedSpaceBooking.actualDepartureDateTime)
-      assertThat(existingSpaceBooking.crn).isEqualTo(updatedSpaceBooking.crn)
-      assertThat(existingSpaceBooking.keyWorkerStaffCode).isEqualTo(updatedSpaceBooking.keyWorkerStaffCode)
-      assertThat(existingSpaceBooking.keyWorkerAssignedAt).isEqualTo(updatedSpaceBooking.keyWorkerAssignedAt)
-      assertThat(existingSpaceBooking.expectedArrivalDate).isEqualTo(updatedSpaceBooking.expectedArrivalDate)
-
       assertThat(nonArrivalReason).isEqualTo(updatedSpaceBooking.nonArrivalReason)
       assertThat("non arrival notes").isEqualTo(updatedSpaceBooking.nonArrivalNotes)
       assertThat(updatedSpaceBooking.nonArrivalConfirmedAt).isWithinTheLastMinute()
@@ -927,11 +922,10 @@ class Cas1SpaceBookingServiceTest {
   @TestInstance(TestInstance.Lifecycle.PER_CLASS)
   @Nested
   inner class RecordDeparture {
-
-    private val actualArrivalDateTime = LocalDateTime.of(2023, 5, 20, 0, 0, 0)
-    private val actualArrivalDateTimeInstant = actualArrivalDateTime.toInstant(ZoneOffset.UTC)
-    private val actualDepartureDateTime = LocalDateTime.of(2023, 6, 1, 12, 45, 0)
-    private val actualDepartureDateTimeInstant = actualDepartureDateTime.toInstant(ZoneOffset.UTC)
+    private val actualArrivalDate = LocalDate.of(2023, 1, 20)
+    private val actualArrivalTime = LocalTime.of(0, 0, 0)
+    private val actualDepartureDate = LocalDate.of(2023, 2, 1)
+    private val actualDepartureTime = LocalTime.of(12, 45, 0)
     private val departureReason = DepartureReasonEntity(
       id = UUID.randomUUID(),
       name = "departureReason",
@@ -973,11 +967,13 @@ class Cas1SpaceBookingServiceTest {
     private val departureNotes = "these are departure notes"
 
     private val existingSpaceBooking = Cas1SpaceBookingEntityFactory()
-      .withActualArrivalDateTime(actualArrivalDateTimeInstant)
+      .withActualArrivalDate(actualArrivalDate)
+      .withActualArrivalTime(actualArrivalTime)
       .produce()
 
     private val existingSpaceBooking2 = Cas1SpaceBookingEntityFactory()
-      .withActualArrivalDateTime(actualArrivalDateTimeInstant)
+      .withActualArrivalDate(actualArrivalDate)
+      .withActualArrivalTime(actualArrivalTime)
       .produce()
 
     private val premises = ApprovedPremisesEntityFactory()
@@ -999,7 +995,11 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordDepartureForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewDeparture = Cas1NewDeparture(actualDepartureDateTimeInstant, UUID.randomUUID(), UUID.randomUUID()),
+        departureInfo = DepartureInfo(
+          actualDepartureDate,
+          actualDepartureTime,
+          UUID.randomUUID(),
+        ),
       )
 
       assertThat(result).isInstanceOf(CasResult.FieldValidationError::class.java)
@@ -1017,7 +1017,11 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordDepartureForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewDeparture = Cas1NewDeparture(actualDepartureDateTimeInstant, UUID.randomUUID(), UUID.randomUUID()),
+        departureInfo = DepartureInfo(
+          actualDepartureDate,
+          actualDepartureTime,
+          UUID.randomUUID(),
+        ),
       )
 
       assertThat(result).isInstanceOf(CasResult.FieldValidationError::class.java)
@@ -1035,7 +1039,11 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordDepartureForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewDeparture = Cas1NewDeparture(actualDepartureDateTimeInstant, UUID.randomUUID(), UUID.randomUUID()),
+        departureInfo = DepartureInfo(
+          actualDepartureDate,
+          actualDepartureTime,
+          UUID.randomUUID(),
+        ),
       )
 
       assertThat(result).isInstanceOf(CasResult.FieldValidationError::class.java)
@@ -1053,7 +1061,11 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordDepartureForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewDeparture = Cas1NewDeparture(actualDepartureDateTimeInstant, UUID.randomUUID(), UUID.randomUUID()),
+        departureInfo = DepartureInfo(
+          actualDepartureDate,
+          actualDepartureTime,
+          UUID.randomUUID(),
+        ),
       )
 
       assertThat(result).isInstanceOf(CasResult.FieldValidationError::class.java)
@@ -1071,7 +1083,11 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordDepartureForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewDeparture = Cas1NewDeparture(actualDepartureDateTimeInstant, UUID.randomUUID(), UUID.randomUUID()),
+        departureInfo = DepartureInfo(
+          actualDepartureDate,
+          actualDepartureTime,
+          UUID.randomUUID(),
+        ),
       )
 
       assertThat(result).isInstanceOf(CasResult.FieldValidationError::class.java)
@@ -1089,7 +1105,11 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordDepartureForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewDeparture = Cas1NewDeparture(actualDepartureDateTimeInstant, UUID.randomUUID(), UUID.randomUUID()),
+        departureInfo = DepartureInfo(
+          actualDepartureDate,
+          actualDepartureTime,
+          UUID.randomUUID(),
+        ),
       )
 
       assertThat(result).isInstanceOf(CasResult.FieldValidationError::class.java)
@@ -1102,14 +1122,18 @@ class Cas1SpaceBookingServiceTest {
 
     @Test
     fun `Returns conflict error if the space booking does not have an actual arrival date`() {
-      val existingSpaceBookingWithArrivalDate = existingSpaceBooking.copy(actualArrivalDateTime = null)
+      val existingSpaceBookingWithArrivalDate = existingSpaceBooking.copy(actualArrivalDate = null)
 
       every { spaceBookingRepository.findByIdOrNull(any()) } returns existingSpaceBookingWithArrivalDate
 
       val result = service.recordDepartureForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewDeparture = Cas1NewDeparture(actualDepartureDateTimeInstant, UUID.randomUUID(), UUID.randomUUID()),
+        departureInfo = DepartureInfo(
+          actualDepartureDate,
+          actualDepartureTime,
+          UUID.randomUUID(),
+        ),
       )
 
       assertThat(result).isInstanceOf(CasResult.ConflictError::class.java)
@@ -1121,7 +1145,8 @@ class Cas1SpaceBookingServiceTest {
     @Test
     fun `Returns conflict error if the space booking actual departure date is before the actual arrival date`() {
       val existingSpaceBookingWithArrivalDateInFuture = existingSpaceBooking.copy(
-        actualArrivalDateTime = LocalDateTime.now().plusDays(1).toInstant(ZoneOffset.UTC),
+        actualArrivalDate = actualDepartureDate.plusDays(1),
+        actualArrivalTime = null,
       )
 
       every { spaceBookingRepository.findByIdOrNull(any()) } returns existingSpaceBookingWithArrivalDateInFuture
@@ -1129,27 +1154,57 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordDepartureForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewDeparture = Cas1NewDeparture(actualDepartureDateTimeInstant, UUID.randomUUID(), UUID.randomUUID()),
+        departureInfo = DepartureInfo(
+          actualDepartureDate,
+          actualDepartureTime,
+          UUID.randomUUID(),
+        ),
       )
 
       assertThat(result).isInstanceOf(CasResult.ConflictError::class.java)
       result as CasResult.ConflictError
 
-      assertThat(result.message).isEqualTo("The departure date is before the arrival date.")
+      assertThat(result.message).isEqualTo("The departure date time is before the arrival date time.")
+    }
+
+    @Test
+    fun `Returns conflict error if the space booking actual departure date time is before the actual arrival date time`() {
+      val existingSpaceBookingWithArrivalDateInFuture = existingSpaceBooking.copy(
+        actualArrivalDate = actualDepartureDate,
+        actualArrivalTime = actualDepartureTime.plusSeconds(1),
+      )
+
+      every { spaceBookingRepository.findByIdOrNull(any()) } returns existingSpaceBookingWithArrivalDateInFuture
+
+      val result = service.recordDepartureForBooking(
+        premisesId = UUID.randomUUID(),
+        bookingId = UUID.randomUUID(),
+        departureInfo = DepartureInfo(
+          actualDepartureDate,
+          actualDepartureTime,
+          UUID.randomUUID(),
+        ),
+      )
+
+      assertThat(result).isInstanceOf(CasResult.ConflictError::class.java)
+      result as CasResult.ConflictError
+
+      assertThat(result.message).isEqualTo("The departure date time is before the arrival date time.")
     }
 
     @ParameterizedTest
     @MethodSource("conflictCasesForSpaceBookingRecordDeparture")
     fun `Returns conflict error if the space booking has already recorded departure information that does not match the received departure information`(
-      testCaseForSpaceBookingRecordDeparture: TestCaseForSpaceBookingRecordDeparture,
+      testCaseForDeparture: TestCaseForDeparture,
     ) {
       val existingSpaceBookingWithDepartureInfo = existingSpaceBooking.copy(
-        actualDepartureDateTime = testCaseForSpaceBookingRecordDeparture.existingDepartureDate.atZone(ZoneId.of("Europe/London")).toInstant(),
+        actualDepartureDate = testCaseForDeparture.existingDepartureDate,
+        actualDepartureTime = testCaseForDeparture.existingDepartureTime,
         departureReason = DepartureReasonEntityFactory()
-          .withId(testCaseForSpaceBookingRecordDeparture.existingReasonId)
+          .withId(testCaseForDeparture.existingReasonId)
           .produce(),
         departureMoveOnCategory = MoveOnCategoryEntityFactory()
-          .withId(testCaseForSpaceBookingRecordDeparture.existingMoveOnCategoryId)
+          .withId(testCaseForDeparture.existingMoveOnCategoryId)
           .produce(),
       )
 
@@ -1158,10 +1213,11 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordDepartureForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewDeparture = Cas1NewDeparture(
-          departureDateTime = testCaseForSpaceBookingRecordDeparture.newDepartureDate.atZone(ZoneId.of("Europe/London")).toInstant(),
-          reasonId = testCaseForSpaceBookingRecordDeparture.newReasonId,
-          moveOnCategoryId = testCaseForSpaceBookingRecordDeparture.newMoveOnCategoryId,
+        departureInfo = DepartureInfo(
+          departureDate = testCaseForDeparture.newDepartureDate,
+          departureTime = testCaseForDeparture.newDepartureTime,
+          reasonId = testCaseForDeparture.newReasonId,
+          moveOnCategoryId = testCaseForDeparture.newMoveOnCategoryId,
         ),
       )
 
@@ -1177,7 +1233,9 @@ class Cas1SpaceBookingServiceTest {
       val moveOnCategoryId = UUID.randomUUID()
       val departureNotes = "these are departure notes"
       val existingSpaceBookingWithDepartureInfo = existingSpaceBooking.copy(
-        actualDepartureDateTime = actualDepartureDateTimeInstant,
+        actualDepartureDate = actualDepartureDate,
+        actualDepartureTime = actualDepartureTime,
+        canonicalDepartureDate = actualDepartureDate,
         departureReason = DepartureReasonEntityFactory()
           .withId(reasonId)
           .produce(),
@@ -1191,32 +1249,36 @@ class Cas1SpaceBookingServiceTest {
       val result = service.recordDepartureForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewDeparture = Cas1NewDeparture(actualDepartureDateTimeInstant, reasonId, moveOnCategoryId, departureNotes),
+        departureInfo = DepartureInfo(
+          actualDepartureDate,
+          actualDepartureTime,
+          reasonId,
+          moveOnCategoryId,
+          departureNotes,
+        ),
       )
 
       assertThat(result).isInstanceOf(CasResult.Success::class.java)
-
       val extractedResult = (result as CasResult.Success).value
-
-      assertThat(extractedResult.actualDepartureDateTime).isEqualTo(LocalDateTime.of(2023, 6, 1, 12, 45, 0).toInstant(ZoneOffset.UTC))
-      assertThat(extractedResult.canonicalDepartureDate).isEqualTo(existingSpaceBookingWithDepartureInfo.actualDepartureDateTime?.toLocalDate())
-      assertThat(extractedResult.departureReason).isEqualTo(existingSpaceBookingWithDepartureInfo.departureReason)
-      assertThat(extractedResult.departureMoveOnCategory).isEqualTo(existingSpaceBookingWithDepartureInfo.departureMoveOnCategory)
-      assertThat(extractedResult.departureNotes).isEqualTo(existingSpaceBookingWithDepartureInfo.departureNotes)
     }
 
     @Test
     fun `Updates existing space booking with departure information and raises domain event`() {
-      val updatedSpaceBookingCaptor = slot<Cas1SpaceBookingEntity>()
+      val user = UserEntityFactory().withDefaults().produce()
 
+      val updatedSpaceBookingCaptor = slot<Cas1SpaceBookingEntity>()
       every { spaceBookingRepository.save(capture(updatedSpaceBookingCaptor)) } returnsArgument 0
-      every { cas1SpaceBookingManagementDomainEventService.departureRecorded(any(), any(), any()) } returns Unit
+
+      val departureInfoCaptor = slot<Cas1SpaceBookingManagementDomainEventService.DepartureInfo>()
+      every { cas1SpaceBookingManagementDomainEventService.departureRecorded(capture(departureInfoCaptor)) } returns Unit
+      every { userService.getUserForRequest() } returns user
 
       val result = service.recordDepartureForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewDeparture = Cas1NewDeparture(
-          departureDateTime = actualDepartureDateTimeInstant,
+        departureInfo = DepartureInfo(
+          departureDate = actualDepartureDate,
+          departureTime = actualDepartureTime,
           reasonId = UUID.randomUUID(),
           moveOnCategoryId = UUID.randomUUID(),
           notes = "these are departure notes",
@@ -1227,12 +1289,20 @@ class Cas1SpaceBookingServiceTest {
       result as CasResult.Success
 
       val updatedSpaceBooking = updatedSpaceBookingCaptor.captured
-
-      assertThat(updatedSpaceBooking.actualDepartureDateTime).isEqualTo(LocalDateTime.of(2023, 6, 1, 12, 45, 0).toInstant(ZoneOffset.UTC))
-      assertThat(updatedSpaceBooking.canonicalDepartureDate).isEqualTo(actualDepartureDateTimeInstant.toLocalDate())
+      assertThat(updatedSpaceBooking.actualDepartureDate).isEqualTo(LocalDate.of(2023, 2, 1))
+      assertThat(updatedSpaceBooking.actualDepartureTime).isEqualTo(LocalTime.of(12, 45, 0))
+      assertThat(updatedSpaceBooking.canonicalDepartureDate).isEqualTo(LocalDate.of(2023, 2, 1))
       assertThat(updatedSpaceBooking.departureReason).isEqualTo(departureReason)
       assertThat(updatedSpaceBooking.departureMoveOnCategory).isEqualTo(departureMoveOnCategory)
       assertThat(updatedSpaceBooking.departureNotes).isEqualTo(departureNotes)
+
+      val departureInfo = departureInfoCaptor.captured
+      assertThat(departureInfo.spaceBooking).isEqualTo(updatedSpaceBooking)
+      assertThat(departureInfo.departureReason).isEqualTo(departureReason)
+      assertThat(departureInfo.moveOnCategory).isEqualTo(departureMoveOnCategory)
+      assertThat(departureInfo.actualDepartureDate).isEqualTo(LocalDate.of(2023, 2, 1))
+      assertThat(departureInfo.actualDepartureTime).isEqualTo(LocalTime.of(12, 45, 0))
+      assertThat(departureInfo.recordedBy).isEqualTo(user)
     }
 
     @Test
@@ -1242,13 +1312,14 @@ class Cas1SpaceBookingServiceTest {
       every { spaceBookingRepository.findByIdOrNull(any()) } returns existingSpaceBooking2
       every { moveOnCategoryRepository.findByIdOrNull(NOT_APPLICABLE_MOVE_ON_CATEGORY_ID) } returns departureNotApplicableMoveOnCategory
       every { spaceBookingRepository.save(capture(updatedSpaceBookingCaptor)) } returnsArgument 0
-      every { cas1SpaceBookingManagementDomainEventService.departureRecorded(any(), any(), any()) } returns Unit
+      every { cas1SpaceBookingManagementDomainEventService.departureRecorded(any()) } returns Unit
 
       val result = service.recordDepartureForBooking(
         premisesId = UUID.randomUUID(),
         bookingId = UUID.randomUUID(),
-        cas1NewDeparture = Cas1NewDeparture(
-          departureDateTime = actualDepartureDateTimeInstant,
+        departureInfo = DepartureInfo(
+          departureDate = actualDepartureDate,
+          departureTime = actualDepartureTime,
           reasonId = UUID.randomUUID(),
           moveOnCategoryId = null,
         ),
@@ -1266,36 +1337,41 @@ class Cas1SpaceBookingServiceTest {
     private fun conflictCasesForSpaceBookingRecordDeparture(): Stream<Arguments> {
       val reasonId = UUID.randomUUID()
       val moveOnCategoryId = UUID.randomUUID()
-      val departureDateTime = LocalDateTime.now().minusDays(1)
       return listOf(
         Arguments.of(
-          TestCaseForSpaceBookingRecordDeparture(
+          TestCaseForDeparture(
             newReasonId = reasonId,
             newMoveOnCategoryId = moveOnCategoryId,
-            newDepartureDate = departureDateTime,
+            newDepartureDate = LocalDate.of(2024, 2, 1),
+            newDepartureTime = LocalTime.of(12, 0, 0),
             existingReasonId = UUID.randomUUID(),
             existingMoveOnCategoryId = moveOnCategoryId,
-            existingDepartureDate = departureDateTime,
+            existingDepartureDate = LocalDate.of(2024, 2, 1),
+            existingDepartureTime = LocalTime.of(12, 0, 0),
           ),
         ),
         Arguments.of(
-          TestCaseForSpaceBookingRecordDeparture(
+          TestCaseForDeparture(
             newReasonId = reasonId,
             newMoveOnCategoryId = moveOnCategoryId,
-            newDepartureDate = departureDateTime,
+            newDepartureDate = LocalDate.of(2024, 2, 1),
+            newDepartureTime = LocalTime.of(12, 0, 0),
             existingReasonId = reasonId,
             existingMoveOnCategoryId = UUID.randomUUID(),
-            existingDepartureDate = departureDateTime,
+            existingDepartureDate = LocalDate.of(2024, 2, 1),
+            existingDepartureTime = LocalTime.of(12, 0, 0),
           ),
         ),
         Arguments.of(
-          TestCaseForSpaceBookingRecordDeparture(
+          TestCaseForDeparture(
             newReasonId = reasonId,
             newMoveOnCategoryId = moveOnCategoryId,
-            newDepartureDate = departureDateTime,
+            newDepartureDate = LocalDate.of(2024, 2, 1),
+            newDepartureTime = LocalTime.of(12, 0, 0),
             existingReasonId = reasonId,
             existingMoveOnCategoryId = moveOnCategoryId,
-            existingDepartureDate = LocalDateTime.now(),
+            existingDepartureDate = LocalDate.of(2024, 2, 2),
+            existingDepartureTime = LocalTime.of(12, 0, 0),
           ),
         ),
       ).stream()
@@ -1306,7 +1382,8 @@ class Cas1SpaceBookingServiceTest {
   inner class RecordKeyWorker {
 
     private val existingSpaceBooking = Cas1SpaceBookingEntityFactory()
-      .withActualArrivalDateTime(LocalDateTime.now().minusDays(1).toInstant(ZoneOffset.UTC))
+      .withActualArrivalDate(LocalDate.now().minusDays(1))
+      .withActualArrivalTime(LocalTime.now())
       .produce()
 
     private val premises = ApprovedPremisesEntityFactory()
@@ -1381,7 +1458,7 @@ class Cas1SpaceBookingServiceTest {
       val updatedSpaceBookingCaptor = slot<Cas1SpaceBookingEntity>()
 
       every { spaceBookingRepository.save(capture(updatedSpaceBookingCaptor)) } returnsArgument 0
-      every { cas1SpaceBookingManagementDomainEventService.keyWorkerAssigned(any(), any(), any()) } returns Unit
+      every { cas1SpaceBookingManagementDomainEventService.keyWorkerAssigned(any(), any(), any(), any()) } returns Unit
 
       val result = service.recordKeyWorkerAssignedForBooking(
         premisesId = UUID.randomUUID(),
@@ -1413,7 +1490,7 @@ class Cas1SpaceBookingServiceTest {
     fun `is withdrawable if no arrival and not cancelled`() {
       val result = service.getWithdrawableState(
         Cas1SpaceBookingEntityFactory()
-          .withActualArrivalDateTime(null)
+          .withActualArrivalDate(null)
           .withCancellationOccurredAt(null)
           .produce(),
         UserEntityFactory().withDefaults().produce(),
@@ -1428,7 +1505,7 @@ class Cas1SpaceBookingServiceTest {
     fun `is not withdrawable if has arrival`() {
       val result = service.getWithdrawableState(
         Cas1SpaceBookingEntityFactory()
-          .withActualArrivalDateTime(Instant.now())
+          .withActualArrivalDate(LocalDate.now())
           .withCancellationOccurredAt(null)
           .produce(),
         UserEntityFactory().withDefaults().produce(),
@@ -1443,7 +1520,7 @@ class Cas1SpaceBookingServiceTest {
     fun `is not withdrawable if already cancelled`() {
       val result = service.getWithdrawableState(
         Cas1SpaceBookingEntityFactory()
-          .withActualArrivalDateTime(null)
+          .withActualArrivalDate(null)
           .withCancellationOccurredAt(LocalDate.now())
           .produce(),
         UserEntityFactory().withDefaults().produce(),
@@ -1617,11 +1694,13 @@ class Cas1SpaceBookingServiceTest {
   }
 }
 
-data class TestCaseForSpaceBookingRecordDeparture(
+data class TestCaseForDeparture(
   val newReasonId: UUID,
   val newMoveOnCategoryId: UUID,
-  val newDepartureDate: LocalDateTime,
+  val newDepartureDate: LocalDate,
+  val newDepartureTime: LocalTime,
   val existingReasonId: UUID,
   val existingMoveOnCategoryId: UUID,
-  val existingDepartureDate: LocalDateTime,
+  val existingDepartureDate: LocalDate,
+  val existingDepartureTime: LocalTime,
 )

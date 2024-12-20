@@ -330,14 +330,14 @@ class SpacePlanningModelsFactoryTest {
         .withCrn("booking1")
         .withCanonicalArrivalDate(LocalDate.of(2020, 4, 4))
         .withCanonicalDepartureDate(LocalDate.of(2020, 4, 5))
-        .withCriteria(listOf(characteristic1, characteristic2, characteristicPremise))
+        .withCriteria(mutableListOf(characteristic1, characteristic2, characteristicPremise))
         .produce()
 
       val booking2 = Cas1SpaceBookingEntityFactory()
         .withCrn("booking2")
         .withCanonicalArrivalDate(LocalDate.of(2020, 4, 4))
         .withCanonicalDepartureDate(LocalDate.of(2020, 4, 5))
-        .withCriteria(listOf(characteristicSingleRoom, characteristicDisabled, characteristicPremise, characteristicNotAllowed))
+        .withCriteria(mutableListOf(characteristicSingleRoom, characteristicDisabled, characteristicPremise, characteristicNotAllowed))
         .produce()
 
       val result = factory.spaceBookingsForDay(

@@ -1,14 +1,14 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed
 
 import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
-import java.util.UUID
 
+@Component
 class UpdateUsersFromApiSeedJob(
   val userService: UserService,
 ) : SeedJob<UpdateUserFromApiCsvRow>(
-  id = UUID.randomUUID(),
   requiredHeaders = setOf(
     "delius_username",
     "service_name",

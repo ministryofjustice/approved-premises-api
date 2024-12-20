@@ -199,6 +199,8 @@ interface ApprovedPremisesRepository : JpaRepository<ApprovedPremisesEntity, UUI
       """,
   )
   fun findForSummaries(gender: ApprovedPremisesGender?, apAreaId: UUID?): List<ApprovedPremisesBasicSummary>
+
+  fun findByQCode(qcode: String): ApprovedPremisesEntity?
 }
 
 @Entity
@@ -270,6 +272,7 @@ class ApprovedPremisesEntity(
   @Enumerated(value = EnumType.STRING)
   var gender: ApprovedPremisesGender,
   var supportsSpaceBookings: Boolean,
+  var managerDetails: String?,
 ) : PremisesEntity(
   id,
   name,

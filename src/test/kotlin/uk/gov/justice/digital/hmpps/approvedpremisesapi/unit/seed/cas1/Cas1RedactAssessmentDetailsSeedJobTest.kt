@@ -5,7 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.Cas1RemoveAssessmentDetailsSeedJob
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationTimelineNoteService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.unit.util.ObjectMapperFactory
 
 class Cas1RedactAssessmentDetailsSeedJobTest {
@@ -13,7 +13,7 @@ class Cas1RedactAssessmentDetailsSeedJobTest {
   val service = Cas1RemoveAssessmentDetailsSeedJob(
     assessmentRepository = mockk<AssessmentRepository>(),
     objectMapper = ObjectMapperFactory.createRuntimeLikeObjectMapper(),
-    applicationService = mockk<ApplicationService>(),
+    applicationTimelineNoteService = mockk<ApplicationTimelineNoteService>(),
   )
 
   @SuppressWarnings("MaxLineLength")

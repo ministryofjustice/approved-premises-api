@@ -39,7 +39,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.client.ApDeliusContextAp
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.client.ClientResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.CaseDetailFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PersonRisksFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.RegistrationClientResponseFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.StaffDetailFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.from
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.cas1.Cas1SimpleApiClient
@@ -48,7 +47,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.given
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnApArea
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnOffender
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextMockSuccessfulCaseDetailCall
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockSuccessfulRegistrationsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AppealEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AppealRepository
@@ -71,8 +69,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.RiskStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.RiskTier
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.RiskWithStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.OffenderDetailSummary
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.RegistrationKeyValue
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.Registrations
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.CaseDetail
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.MappaDetail
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.ProbationArea
@@ -110,7 +106,7 @@ class PlacementApplicationReportsTest : IntegrationTestBase() {
   lateinit var referrerProbationArea: String
 
   lateinit var assessorDetails: Pair<UserEntity, String>
-  lateinit var managerDetails: Pair<UserEntity, String>
+  lateinit var futureManagerDetails: Pair<UserEntity, String>
   lateinit var workflowManagerDetails: Pair<UserEntity, String>
   lateinit var matcherDetails: Pair<UserEntity, String>
   lateinit var appealManagerDetails: Pair<UserEntity, String>
@@ -141,7 +137,7 @@ class PlacementApplicationReportsTest : IntegrationTestBase() {
         ),
       ),
     )
-    managerDetails = givenAUser(roles = listOf(UserRole.CAS1_MANAGER))
+    futureManagerDetails = givenAUser(roles = listOf(UserRole.CAS1_FUTURE_MANAGER))
     workflowManagerDetails = givenAUser(roles = listOf(UserRole.CAS1_WORKFLOW_MANAGER))
     matcherDetails = givenAUser(roles = listOf(UserRole.CAS1_MATCHER))
     appealManagerDetails = givenAUser(roles = listOf(UserRole.CAS1_APPEALS_MANAGER))
@@ -494,20 +490,6 @@ class PlacementApplicationReportsTest : IntegrationTestBase() {
   private fun createAndSubmitApplication(crn: String): ApprovedPremisesApplicationEntity {
     val (referrer, jwt) = referrerDetails
     val (offenderDetails, _) = givenAnOffender({ withCrn(crn) })
-
-    communityAPIMockSuccessfulRegistrationsCall(
-      offenderDetails.otherIds.crn,
-      Registrations(
-        registrations = listOf(
-          RegistrationClientResponseFactory()
-            .withType(RegistrationKeyValue(code = "MAPP", description = "MAPPA"))
-            .withRegisterCategory(RegistrationKeyValue(code = "M2", description = "M2"))
-            .withRegisterLevel(RegistrationKeyValue(code = "M2", description = "M2"))
-            .withStartDate(LocalDate.parse("2022-09-06"))
-            .produce(),
-        ),
-      ),
-    )
 
     apDeliusContextMockSuccessfulCaseDetailCall(
       offenderDetails.otherIds.crn,

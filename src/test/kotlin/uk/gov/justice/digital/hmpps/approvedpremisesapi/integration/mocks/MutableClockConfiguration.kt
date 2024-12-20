@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.test.context.event.annotation.BeforeTestMethod
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.roundNanosToMillisToAccountForLossOfPrecisionInPostgres
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDateTime
@@ -30,6 +31,10 @@ class MutableClockConfiguration {
 
     fun setNow(now: LocalDateTime) {
       fixedTime = now.toInstant(ZoneOffset.UTC)
+    }
+
+    fun setToNowWithoutMillis() {
+      setNow(LocalDateTime.now().roundNanosToMillisToAccountForLossOfPrecisionInPostgres())
     }
 
     fun advanceOneMinute() {

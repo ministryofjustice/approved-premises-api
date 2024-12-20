@@ -1,23 +1,23 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1
 
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedLogger
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
-import java.util.UUID
 /**
  * Seeds users, without touching roles and qualifications.
  *
  *  If you want to set roles and qualifications as part of
  *  the seeding then look at UsersSeedJob.
  */
+@Component
 class ApStaffUsersSeedJob(
   private val userService: UserService,
   private val seedLogger: SeedLogger,
 ) : SeedJob<ApStaffUserSeedCsvRow>(
-  id = UUID.randomUUID(),
   requiredHeaders = setOf(
     "deliusUsername",
   ),

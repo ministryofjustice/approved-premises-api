@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.unit.service
 
 import io.mockk.every
 import io.mockk.mockk
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PersonType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PlacementCriteria
@@ -30,12 +29,11 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.BedSearchRepo
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.CharacteristicNames
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.TemporaryAccommodationBedSearchResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.TemporaryAccommodationBedSearchResultOverlap
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActionResult
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.ValidatableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.BedSearchService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.CharacteristicService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.OffenderService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.WorkingDayService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.unit.util.assertThat
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringMultiCaseWithNumbers
 import java.time.LocalDate
 import java.util.UUID
@@ -74,7 +72,7 @@ class BedSearchServiceTest {
       requiredCharacteristics = listOf(),
     )
 
-    assertThat(result is AuthorisableActionResult.Unauthorised).isTrue
+    assertThat(result).isUnauthorised()
   }
 
   @Test
@@ -109,7 +107,7 @@ class BedSearchServiceTest {
       )
     } returns listOf(roomCharacteristic)
 
-    val authorisableResult = bedSearchService.findApprovedPremisesBeds(
+    val result = bedSearchService.findApprovedPremisesBeds(
       user = user,
       postcodeDistrictOutcode = postcodeDistrict.outcode,
       maxDistanceMiles = 20,
@@ -118,12 +116,10 @@ class BedSearchServiceTest {
       requiredCharacteristics = listOf(PlacementCriteria.isESAP, PlacementCriteria.isRecoveryFocussed),
     )
 
-    assertThat(authorisableResult is AuthorisableActionResult.Success).isTrue
-    authorisableResult as AuthorisableActionResult.Success
-    assertThat(authorisableResult.entity is ValidatableActionResult.FieldValidationError).isTrue
-    val fieldValidationError = authorisableResult.entity as ValidatableActionResult.FieldValidationError
-
-    assertThat(fieldValidationError.validationMessages["$.requiredCharacteristics"]).isEqualTo("$premisesCharacteristicPropertyName doesNotExist")
+    assertThat(result).isFieldValidationError(
+      "$.requiredCharacteristics",
+      "$premisesCharacteristicPropertyName doesNotExist",
+    )
   }
 
   @Test
@@ -162,7 +158,7 @@ class BedSearchServiceTest {
       )
     } returns listOf(premisesCharacteristic, roomCharacteristic)
 
-    val authorisableResult = bedSearchService.findApprovedPremisesBeds(
+    val result = bedSearchService.findApprovedPremisesBeds(
       user = user,
       postcodeDistrictOutcode = postcodeDistrict.outcode,
       maxDistanceMiles = 20,
@@ -171,12 +167,10 @@ class BedSearchServiceTest {
       requiredCharacteristics = listOf(PlacementCriteria.hasEnSuite, PlacementCriteria.isArsonSuitable),
     )
 
-    assertThat(authorisableResult is AuthorisableActionResult.Success).isTrue
-    authorisableResult as AuthorisableActionResult.Success
-    assertThat(authorisableResult.entity is ValidatableActionResult.FieldValidationError).isTrue
-    val fieldValidationError = authorisableResult.entity as ValidatableActionResult.FieldValidationError
-
-    assertThat(fieldValidationError.validationMessages["$.requiredCharacteristics"]).isEqualTo("${premisesCharacteristic.propertyName} scopeInvalid")
+    assertThat(result).isFieldValidationError(
+      "$.requiredCharacteristics",
+      "${premisesCharacteristic.propertyName} scopeInvalid",
+    )
   }
 
   @Test
@@ -211,7 +205,7 @@ class BedSearchServiceTest {
       )
     } returns listOf(premisesCharacteristic)
 
-    val authorisableResult = bedSearchService.findApprovedPremisesBeds(
+    val result = bedSearchService.findApprovedPremisesBeds(
       user = user,
       postcodeDistrictOutcode = postcodeDistrict.outcode,
       maxDistanceMiles = 20,
@@ -220,12 +214,10 @@ class BedSearchServiceTest {
       requiredCharacteristics = listOf(PlacementCriteria.hasEnSuite, PlacementCriteria.isArsonSuitable),
     )
 
-    assertThat(authorisableResult is AuthorisableActionResult.Success).isTrue
-    authorisableResult as AuthorisableActionResult.Success
-    assertThat(authorisableResult.entity is ValidatableActionResult.FieldValidationError).isTrue
-    val fieldValidationError = authorisableResult.entity as ValidatableActionResult.FieldValidationError
-
-    assertThat(fieldValidationError.validationMessages["$.requiredCharacteristics"]).isEqualTo("$roomCharacteristicPropertyName doesNotExist")
+    assertThat(result).isFieldValidationError(
+      "$.requiredCharacteristics",
+      "$roomCharacteristicPropertyName doesNotExist",
+    )
   }
 
   @Test
@@ -264,7 +256,7 @@ class BedSearchServiceTest {
       )
     } returns listOf(premisesCharacteristic, roomCharacteristic)
 
-    val authorisableResult = bedSearchService.findApprovedPremisesBeds(
+    val result = bedSearchService.findApprovedPremisesBeds(
       user = user,
       postcodeDistrictOutcode = postcodeDistrict.outcode,
       maxDistanceMiles = 20,
@@ -273,12 +265,10 @@ class BedSearchServiceTest {
       requiredCharacteristics = listOf(PlacementCriteria.isArsonSuitable, PlacementCriteria.hasEnSuite),
     )
 
-    assertThat(authorisableResult is AuthorisableActionResult.Success).isTrue
-    authorisableResult as AuthorisableActionResult.Success
-    assertThat(authorisableResult.entity is ValidatableActionResult.FieldValidationError).isTrue
-    val fieldValidationError = authorisableResult.entity as ValidatableActionResult.FieldValidationError
-
-    assertThat(fieldValidationError.validationMessages["$.requiredCharacteristics"]).isEqualTo("${roomCharacteristic.propertyName} scopeInvalid")
+    assertThat(result).isFieldValidationError(
+      "$.requiredCharacteristics",
+      "${roomCharacteristic.propertyName} scopeInvalid",
+    )
   }
 
   @Test
@@ -319,7 +309,7 @@ class BedSearchServiceTest {
 
     every { mockCharacteristicService.getCharacteristicByPropertyName(roomCharacteristic.propertyName!!, ServiceName.approvedPremises) } returns roomCharacteristic
 
-    val authorisableResult = bedSearchService.findApprovedPremisesBeds(
+    val result = bedSearchService.findApprovedPremisesBeds(
       user = user,
       postcodeDistrictOutcode = postcodeDistrict.outcode,
       maxDistanceMiles = 20,
@@ -328,12 +318,7 @@ class BedSearchServiceTest {
       requiredCharacteristics = listOf(PlacementCriteria.isArsonSuitable, PlacementCriteria.hasEnSuite),
     )
 
-    assertThat(authorisableResult is AuthorisableActionResult.Success).isTrue
-    authorisableResult as AuthorisableActionResult.Success
-    assertThat(authorisableResult.entity is ValidatableActionResult.FieldValidationError).isTrue
-    val fieldValidationError = authorisableResult.entity as ValidatableActionResult.FieldValidationError
-
-    assertThat(fieldValidationError.validationMessages["$.postcodeDistrictOutcode"]).isEqualTo("doesNotExist")
+    assertThat(result).isFieldValidationError("$.postcodeDistrictOutcode", "doesNotExist")
   }
 
   @Test
@@ -372,7 +357,7 @@ class BedSearchServiceTest {
       )
     } returns listOf(premisesCharacteristic, roomCharacteristic)
 
-    val authorisableResult = bedSearchService.findApprovedPremisesBeds(
+    val result = bedSearchService.findApprovedPremisesBeds(
       user = user,
       postcodeDistrictOutcode = postcodeDistrict.outcode,
       maxDistanceMiles = 20,
@@ -381,12 +366,7 @@ class BedSearchServiceTest {
       requiredCharacteristics = listOf(PlacementCriteria.hasEnSuite, PlacementCriteria.isArsonSuitable),
     )
 
-    assertThat(authorisableResult is AuthorisableActionResult.Success).isTrue
-    authorisableResult as AuthorisableActionResult.Success
-    assertThat(authorisableResult.entity is ValidatableActionResult.FieldValidationError).isTrue
-    val fieldValidationError = authorisableResult.entity as ValidatableActionResult.FieldValidationError
-
-    assertThat(fieldValidationError.validationMessages["$.durationDays"]).isEqualTo("mustBeAtLeast1")
+    assertThat(result).isFieldValidationError("$.durationDays", "mustBeAtLeast1")
   }
 
   @Test
@@ -425,7 +405,7 @@ class BedSearchServiceTest {
       )
     } returns listOf(premisesCharacteristic, roomCharacteristic)
 
-    val authorisableResult = bedSearchService.findApprovedPremisesBeds(
+    val result = bedSearchService.findApprovedPremisesBeds(
       user = user,
       postcodeDistrictOutcode = postcodeDistrict.outcode,
       maxDistanceMiles = 0,
@@ -434,12 +414,7 @@ class BedSearchServiceTest {
       requiredCharacteristics = listOf(PlacementCriteria.hasEnSuite, PlacementCriteria.isArsonSuitable),
     )
 
-    assertThat(authorisableResult is AuthorisableActionResult.Success).isTrue
-    authorisableResult as AuthorisableActionResult.Success
-    assertThat(authorisableResult.entity is ValidatableActionResult.FieldValidationError).isTrue
-    val fieldValidationError = authorisableResult.entity as ValidatableActionResult.FieldValidationError
-
-    assertThat(fieldValidationError.validationMessages["$.maxDistanceMiles"]).isEqualTo("mustBeAtLeast1")
+    assertThat(result).isFieldValidationError("$.maxDistanceMiles", "mustBeAtLeast1")
   }
 
   @Test
@@ -518,7 +493,7 @@ class BedSearchServiceTest {
       )
     } returns repositorySearchResults
 
-    val authorisableResult = bedSearchService.findApprovedPremisesBeds(
+    val result = bedSearchService.findApprovedPremisesBeds(
       user = user,
       postcodeDistrictOutcode = postcodeDistrict.outcode,
       maxDistanceMiles = 20,
@@ -527,12 +502,7 @@ class BedSearchServiceTest {
       requiredCharacteristics = listOf(PlacementCriteria.hasEnSuite, PlacementCriteria.isArsonSuitable),
     )
 
-    assertThat(authorisableResult is AuthorisableActionResult.Success).isTrue
-    authorisableResult as AuthorisableActionResult.Success
-    assertThat(authorisableResult.entity is ValidatableActionResult.Success).isTrue
-    val result = (authorisableResult.entity as ValidatableActionResult.Success).entity
-
-    assertThat(result).isEqualTo(repositorySearchResults)
+    assertThat(result).isSuccess().hasValueEqualTo(repositorySearchResults)
   }
 
   @Test
@@ -550,7 +520,7 @@ class BedSearchServiceTest {
       mockProbationDeliveryUnitRepository.existsById(probationDeliveryUnit.id)
     } returns true
 
-    val authorisableResult = bedSearchService.findTemporaryAccommodationBeds(
+    val result = bedSearchService.findTemporaryAccommodationBeds(
       user = user,
       startDate = LocalDate.parse("2023-03-22"),
       durationInDays = 0,
@@ -558,12 +528,7 @@ class BedSearchServiceTest {
       propertyBedAttributes = null,
     )
 
-    assertThat(authorisableResult is AuthorisableActionResult.Success).isTrue
-    authorisableResult as AuthorisableActionResult.Success
-    assertThat(authorisableResult.entity is ValidatableActionResult.FieldValidationError).isTrue
-    val validationError = authorisableResult.entity as ValidatableActionResult.FieldValidationError
-
-    assertThat(validationError.validationMessages["$.durationDays"]).isEqualTo("mustBeAtLeast1")
+    assertThat(result).isFieldValidationError("$.durationDays", "mustBeAtLeast1")
   }
 
   @Test
@@ -587,13 +552,7 @@ class BedSearchServiceTest {
       probationDeliveryUnits = probationDeliveryUnitIds,
       propertyBedAttributes = null,
     )
-
-    assertThat(result is AuthorisableActionResult.Success).isTrue
-    result as AuthorisableActionResult.Success
-    assertThat(result.entity is ValidatableActionResult.FieldValidationError).isTrue
-    val validationError = result.entity as ValidatableActionResult.FieldValidationError
-
-    assertThat(validationError.validationMessages["$.probationDeliveryUnits"]).isEqualTo("maxNumberProbationDeliveryUnits")
+    assertThat(result).isFieldValidationError("$.probationDeliveryUnits", "maxNumberProbationDeliveryUnits")
   }
 
   @Test
@@ -628,13 +587,7 @@ class BedSearchServiceTest {
       probationDeliveryUnits = probationDeliveryUnitIds,
       propertyBedAttributes = null,
     )
-
-    assertThat(result is AuthorisableActionResult.Success).isTrue
-    result as AuthorisableActionResult.Success
-    assertThat(result.entity is ValidatableActionResult.FieldValidationError).isTrue
-    val validationError = result.entity as ValidatableActionResult.FieldValidationError
-
-    assertThat(validationError.validationMessages["$.probationDeliveryUnits[3]"]).isEqualTo("doesNotExist")
+    assertThat(result).isFieldValidationError("$.probationDeliveryUnits[3]", "doesNotExist")
   }
 
   @Test
@@ -726,7 +679,7 @@ class BedSearchServiceTest {
     every { mockOffenderService.getPersonSummaryInfoResults(setOf(caseSummary.crn), any()) } returns
       listOf(PersonSummaryInfoResult.Success.Full(caseSummary.crn, caseSummary))
 
-    val authorisableResult = bedSearchService.findTemporaryAccommodationBeds(
+    val result = bedSearchService.findTemporaryAccommodationBeds(
       user = user,
       probationDeliveryUnits = listOf(probationDeliveryUnit.id),
       startDate = LocalDate.parse("2023-03-22"),
@@ -734,12 +687,7 @@ class BedSearchServiceTest {
       propertyBedAttributes = null,
     )
 
-    assertThat(authorisableResult is AuthorisableActionResult.Success).isTrue
-    authorisableResult as AuthorisableActionResult.Success
-    assertThat(authorisableResult.entity is ValidatableActionResult.Success).isTrue
-    val result = (authorisableResult.entity as ValidatableActionResult.Success).entity
-
-    assertThat(result).isEqualTo(repositorySearchResults)
+    assertThat(result).isSuccess().hasValueEqualTo(repositorySearchResults)
   }
 
   @Test
@@ -923,20 +871,14 @@ class BedSearchServiceTest {
       mockProbationDeliveryUnitRepository.existsById(probationDeliveryUnit.id)
     } returns true
 
-    val authorisableResult = bedSearchService.findTemporaryAccommodationBeds(
+    val result = bedSearchService.findTemporaryAccommodationBeds(
       user = user,
       startDate = LocalDate.parse("2023-03-22"),
       durationInDays = 7,
       probationDeliveryUnits = listOf(probationDeliveryUnit.id),
       propertyBedAttributes = null,
     )
-
-    assertThat(authorisableResult is AuthorisableActionResult.Success).isTrue
-    authorisableResult as AuthorisableActionResult.Success
-    assertThat(authorisableResult.entity is ValidatableActionResult.Success).isTrue
-    val result = (authorisableResult.entity as ValidatableActionResult.Success).entity
-
-    assertThat(result).isEqualTo(expectedResults)
+    assertThat(result).isSuccess().hasValueEqualTo(expectedResults)
   }
 
   @Suppress("LongParameterList")

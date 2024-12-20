@@ -9,8 +9,8 @@ const val SIX_WEEKS = 6L
 data class SpaceBookingDates(
   val expectedArrivalDate: LocalDate,
   val expectedDepartureDate: LocalDate,
-  val actualArrivalDateTime: LocalDateTime?,
-  val actualDepartureDateTime: LocalDateTime?,
+  val actualArrivalDate: LocalDate?,
+  val actualDepartureDate: LocalDate?,
   val nonArrivalConfirmedAtDateTime: LocalDateTime?,
 ) {
   fun isNotArrived(): Boolean = this.nonArrivalConfirmedAtDateTime != null
@@ -27,9 +27,9 @@ data class SpaceBookingDates(
 
   fun hasArrivedAndNotDeparted() = hasArrived() && !hasDeparted()
 
-  private fun hasArrived() = actualArrivalDateTime != null
+  private fun hasArrived() = actualArrivalDate != null
 
-  fun hasDeparted() = actualDepartureDateTime != null
+  fun hasDeparted() = actualDepartureDate != null
 
   fun isArrivalToday(nowDate: LocalDate): Boolean =
     !hasArrived() && expectedArrivalDate == nowDate

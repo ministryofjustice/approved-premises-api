@@ -11,13 +11,13 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.given
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.CsvBuilder
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.UpdateNomsNumberSeedRow
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.DomainEventService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1DomainEventService
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class SeedUpdateNomsNumberSeedJobTest : SeedTestBase() {
 
   @Autowired
-  lateinit var domainEventService: DomainEventService
+  lateinit var domainEventService: Cas1DomainEventService
 
   companion object CONSTANTS {
     const val CRN = "CRN123"

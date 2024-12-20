@@ -1,9 +1,10 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1
 
 import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementRequestWithdrawalReason
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedJob
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationTimelineNoteService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.PlacementRequestService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.WithdrawableEntityType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.WithdrawalContext
@@ -13,11 +14,11 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.javaConstantNameToS
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.toUiFormat
 import java.util.UUID
 
+@Component
 class Cas1WithdrawPlacementRequestSeedJob(
   private val placementRequestService: PlacementRequestService,
-  private val applicationService: ApplicationService,
+  private val applicationTimelineNoteService: ApplicationTimelineNoteService,
 ) : SeedJob<Cas1WithdrawPlacementRequestSeedSeedCsvRow>(
-  id = UUID.randomUUID(),
   requiredHeaders = setOf(
     "placement_request_id",
     "withdrawal_reason",
@@ -53,7 +54,7 @@ class Cas1WithdrawPlacementRequestSeedJob(
     extractEntityFromCasResult(result).placementRequest
 
     val reasonDescription = withdrawalReason.name.javaConstantNameToSentence()
-    applicationService.addNoteToApplication(
+    applicationTimelineNoteService.saveApplicationTimelineNote(
       applicationId = placementRequest.application.id,
       note = "The Match Request for arrival date ${placementRequest.expectedArrival.toUiFormat()} has " +
         "been withdrawn by Application Support as the CRU has indicated that it is no longer required. " +

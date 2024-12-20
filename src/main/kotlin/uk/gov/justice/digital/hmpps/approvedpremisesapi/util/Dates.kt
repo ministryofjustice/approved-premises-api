@@ -8,11 +8,13 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 val cas1UiExtendedDateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM yyyy")
+val cas1UiExtendedDateTimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM yyyy HH:mm")
 val cas2UiExtendedDateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM y")
 val cas1UiTimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("ha")
 val cas2UiTimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mma")
@@ -79,6 +81,7 @@ infix fun ClosedRange<LocalDate>.countOverlappingDays(other: ClosedRange<LocalDa
 }
 
 fun LocalDate.toUiFormat(): String = this.format(cas1UiExtendedDateFormat)
+fun LocalDateTime.toUiDateTimeFormat(): String = this.format(cas1UiExtendedDateTimeFormat)
 
 fun LocalDate.toCas2UiFormat(): String = this.format(cas2UiExtendedDateFormat)
 
@@ -147,3 +150,5 @@ fun Instant.minusRandomSeconds(maxOffset: Long): Instant {
 
   return this.plusSeconds(randomOffset)
 }
+
+fun LocalDateTime.toInstant(): Instant = this.atZone(ZoneId.systemDefault()).toInstant()

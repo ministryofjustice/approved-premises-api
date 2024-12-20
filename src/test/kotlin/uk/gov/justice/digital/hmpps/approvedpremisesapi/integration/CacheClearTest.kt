@@ -8,7 +8,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.OffenderDetailsS
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAProbationRegion
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAUser
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextMockSuccessfulStaffMembersCall
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockSuccessfulOffenderDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.OffenderDetailSummary
 import java.util.UUID
@@ -17,7 +16,7 @@ import java.util.UUID
 class CacheClearTest : IntegrationTestBase() {
   @Test
   fun `Clearing a regular cache results in upstream calls being made again`() {
-    givenAUser(roles = listOf(UserRole.CAS1_MANAGER)) { _, jwt ->
+    givenAUser(roles = listOf(UserRole.CAS1_FUTURE_MANAGER)) { _, jwt ->
       val premisesId = UUID.fromString("d687f947-ff80-431e-9c72-75f704730978")
       val qCode = "FOUND"
 
@@ -62,7 +61,6 @@ class CacheClearTest : IntegrationTestBase() {
       .produce()
 
     // Given a Booking for an Offender
-    communityAPIMockSuccessfulOffenderDetailsCall(offenderDetails)
     setupBookingForOffender(offenderDetails)
 
     // Then OffenderDetailsCacheRefreshWorker should pick up the CRN and preemptively load it

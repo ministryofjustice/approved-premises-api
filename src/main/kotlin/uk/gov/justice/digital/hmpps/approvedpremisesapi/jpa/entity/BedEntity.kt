@@ -21,6 +21,8 @@ import java.util.UUID
 interface BedRepository : JpaRepository<BedEntity, UUID> {
   fun findByCode(bedCode: String): BedEntity?
 
+  fun findByCodeAndRoomId(bedCode: String, roomId: UUID): BedEntity?
+
   @Query(nativeQuery = true)
   fun findAllBedsForPremises(premisesId: UUID): List<DomainBedSummary>
 

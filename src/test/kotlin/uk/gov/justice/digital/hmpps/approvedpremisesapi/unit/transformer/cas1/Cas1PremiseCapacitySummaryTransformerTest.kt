@@ -9,7 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1PremisesSummary
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceCharacteristic
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBookingCharacteristic
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ApprovedPremisesEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1PremisesService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.planning.SpacePlanningService.PremiseCapacityForDay
@@ -49,13 +49,13 @@ class Cas1PremiseCapacitySummaryTransformerTest {
           characteristicAvailability = listOf(
             PremiseCharacteristicAvailability(
               characteristicPropertyName = "isSingle",
-              availableBedsCount = 10,
-              bookingsCount = 4,
+              availableBedCount = 10,
+              bookingCount = 4,
             ),
             PremiseCharacteristicAvailability(
-              characteristicPropertyName = "isWheelchairAccessible",
-              availableBedsCount = 20,
-              bookingsCount = 8,
+              characteristicPropertyName = "isWheelchairDesignated",
+              availableBedCount = 20,
+              bookingCount = 8,
             ),
           ),
         ),
@@ -80,6 +80,7 @@ class Cas1PremiseCapacitySummaryTransformerTest {
     assertThat(result.capacity).hasSize(1)
 
     val capacityForDay = result.capacity[0]
+    assertThat(capacityForDay.date).isEqualTo(LocalDate.of(2020, 1, 3))
     assertThat(capacityForDay.totalBedCount).isEqualTo(5)
     assertThat(capacityForDay.availableBedCount).isEqualTo(3)
     assertThat(capacityForDay.bookingCount).isEqualTo(4)
@@ -87,12 +88,12 @@ class Cas1PremiseCapacitySummaryTransformerTest {
     assertThat(capacityForDay.characteristicAvailability).hasSize(2)
 
     val characteristicAvailability1 = capacityForDay.characteristicAvailability[0]
-    assertThat(characteristicAvailability1.characteristic).isEqualTo(Cas1SpaceCharacteristic.isSingle)
+    assertThat(characteristicAvailability1.characteristic).isEqualTo(Cas1SpaceBookingCharacteristic.IS_SINGLE)
     assertThat(characteristicAvailability1.availableBedsCount).isEqualTo(10)
     assertThat(characteristicAvailability1.bookingsCount).isEqualTo(4)
 
     val characteristicAvailability2 = capacityForDay.characteristicAvailability[1]
-    assertThat(characteristicAvailability2.characteristic).isEqualTo(Cas1SpaceCharacteristic.isWheelchairAccessible)
+    assertThat(characteristicAvailability2.characteristic).isEqualTo(Cas1SpaceBookingCharacteristic.IS_WHEELCHAIR_DESIGNATED)
     assertThat(characteristicAvailability2.availableBedsCount).isEqualTo(20)
     assertThat(characteristicAvailability2.bookingsCount).isEqualTo(8)
   }

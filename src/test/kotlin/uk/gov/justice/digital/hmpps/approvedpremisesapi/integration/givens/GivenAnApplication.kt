@@ -8,19 +8,23 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomInt
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringMultiCaseWithNumbers
 import java.time.OffsetDateTime
 
+@Suppress("LongParameterList")
 fun IntegrationTestBase.givenACas1Application(
   createdByUser: UserEntity,
   crn: String = randomStringMultiCaseWithNumbers(8),
   submittedAt: OffsetDateTime? = null,
   eventNumber: String = randomInt(1, 9).toString(),
+  isWomensApplication: Boolean? = null,
   block: (application: ApplicationEntity) -> Unit = {},
-) = givenAnApplication(createdByUser, crn, submittedAt, eventNumber, block)
+) = givenAnApplication(createdByUser, crn, submittedAt, eventNumber, isWomensApplication, block)
 
+@Suppress("LongParameterList")
 fun IntegrationTestBase.givenAnApplication(
   createdByUser: UserEntity,
   crn: String = randomStringMultiCaseWithNumbers(8),
   submittedAt: OffsetDateTime? = null,
   eventNumber: String = randomInt(1, 9).toString(),
+  isWomensApplication: Boolean? = null,
   block: (application: ApplicationEntity) -> Unit = {},
 ): ApprovedPremisesApplicationEntity {
   val applicationSchema = approvedPremisesApplicationJsonSchemaEntityFactory.produceAndPersist {
@@ -33,6 +37,7 @@ fun IntegrationTestBase.givenAnApplication(
     withApplicationSchema(applicationSchema)
     withSubmittedAt(submittedAt)
     withEventNumber(eventNumber)
+    withIsWomensApplication(isWomensApplication)
   }
 
   block(application)

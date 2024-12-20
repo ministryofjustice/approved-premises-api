@@ -46,6 +46,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.roundNanosToMillisT
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
@@ -134,13 +135,15 @@ class Cas1SpaceBookingTransformerTest {
         .withKeyworkerName("Mr Key Worker")
         .withKeyworkerStaffCode("K123")
         .withKeyworkerAssignedAt(LocalDateTime.parse("2007-12-03T10:15:30").toInstant(ZoneOffset.UTC))
-        .withActualArrivalDateTime(Instant.parse("2009-02-05T11:25:10.00Z"))
-        .withActualDepartureDateTime(Instant.parse("2012-12-25T00:00:00.00Z"))
+        .withActualArrivalDate(LocalDate.of(2009, 2, 5))
+        .withActualArrivalTime(LocalTime.of(11, 25, 10, 0))
+        .withActualDepartureDate(LocalDate.of(2012, 12, 25))
+        .withActualDepartureTime(LocalTime.of(23, 0, 0, 0))
         .withCancellationOccurredAt(LocalDate.parse("2039-12-28"))
         .withCancellationRecordedAt(Instant.parse("2023-12-29T11:25:10.00Z"))
         .withCancellationReason(cancellationReason)
         .withCancellationReasonNotes("some extra info on cancellation")
-        .withCriteria(criteria)
+        .withCriteria(criteria.toMutableList())
         .withNonArrivalConfirmedAt(Instant.parse("2024-01-20T10:10:10.00Z"))
         .withNonArrivalReason(nonArrivalReason)
         .withNonArrivalNotes("some information on the non arrival")
@@ -198,7 +201,11 @@ class Cas1SpaceBookingTransformerTest {
       assertThat(result.expectedArrivalDate).isEqualTo(spaceBooking.expectedArrivalDate)
       assertThat(result.expectedDepartureDate).isEqualTo(spaceBooking.expectedDepartureDate)
       assertThat(result.actualArrivalDate).isEqualTo(Instant.parse("2009-02-05T11:25:10.00Z"))
-      assertThat(result.actualDepartureDate).isEqualTo(Instant.parse("2012-12-25T00:00:00.00Z"))
+      assertThat(result.actualArrivalDateOnly).isEqualTo(LocalDate.parse("2009-02-05"))
+      assertThat(result.actualArrivalTime).isEqualTo("11:25")
+      assertThat(result.actualDepartureDate).isEqualTo(Instant.parse("2012-12-25T23:00:00.00Z"))
+      assertThat(result.actualDepartureDateOnly).isEqualTo(LocalDate.parse("2012-12-25"))
+      assertThat(result.actualDepartureTime).isEqualTo("23:00")
       assertThat(result.canonicalArrivalDate).isEqualTo(spaceBooking.expectedArrivalDate)
       assertThat(result.canonicalDepartureDate).isEqualTo(spaceBooking.expectedDepartureDate)
       assertThat(result.createdAt).isEqualTo(spaceBooking.createdAt.toInstant())
@@ -217,8 +224,8 @@ class Cas1SpaceBookingTransformerTest {
       assertThat(result.nonArrival!!.reason!!.id).isEqualTo(spaceBooking.nonArrivalReason!!.id)
       assertThat(result.nonArrival!!.notes).isEqualTo("some information on the non arrival")
 
-      assertThat(result.departure!!.reason!!.id).isEqualTo(departureReason.id)
-      assertThat(result.departure!!.reason!!.name).isEqualTo(departureReason.name)
+      assertThat(result.departure!!.reason.id).isEqualTo(departureReason.id)
+      assertThat(result.departure!!.reason.name).isEqualTo(departureReason.name)
       assertThat(result.departure!!.moveOnCategory!!.id).isEqualTo(moveOnCategory.id)
       assertThat(result.departure!!.moveOnCategory!!.name).isEqualTo(moveOnCategory.name)
       assertThat(result.departure!!.notes).isEqualTo(departureNotes)
@@ -230,6 +237,7 @@ class Cas1SpaceBookingTransformerTest {
       assertThat(result.otherBookingsInPremisesForCrn[0].canonicalArrivalDate).isEqualTo(LocalDate.parse("2025-04-06"))
       assertThat(result.otherBookingsInPremisesForCrn[0].canonicalDepartureDate).isEqualTo(LocalDate.parse("2025-05-07"))
       assertThat(result.requestForPlacementId).isEqualTo(placementRequest.id)
+      assertThat(result.status).isEqualTo(Cas1SpaceBookingSummaryStatus.notArrived)
     }
 
     @Test
@@ -275,11 +283,12 @@ class Cas1SpaceBookingTransformerTest {
         .withKeyworkerName("Mr Key Worker")
         .withKeyworkerStaffCode("K123")
         .withKeyworkerAssignedAt(LocalDateTime.parse("2007-12-03T10:15:30").toInstant(ZoneOffset.UTC))
-        .withActualArrivalDateTime(Instant.parse("2009-02-05T11:25:10.00Z"))
+        .withActualArrivalDate(LocalDate.parse("2009-02-05"))
+        .withActualArrivalTime(LocalTime.parse("11:25:10"))
         .withCancellationOccurredAt(LocalDate.parse("2039-12-28"))
         .withCancellationRecordedAt(Instant.parse("2023-12-29T11:25:10.00Z"))
         .withCancellationReasonNotes("some extra info on cancellation")
-        .withCriteria(criteria)
+        .withCriteria(criteria.toMutableList())
         .produce()
 
       val expectedRequirements = Cas1SpaceBookingRequirements(
@@ -358,8 +367,10 @@ class Cas1SpaceBookingTransformerTest {
         .withKeyworkerName("Mr Key Worker")
         .withKeyworkerStaffCode("K123")
         .withKeyworkerAssignedAt(LocalDateTime.parse("2007-12-03T10:15:30").toInstant(ZoneOffset.UTC))
-        .withActualArrivalDateTime(Instant.parse("2009-02-05T11:25:10.00Z"))
-        .withActualDepartureDateTime(Instant.parse("2012-12-25T00:00:00.00Z"))
+        .withActualArrivalDate(LocalDate.parse("2009-02-05"))
+        .withActualArrivalTime(LocalTime.parse("11:25:10"))
+        .withActualDepartureDate(LocalDate.parse("2012-12-25"))
+        .withActualDepartureTime(LocalTime.parse("00:00:00"))
         .withDeliusEventNumber("97")
         .withDepartureReason(departureReason)
         .produce()
@@ -391,6 +402,7 @@ class Cas1SpaceBookingTransformerTest {
       assertThat(departure.parentReason!!.name).isEqualTo(parentDepartureReason.name)
       assertThat(departure.notes).isNull()
       assertThat(departure.moveOnCategory).isNull()
+      assertThat(result.status).isEqualTo(Cas1SpaceBookingSummaryStatus.departed)
     }
   }
 
@@ -418,8 +430,10 @@ class Cas1SpaceBookingTransformerTest {
           canonicalDepartureDate = LocalDate.parse("2023-01-02"),
           expectedArrivalDate = LocalDate.parse("2023-12-13"),
           expectedDepartureDate = LocalDate.parse("2023-01-02"),
-          actualArrivalDateTime = null,
-          actualDepartureDateTime = null,
+          actualArrivalDate = null,
+          actualArrivalTime = null,
+          actualDepartureDate = null,
+          actualDepartureTime = null,
           nonArrivalConfirmedAtDateTime = null,
           tier = "A",
           keyWorkerStaffCode = "the staff code",
@@ -461,8 +475,10 @@ class Cas1SpaceBookingTransformerTest {
           canonicalDepartureDate = LocalDate.parse("2023-01-02"),
           expectedArrivalDate = LocalDate.parse("2023-12-13"),
           expectedDepartureDate = LocalDate.parse("2023-01-02"),
-          actualArrivalDateTime = null,
-          actualDepartureDateTime = null,
+          actualArrivalDate = null,
+          actualArrivalTime = null,
+          actualDepartureDate = null,
+          actualDepartureTime = null,
           nonArrivalConfirmedAtDateTime = null,
           tier = "A",
           keyWorkerStaffCode = null,
@@ -485,8 +501,10 @@ data class Cas1SpaceBookingSearchResultImpl(
   override val canonicalDepartureDate: LocalDate,
   override val expectedArrivalDate: LocalDate,
   override val expectedDepartureDate: LocalDate,
-  override val actualArrivalDateTime: LocalDateTime?,
-  override val actualDepartureDateTime: LocalDateTime?,
+  override val actualArrivalDate: LocalDate?,
+  override val actualArrivalTime: LocalTime?,
+  override val actualDepartureDate: LocalDate?,
+  override val actualDepartureTime: LocalTime?,
   override val nonArrivalConfirmedAtDateTime: LocalDateTime?,
   override val tier: String?,
   override val keyWorkerStaffCode: String?,

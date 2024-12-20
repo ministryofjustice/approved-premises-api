@@ -2291,8 +2291,9 @@ components:
               type: boolean
             caseManagerUserDetails:
               $ref: '#/components/schemas/Cas1ApplicationUserDetails'
-            genderForAp:
-              $ref: '#/components/schemas/GenderForAp'
+            licenceExpiryDate:
+              type: string
+              format: date
           required:
             - createdByUserId
             - schemaVersion
@@ -2403,6 +2404,9 @@ components:
               format: date-time
             offenceId:
               type: string
+            assessmentId:
+              type: string
+              format: uuid
           required:
             - createdByUserId
             - schemaVersion
@@ -2783,6 +2787,9 @@ components:
     AnyValue:
       description: Any object that conforms to the current JSON schema for an application
       type: object
+    Unit:
+      description: Any object
+      type: object
     ApplicationTimelineNote:
       type: object
       properties:
@@ -2958,6 +2965,9 @@ components:
               type: string
             reasonForShortNoticeOther:
               type: string
+            licenseExpiryDate:
+              type: string
+              format: date
           required:
             - targetLocation
             - releaseType
@@ -3782,14 +3792,12 @@ components:
       enum:
         - assessor
         - matcher
-        - manager
-        - legacy_manager
         - future_manager
         - workflow_manager
         - cru_member
         - cru_member_find_and_book_beta
+        - cru_member_enable_out_of_service_beds
         - applicant
-        - role_admin
         - report_viewer
         - excluded_from_assess_allocation
         - excluded_from_match_allocation
@@ -3826,8 +3834,8 @@ components:
         - cas1_space_booking_record_keyworker
         - cas1_space_booking_view
         - cas1_space_booking_withdraw
-        - cas1_premises_view_capacity
-        - cas1_premises_view_summary
+        - cas1_premises_view
+        - cas1_premises_manage
         - cas1_reports_view
     TemporaryAccommodationUserRole:
       type: string
@@ -4013,144 +4021,6 @@ components:
       required:
         - label
         - questionNumber
-    ArrayOfOASysOffenceDetailsQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Offence analysis"
-            questionNumber: "2.1"
-            answer: "Mr Smith admits he went to Mr Jones's address on 23rd March 2010..."
-          - label: "Victim - perpetrator relationship"
-            questionNumber: "2.4.1"
-            answer: "Mr Smith told me that he did not know the victim, prior to the incident..."
-    ArrayOfOASysRiskContributorsQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Accommodation issues contributing to risks of offending and harm"
-            questionNumber: "3.9"
-            answer: "Mr Smith told me that he was renting a room in a shared house, prior to his current remand..."
-          - label: "Education, training and employability issues contributing to risks of offending and harm"
-            questionNumber: "4.9"
-            answer: "Mr Smith told me that his formal school education was regularly interrupted as he and his family travelled a lot whilst he was growing up..."
-    ArrayOfOASysRiskManagementQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Current situation"
-            questionNumber: "RM28.1"
-            answer: "Currently on remand at HMP Wandsworth - Management of case under MAPPA - level not yet set."
-          - label: "Supervision"
-            questionNumber: "RM30"
-            answer: "Probation Officer, Education training and employment Officer, Prison Offender Supervisor"
-          - label: "Monitoring and control"
-            questionNumber: "RM31"
-            answer: "State they will have secure accommodation for Mr Smith and partner on release, although ..."
-    ArrayOfOASysRiskOfSeriousHarmSummaryQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Who is at risk?"
-            questionNumber: "R10.1"
-            answer: "Males whom Mr Smith believes have wronged him, or strangers with whom he gets...."
-          - label: "What is the nature of the risk?"
-            questionNumber: "R10.2"
-            answer: "Violence, Threats, Physical harm"
-          - label: "When is the risk likely to be greatest?"
-            questionNumber: "R10.3"
-            answer: "Not imminent ? lengthy gap between convictions for violent offences..."
-          - label: "What circumstances are likely to increase the risk?"
-            questionNumber: "R10.4"
-            answer: "As above ? drug use, need to obtain money for drugs at all costs..."
-          - label: "What factors are likely to reduce the risk?"
-            questionNumber: "R10.5"
-            answer: "Mr Smith thinking about consequences of his actions and not acting impulsively..."
-    ArrayOfOASysRisksToTheIndividualQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Current concerns about self-harm or suicide"
-            questionNumber: "R8.1.1"
-            answers: "There have been numerous ACCTs opened since 2013 and every subsequent year he has been in custody..."
-          - label: "Previous concerns about self-harm or suicide"
-            questionNumber: "R8.1.4"
-            answer: "During Mr Smith's psr report, he denied having any history of self-harm, however... "
-          - label: "Current concerns about Coping in Custody or Hostel."
-            questionNumber: "R8.2.1"
-            answer: "Has told prison staff that he swallowed batteries on one occasion due to wanting..."
-          - label: "Previous concerns about Coping in Custody or Hostel."
-            questionNumber: "R8.2.2"
-            answer: "Reported in 2021 that he will keep himself to himself because he gets discomfiture..."
-    ArrayOfOASysRisksToOthersQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Current offence details"
-            questionNumber: "R6.1 FA1"
-            answer: "Mr Smith was released on licence from custody on 12/7/2018.  Between then and 1/8/2018 Mr Smith approached..."
-          - label: "Current where and when"
-            questionNumber: "R6.1 FA2"
-            answer: "Between 12/7/2018 - 31/7/2018, initially victim in the street putting bins out... "
-          - label: "Previous offence details"
-            questionNumber: "R6.2 FA8"
-            answer: "Mr Smith is assessed to have committed a number of offences that are considered to have crossed the Threshold of serious harm..."
-          - label: "Previous where and when"
-            questionNumber: "R6.2 FA9"
-            answer: "Bolton and Bury Districts."
-    ArrayOfOASysSupportingInformationQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysSupportingInformationQuestion'
-        example:
-          - label: "Accommodation issues contributing to risks of offending and harm?"
-            questionNumber: "3.9"
-            sectionNumber: 3
-            linkedToHarm: false
-            linkedToReOffending: true
-            answer: "Mr Smith told me that he was renting a room in a shared house, prior to his current remand. He said that this accomodation..."
-          - label: "Education, training and employability issues contributing to risks of offending and harm"
-            questionNumber: "4.9"
-            sectionNumber: 4
-            linkedToHarm: false
-            linkedToReOffending: true
-            answer: "He said that he has since learnt to read and write during periods of custody and..."
-    ArrayOfOASysRiskToSelfQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Current concerns about self-harm or suicide"
-            questionNumber: "R8.1.1"
-            answer: "There have been numerous ACCTs opened since 2013 and every subsequent year he has been in custody....."
-          - label: "Current concerns about Coping in Custody or Hostel."
-            questionNumber: "R8.2.1"
-            answer: "Has told prison staff that he swallowed batteries on one occasion due to wanting..."
-    ArrayOfOASysRiskManagementPlanQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Key information about current situation"
-            questionNumber: "RM28.1"
-            answer: "Currently on remand - Management of case under MAPPA - level not yet set......"
-          - label: "Further considerations about current situation"
-            questionNumber: "RM28"
-            answer: "Mr Manette is currently on remand awaiting sentence"
     OASysSections:
       type: object
       properties:
@@ -4165,15 +4035,25 @@ components:
           type: string
           format: date-time
         offenceDetails:
-          $ref: '#/components/schemas/ArrayOfOASysOffenceDetailsQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysQuestion'
         roshSummary:
-          $ref: '#/components/schemas/ArrayOfOASysRiskOfSeriousHarmSummaryQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysQuestion'
         supportingInformation:
-          $ref: '#/components/schemas/ArrayOfOASysSupportingInformationQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysSupportingInformationQuestion'
         riskToSelf:
-          $ref: '#/components/schemas/ArrayOfOASysRiskToSelfQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysQuestion'
         riskManagementPlan:
-          $ref: '#/components/schemas/ArrayOfOASysRiskManagementPlanQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysQuestion'
       required:
         - assessmentId
         - assessmentState
@@ -4197,7 +4077,9 @@ components:
           type: string
           format: date-time
         riskToSelf:
-          $ref: '#/components/schemas/ArrayOfOASysRiskToSelfQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysQuestion'
       required:
         - assessmentId
         - assessmentState
@@ -4217,7 +4099,9 @@ components:
           type: string
           format: date-time
         rosh:
-          $ref: '#/components/schemas/ArrayOfOASysRiskOfSeriousHarmSummaryQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysQuestion'
       required:
         - assessmentId
         - assessmentState
@@ -4437,6 +4321,20 @@ components:
       required:
         - seedType
         - fileName
+    SeedFromExcelRequest:
+      type: object
+      properties:
+        seedType:
+          $ref: '#/components/schemas/SeedFromExcelFileType'
+        premisesId:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+      required:
+        - seedType
+        - premisesId
+        - fileName
     SeedFileType:
       type: string
       enum:
@@ -4467,6 +4365,13 @@ components:
         - approved_premises_cru_management_areas
         - approved_premises_space_planning_dry_run
         - approved_premises_import_delius_booking_management_data
+        - approved_premises_update_space_booking
+        - temporary_accommodation_referral_rejection
+    SeedFromExcelFileType:
+      type: string
+      enum:
+        - approved_premises_room
+        - cas1_import_site_survey_premise
     MigrationJobRequest:
       type: object
       properties:
@@ -4490,6 +4395,7 @@ components:
         - update_cas1_backfill_user_ap_area
         - update_cas3_application_offender_name
         - update_cas3_domain_event_type_for_person_departed_updated
+        - update_cas1_applications_licence_expiry_date
     PlacementDates:
       type: object
       properties:
@@ -5297,78 +5203,6 @@ components:
         - teamsManagingCase
         - ukBankHolidays
         - inmateDetails
-    BedOccupancyRange:
-      type: object
-      properties:
-        bedId:
-          type: string
-          format: uuid
-        bedName:
-          type: string
-        schedule:
-          type: array
-          items:
-            $ref: '#/components/schemas/BedOccupancyEntry'
-      required:
-        - bedId
-        - bedName
-        - schedule
-    BedOccupancyEntryType:
-      type: string
-      enum:
-        - booking
-        - lost_bed
-        - open
-    BedOccupancyEntry:
-      type: object
-      properties:
-        type:
-          $ref: '#/components/schemas/BedOccupancyEntryType'
-        length:
-          type: integer
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-      required:
-        - type
-        - length
-        - startDate
-        - endDate
-      discriminator:
-        propertyName: type
-        mapping:
-          booking: '#/components/schemas/BedOccupancyBookingEntry'
-          lost_bed: '#/components/schemas/BedOccupancyLostBedEntry'
-          open: '#/components/schemas/BedOccupancyOpenEntry'
-    BedOccupancyBookingEntry:
-      allOf:
-        - $ref: '#/components/schemas/BedOccupancyEntry'
-        - type: object
-          properties:
-            bookingId:
-              type: string
-              format: uuid
-            personName:
-              type: string
-          required:
-            - bookingId
-            - personName
-    BedOccupancyLostBedEntry:
-      allOf:
-        - $ref: '#/components/schemas/BedOccupancyEntry'
-        - type: object
-          properties:
-            lostBedId:
-              type: string
-              format: uuid
-          required:
-            - lostBedId
-    BedOccupancyOpenEntry:
-      allOf:
-        - $ref: '#/components/schemas/BedOccupancyEntry'
     PersonType:
       type: string
       enum:
@@ -5382,8 +5216,11 @@ components:
           properties:
             name:
               type: string
+            isRestricted:
+              type: boolean
           required:
             - name
+            - isRestricted
     RestrictedPersonSummary:
       allOf:
         - $ref: '#/components/schemas/PersonSummary'
@@ -5597,196 +5434,6 @@ components:
         - submitted-applications
         - application-status-updates
         - unsubmitted-applications
-    Cas1OutOfServiceBed:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        createdAt:
-          type: string
-          format: date-time
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-        bed:
-          $ref: '#/components/schemas/NamedId'
-        room:
-          $ref: '#/components/schemas/NamedId'
-        premises:
-          $ref: '#/components/schemas/NamedId'
-        apArea:
-          $ref: '#/components/schemas/NamedId'
-        reason:
-          $ref: '#/components/schemas/Cas1OutOfServiceBedReason'
-        referenceNumber:
-          type: string
-        notes:
-          type: string
-        daysLostCount:
-          type: integer
-        temporality:
-          $ref: '#/components/schemas/Temporality'
-        status:
-          $ref: '#/components/schemas/Cas1OutOfServiceBedStatus'
-        cancellation:
-          nullable: true
-          allOf:
-            - $ref: '#/components/schemas/Cas1OutOfServiceBedCancellation'
-        revisionHistory:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1OutOfServiceBedRevision'
-      required:
-        - id
-        - createdAt
-        - startDate
-        - endDate
-        - bed
-        - room
-        - premises
-        - apArea
-        - reason
-        - daysLostCount
-        - temporality
-        - status
-        - revisionHistory
-    NewCas1OutOfServiceBed:
-      type: object
-      properties:
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-        reason:
-          type: string
-          format: uuid
-        referenceNumber:
-          type: string
-        notes:
-          type: string
-        bedId:
-          type: string
-          format: uuid
-      required:
-        - startDate
-        - endDate
-        - reason
-        - bedId
-    UpdateCas1OutOfServiceBed:
-      type: object
-      properties:
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-        reason:
-          type: string
-          format: uuid
-        referenceNumber:
-          type: string
-        notes:
-          type: string
-      required:
-        - startDate
-        - endDate
-        - reason
-    Cas1OutOfServiceBedCancellation:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        createdAt:
-          type: string
-          format: date-time
-        notes:
-          type: string
-      required:
-        - id
-        - createdAt
-    NewCas1OutOfServiceBedCancellation:
-      type: object
-      properties:
-        notes:
-          type: string
-    Cas1OutOfServiceBedStatus:
-      type: string
-      enum:
-        - active
-        - cancelled
-    Cas1OutOfServiceBedReason:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-          example: Double Room with Single Occupancy - Other (Non-FM)
-        isActive:
-          type: boolean
-      required:
-        - id
-        - name
-        - isActive
-    Cas1OutOfServiceBedSortField:
-      type: string
-      enum:
-        - premisesName
-        - roomName
-        - bedName
-        - startDate
-        - endDate
-        - reason
-        - daysLost
-    Cas1OutOfServiceBedRevision:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        updatedAt:
-          type: string
-          format: date-time
-        updatedBy:
-          $ref: '#/components/schemas/User'
-        revisionType:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1OutOfServiceBedRevisionType'
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-        reason:
-          $ref: '#/components/schemas/Cas1OutOfServiceBedReason'
-        referenceNumber:
-          type: string
-        notes:
-          type: string
-      required:
-        - id
-        - updatedAt
-        - revisionType
-    Cas1OutOfServiceBedRevisionType:
-      type: string
-      enum:
-        - created
-        - updatedStartDate
-        - updatedEndDate
-        - updatedReferenceNumber
-        - updatedReason
-        - updatedNotes
     NamedId:
       type: object
       description: A generic stub for an object with a name and an ID.
@@ -5805,17 +5452,16 @@ components:
         - past
         - current
         - future
-    GenderForAp:
-      type: string
-      enum:
-        - male
-        - female
     BedSearchAttributes:
       type: string
       enum:
-        - sharedProperty
-        - singleOccupancy
-        - wheelchairAccessible
+        - isSharedProperty
+        - isSingleOccupancy
+        - isWheelchairAccessible
+      x-enum-varnames:
+        - SHARED_PROPERTY
+        - SINGLE_OCCUPANCY
+        - WHEELCHAIR_ACCESSIBLE
 
 # GARETH above here
 

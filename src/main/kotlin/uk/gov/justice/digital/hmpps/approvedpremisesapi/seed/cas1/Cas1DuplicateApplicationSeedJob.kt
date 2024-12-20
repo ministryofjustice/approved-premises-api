@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1
 
 import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonInfoResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.asApiType
@@ -8,6 +9,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ForbiddenProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.NotFoundProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationTimelineNoteService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.OffenderService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromValidatableActionResult
 import java.util.UUID
@@ -29,11 +31,12 @@ import java.util.UUID
  * Using this seed job against a given application should always be tested in pre-prod to ensure that all the pages
  * of the application can be traversed, and the application can be submitted.
  */
+@Component
 class Cas1DuplicateApplicationSeedJob(
   private val applicationService: ApplicationService,
   private val offenderService: OffenderService,
+  private val applicationTimelineNoteService: ApplicationTimelineNoteService,
 ) : SeedJob<Cas1DuplicateApplicationSeedCsvRow>(
-  id = UUID.randomUUID(),
   requiredHeaders = setOf(
     "application_id",
   ),
@@ -103,7 +106,7 @@ class Cas1DuplicateApplicationSeedJob(
       createdByUser,
     )
 
-    applicationService.addNoteToApplication(
+    applicationTimelineNoteService.saveApplicationTimelineNote(
       applicationId = newApplicationEntity.id,
       note = "Application automatically created by Application Support by duplicating existing application ${sourceApplication.id}",
       user = null,

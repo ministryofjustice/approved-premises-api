@@ -18,8 +18,10 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewDeparture
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewExtension
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ContextStaffMemberFactory
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenABooking
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenACas1CruManagementArea
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAProbationRegion
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenASubmittedApplication
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAUser
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnApArea
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnOffender
@@ -82,8 +84,8 @@ class BookingTest : IntegrationTestBase() {
     }
 
     @ParameterizedTest
-    @EnumSource(value = UserRole::class, names = ["CAS1_LEGACY_MANAGER", "CAS1_MANAGER", "CAS1_MATCHER"])
-    fun `Get a booking returns OK with the correct body when user has one of roles MANAGER, MATCHER`(
+    @EnumSource(value = UserRole::class, names = ["CAS1_FUTURE_MANAGER", "CAS1_MATCHER"])
+    fun `Get a booking returns OK with the correct body when user has one of roles FUTURE_MANAGER, MATCHER`(
       role: UserRole,
     ) {
       givenAUser(roles = listOf(role)) { _, jwt ->
@@ -133,7 +135,7 @@ class BookingTest : IntegrationTestBase() {
 
     @Test
     fun `Get a booking belonging to another premises returns not found`() {
-      givenAUser(roles = listOf(UserRole.CAS1_MANAGER)) { _, jwt ->
+      givenAUser(roles = listOf(UserRole.CAS1_FUTURE_MANAGER)) { _, jwt ->
         givenAnOffender(
           offenderDetailsConfigBlock = {
             withNomsNumber(null)
@@ -166,8 +168,8 @@ class BookingTest : IntegrationTestBase() {
     }
 
     @ParameterizedTest
-    @EnumSource(value = UserRole::class, names = ["CAS1_LEGACY_MANAGER", "CAS1_MANAGER", "CAS1_MATCHER"])
-    fun `Get a booking for an Approved Premises returns OK with the correct body when user has one of roles LEGACY_MANAGER, MANAGER, MATCHER`(
+    @EnumSource(value = UserRole::class, names = ["CAS1_FUTURE_MANAGER", "CAS1_MATCHER"])
+    fun `Get a booking for an Approved Premises returns OK with the correct body when user has one of roles FUTURE_MANAGER, MATCHER`(
       role: UserRole,
     ) {
       givenAUser(roles = listOf(role)) { userEntity, jwt ->
@@ -236,7 +238,7 @@ class BookingTest : IntegrationTestBase() {
 
     @Test
     fun `Get a booking for an Approved Premises returns OK with the correct body when the NOMS number is null`() {
-      givenAUser(roles = listOf(UserRole.CAS1_MANAGER)) { _, jwt ->
+      givenAUser(roles = listOf(UserRole.CAS1_FUTURE_MANAGER)) { _, jwt ->
         givenAnOffender(
           offenderDetailsConfigBlock = {
             withNomsNumber(null)
@@ -378,8 +380,8 @@ class BookingTest : IntegrationTestBase() {
   }
 
   @ParameterizedTest
-  @EnumSource(value = UserRole::class, names = ["CAS1_MANAGER", "CAS1_MATCHER"])
-  fun `Get all Bookings on Premises without any Bookings returns empty list when user has one of roles MANAGER, MATCHER`(
+  @EnumSource(value = UserRole::class, names = ["CAS1_FUTURE_MANAGER", "CAS1_MATCHER"])
+  fun `Get all Bookings on Premises without any Bookings returns empty list when user has one of roles FUTURE_MANAGER, MATCHER`(
     role: UserRole,
   ) {
     givenAUser(roles = listOf(role)) { _, jwt ->
@@ -400,8 +402,8 @@ class BookingTest : IntegrationTestBase() {
   }
 
   @ParameterizedTest
-  @EnumSource(value = UserRole::class, names = ["CAS1_MANAGER", "CAS1_MATCHER"])
-  fun `Get all Bookings returns OK with correct body when user has one of roles MANAGER, MATCHER`(role: UserRole) {
+  @EnumSource(value = UserRole::class, names = ["CAS1_FUTURE_MANAGER", "CAS1_MATCHER"])
+  fun `Get all Bookings returns OK with correct body when user has one of roles FUTURE_MANAGER, MATCHER`(role: UserRole) {
     givenAUser(roles = listOf(role)) { _, jwt ->
       givenAnOffender { offenderDetails, inmateDetails ->
         val premises = approvedPremisesEntityFactory.produceAndPersist {
@@ -616,162 +618,6 @@ class BookingTest : IntegrationTestBase() {
       .exchange()
       .expectStatus()
       .isUnauthorized
-  }
-
-  @Nested
-  inner class CreateCas1AdhocBooking {
-
-    @Test
-    fun `Create Approved Premises Booking returns OK with correct body emits domain event and sends emails`() {
-      givenAUser(roles = listOf(UserRole.CAS1_MATCHER)) { _, jwt ->
-        givenAUser { applicant, _ ->
-          givenAnOffender { offenderDetails, _ ->
-            val premises = approvedPremisesEntityFactory.produceAndPersist {
-              withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-              withYieldedProbationRegion {
-                probationRegion
-              }
-            }
-
-            val linkedApplication = approvedPremisesApplicationEntityFactory.produceAndPersist {
-              withCrn(offenderDetails.otherIds.crn)
-              withCreatedByUser(applicant)
-              withApplicationSchema(approvedPremisesApplicationJsonSchemaEntityFactory.produceAndPersist())
-              withSubmittedAt(OffsetDateTime.now())
-            }
-
-            val room = roomEntityFactory.produceAndPersist {
-              withPremises(premises)
-            }
-
-            val bed = bedEntityFactory.produceAndPersist {
-              withRoom(room)
-            }
-
-            webTestClient.post()
-              .uri("/premises/${premises.id}/bookings")
-              .header("Authorization", "Bearer $jwt")
-              .bodyValue(
-                NewBooking(
-                  crn = offenderDetails.otherIds.crn,
-                  arrivalDate = LocalDate.parse("2022-08-12"),
-                  departureDate = LocalDate.parse("2022-08-30"),
-                  serviceName = ServiceName.approvedPremises,
-                  bedId = bed.id,
-                  eventNumber = "eventNumber",
-                ),
-              )
-              .exchange()
-              .expectStatus()
-              .isOk
-              .expectBody()
-              .jsonPath("$.person.crn").isEqualTo(offenderDetails.otherIds.crn)
-              .jsonPath("$.person.name").isEqualTo("${offenderDetails.firstName} ${offenderDetails.surname}")
-              .jsonPath("$.arrivalDate").isEqualTo("2022-08-12")
-              .jsonPath("$.departureDate").isEqualTo("2022-08-30")
-              .jsonPath("$.originalArrivalDate").isEqualTo("2022-08-12")
-              .jsonPath("$.originalDepartureDate").isEqualTo("2022-08-30")
-              .jsonPath("$.keyWorker").isEqualTo(null)
-              .jsonPath("$.status").isEqualTo("awaiting-arrival")
-              .jsonPath("$.arrival").isEqualTo(null)
-              .jsonPath("$.departure").isEqualTo(null)
-              .jsonPath("$.nonArrival").isEqualTo(null)
-              .jsonPath("$.cancellation").isEqualTo(null)
-              .jsonPath("$.serviceName").isEqualTo(ServiceName.approvedPremises.value)
-              .jsonPath("$.createdAt").value(withinSeconds(5L), OffsetDateTime::class.java)
-              .jsonPath("$.bed.id").isEqualTo(bed.id.toString())
-              .jsonPath("$.bed.name").isEqualTo(bed.name)
-
-            val emittedMessage = snsDomainEventListener.blockForMessage(DomainEventType.APPROVED_PREMISES_BOOKING_MADE)
-
-            assertThat(emittedMessage.description).isEqualTo("An Approved Premises booking has been made")
-            assertThat(emittedMessage.detailUrl).matches("http://api/events/booking-made/[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}")
-            assertThat(emittedMessage.additionalInformation.applicationId).isEqualTo(linkedApplication.id)
-            assertThat(emittedMessage.personReference.identifiers).containsExactlyInAnyOrder(
-              SnsEventPersonReference("CRN", offenderDetails.otherIds.crn),
-              SnsEventPersonReference("NOMS", offenderDetails.otherIds.nomsNumber!!),
-            )
-
-            emailAsserter.assertEmailsRequestedCount(2)
-            emailAsserter.assertEmailRequested(
-              applicant.email!!,
-              notifyConfig.templates.bookingMade,
-            )
-            emailAsserter.assertEmailRequested(
-              premises.emailAddress!!,
-              notifyConfig.templates.bookingMadePremises,
-            )
-          }
-        }
-      }
-    }
-
-    @Test
-    fun `Create Approved Premises Booking returns OK with correct body when NOMS number is null`() {
-      givenAUser(roles = listOf(UserRole.CAS1_MATCHER)) { userEntity, jwt ->
-        givenAnOffender(
-          offenderDetailsConfigBlock = {
-            withNomsNumber(null)
-          },
-        ) { offenderDetails, _ ->
-          val premises = approvedPremisesEntityFactory.produceAndPersist {
-            withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-            withYieldedProbationRegion {
-              probationRegion
-            }
-          }
-
-          val linkedApplication = approvedPremisesApplicationEntityFactory.produceAndPersist {
-            withCrn(offenderDetails.otherIds.crn)
-            withCreatedByUser(userEntity)
-            withApplicationSchema(approvedPremisesApplicationJsonSchemaEntityFactory.produceAndPersist())
-            withSubmittedAt(OffsetDateTime.now())
-          }
-
-          val room = roomEntityFactory.produceAndPersist {
-            withPremises(premises)
-          }
-
-          val bed = bedEntityFactory.produceAndPersist {
-            withRoom(room)
-          }
-
-          webTestClient.post()
-            .uri("/premises/${premises.id}/bookings")
-            .header("Authorization", "Bearer $jwt")
-            .bodyValue(
-              NewBooking(
-                crn = offenderDetails.otherIds.crn,
-                arrivalDate = LocalDate.parse("2022-08-12"),
-                departureDate = LocalDate.parse("2022-08-30"),
-                serviceName = ServiceName.approvedPremises,
-                bedId = bed.id,
-                eventNumber = "eventNumber",
-              ),
-            )
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBody()
-            .jsonPath("$.person.crn").isEqualTo(offenderDetails.otherIds.crn)
-            .jsonPath("$.person.name").isEqualTo("${offenderDetails.firstName} ${offenderDetails.surname}")
-            .jsonPath("$.arrivalDate").isEqualTo("2022-08-12")
-            .jsonPath("$.departureDate").isEqualTo("2022-08-30")
-            .jsonPath("$.originalArrivalDate").isEqualTo("2022-08-12")
-            .jsonPath("$.originalDepartureDate").isEqualTo("2022-08-30")
-            .jsonPath("$.keyWorker").isEqualTo(null)
-            .jsonPath("$.status").isEqualTo("awaiting-arrival")
-            .jsonPath("$.arrival").isEqualTo(null)
-            .jsonPath("$.departure").isEqualTo(null)
-            .jsonPath("$.nonArrival").isEqualTo(null)
-            .jsonPath("$.cancellation").isEqualTo(null)
-            .jsonPath("$.serviceName").isEqualTo(ServiceName.approvedPremises.value)
-            .jsonPath("$.createdAt").value(withinSeconds(5L), OffsetDateTime::class.java)
-            .jsonPath("$.bed.id").isEqualTo(bed.id.toString())
-            .jsonPath("$.bed.name").isEqualTo(bed.name)
-        }
-      }
-    }
   }
 
   @Test
@@ -2550,7 +2396,7 @@ class BookingTest : IntegrationTestBase() {
     @ParameterizedTest
     @EnumSource(
       value = UserRole::class,
-      names = ["CAS1_WORKFLOW_MANAGER", "CAS1_CRU_MEMBER", "CAS1_JANITOR"],
+      names = ["CAS1_WORKFLOW_MANAGER", "CAS1_CRU_MEMBER", "CAS1_CRU_MEMBER_FIND_AND_BOOK_BETA", "CAS1_JANITOR"],
       mode = EnumSource.Mode.EXCLUDE,
     )
     fun `Create Cancellation with invalid role returns 401`(role: UserRole) {
@@ -3010,549 +2856,353 @@ class BookingTest : IntegrationTestBase() {
     }
   }
 
-  @Test
-  fun `Create Extension without JWT returns 401`() {
-    webTestClient.post()
-      .uri("/premises/e0f03aa2-1468-441c-aa98-0b98d86b67f9/bookings/1617e729-13f3-4158-bd88-c59affdb8a45/extensions")
-      .bodyValue(
-        NewExtension(
-          newDepartureDate = LocalDate.parse("2022-08-20"),
-          notes = null,
-        ),
-      )
-      .exchange()
-      .expectStatus()
-      .isUnauthorized
-  }
+  @Nested
+  inner class CreateExtensionCAS3Only {
 
-  @Test
-  fun `Create Temporary Accommodation Extension returns 409 Conflict when another booking for the same bed overlaps with the new departure date`() {
-    givenAUser(roles = listOf(UserRole.CAS3_ASSESSOR)) { userEntity, jwt ->
-      givenAnOffender { offenderDetails, inmateDetails ->
-        val premises = temporaryAccommodationPremisesEntityFactory.produceAndPersist {
-          withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-          withYieldedProbationRegion {
-            probationRegion
-          }
-        }
-
-        val bed = bedEntityFactory.produceAndPersist {
-          withName("test-bed")
-          withYieldedRoom {
-            roomEntityFactory.produceAndPersist {
-              withName("test-room")
-              withYieldedPremises { premises }
-            }
-          }
-        }
-
-        val conflictingBooking = bookingEntityFactory.produceAndPersist {
-          withServiceName(ServiceName.temporaryAccommodation)
-          withCrn("CRN123")
-          withYieldedPremises { premises }
-          withYieldedBed { bed }
-          withArrivalDate(LocalDate.parse("2022-07-15"))
-          withDepartureDate(LocalDate.parse("2022-08-15"))
-        }
-
-        val booking = bookingEntityFactory.produceAndPersist {
-          withServiceName(ServiceName.temporaryAccommodation)
-          withCrn(offenderDetails.otherIds.crn)
-          withYieldedPremises { premises }
-          withYieldedBed { bed }
-          withArrivalDate(LocalDate.parse("2022-06-14"))
-          withDepartureDate(LocalDate.parse("2022-07-14"))
-        }
-
-        govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
-
-        webTestClient.post()
-          .uri("/premises/${premises.id}/bookings/${booking.id}/extensions")
-          .header("Authorization", "Bearer $jwt")
-          .bodyValue(
-            NewExtension(
-              newDepartureDate = LocalDate.parse("2022-07-16"),
-              notes = null,
-            ),
-          )
-          .exchange()
-          .expectStatus()
-          .is4xxClientError
-          .expectBody()
-          .jsonPath("title").isEqualTo("Conflict")
-          .jsonPath("status").isEqualTo(409)
-          .jsonPath("detail")
-          .isEqualTo("A Booking already exists for dates from 2022-07-15 to 2022-08-15 which overlaps with the desired dates: ${conflictingBooking.id}")
-      }
-    }
-  }
-
-  @Test
-  fun `Create Temporary Accommodation Extension returns 409 Conflict when another booking for the same bed overlaps with the updated booking's turnaround time`() {
-    givenAUser(roles = listOf(UserRole.CAS3_ASSESSOR)) { userEntity, jwt ->
-      givenAnOffender { offenderDetails, inmateDetails ->
-        val premises = temporaryAccommodationPremisesEntityFactory.produceAndPersist {
-          withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-          withYieldedProbationRegion {
-            probationRegion
-          }
-        }
-
-        val bed = bedEntityFactory.produceAndPersist {
-          withName("test-bed")
-          withYieldedRoom {
-            roomEntityFactory.produceAndPersist {
-              withName("test-room")
-              withYieldedPremises { premises }
-            }
-          }
-        }
-
-        val conflictingBooking = bookingEntityFactory.produceAndPersist {
-          withServiceName(ServiceName.temporaryAccommodation)
-          withCrn("CRN123")
-          withYieldedPremises { premises }
-          withYieldedBed { bed }
-          withArrivalDate(LocalDate.parse("2022-07-15"))
-          withDepartureDate(LocalDate.parse("2022-08-15"))
-        }
-
-        val booking = bookingEntityFactory.produceAndPersist {
-          withServiceName(ServiceName.temporaryAccommodation)
-          withCrn(offenderDetails.otherIds.crn)
-          withYieldedPremises { premises }
-          withYieldedBed { bed }
-          withArrivalDate(LocalDate.parse("2022-06-12"))
-          withDepartureDate(LocalDate.parse("2022-07-12"))
-        }
-
-        val turnarounds = turnaroundFactory.produceAndPersistMultiple(1) {
-          withWorkingDayCount(2)
-          withCreatedAt(booking.createdAt)
-          withBooking(booking)
-        }
-
-        booking.turnarounds += turnarounds
-
-        govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
-
-        webTestClient.post()
-          .uri("/premises/${premises.id}/bookings/${booking.id}/extensions")
-          .header("Authorization", "Bearer $jwt")
-          .bodyValue(
-            NewExtension(
-              newDepartureDate = LocalDate.parse("2022-07-13"),
-              notes = null,
-            ),
-          )
-          .exchange()
-          .expectStatus()
-          .is4xxClientError
-          .expectBody()
-          .jsonPath("title").isEqualTo("Conflict")
-          .jsonPath("status").isEqualTo(409)
-          .jsonPath("detail")
-          .isEqualTo("A Booking already exists for dates from 2022-07-15 to 2022-08-15 which overlaps with the desired dates: ${conflictingBooking.id}")
-      }
-    }
-  }
-
-  @Test
-  fun `Create Temporary Accommodation Extension returns 409 Conflict when a lost bed for the same bed overlaps with the new departure date`() {
-    givenAUser(roles = listOf(UserRole.CAS3_ASSESSOR)) { userEntity, jwt ->
-      givenAnOffender { offenderDetails, inmateDetails ->
-        val premises = temporaryAccommodationPremisesEntityFactory.produceAndPersist {
-          withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-          withYieldedProbationRegion {
-            probationRegion
-          }
-        }
-
-        val bed = bedEntityFactory.produceAndPersist {
-          withName("test-bed")
-          withYieldedRoom {
-            roomEntityFactory.produceAndPersist {
-              withName("test-room")
-              withYieldedPremises { premises }
-            }
-          }
-        }
-
-        val conflictingLostBed = lostBedsEntityFactory.produceAndPersist {
-          withBed(bed)
-          withPremises(premises)
-          withStartDate(LocalDate.parse("2022-07-15"))
-          withEndDate(LocalDate.parse("2022-08-15"))
-          withYieldedReason { lostBedReasonEntityFactory.produceAndPersist() }
-        }
-
-        val booking = bookingEntityFactory.produceAndPersist {
-          withServiceName(ServiceName.temporaryAccommodation)
-          withCrn(offenderDetails.otherIds.crn)
-          withYieldedPremises { premises }
-          withYieldedBed { bed }
-          withArrivalDate(LocalDate.parse("2022-06-14"))
-          withDepartureDate(LocalDate.parse("2022-07-14"))
-        }
-
-        govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
-
-        webTestClient.post()
-          .uri("/premises/${premises.id}/bookings/${booking.id}/extensions")
-          .header("Authorization", "Bearer $jwt")
-          .bodyValue(
-            NewExtension(
-              newDepartureDate = LocalDate.parse("2022-07-16"),
-              notes = null,
-            ),
-          )
-          .exchange()
-          .expectStatus()
-          .is4xxClientError
-          .expectBody()
-          .jsonPath("title").isEqualTo("Conflict")
-          .jsonPath("status").isEqualTo(409)
-          .jsonPath("detail")
-          .isEqualTo("A Lost Bed already exists for dates from 2022-07-15 to 2022-08-15 which overlaps with the desired dates: ${conflictingLostBed.id}")
-      }
-    }
-  }
-
-  @Test
-  fun `Create Temporary Accommodation Extension returns 409 Conflict when a lost bed for the same bed overlaps with the updated booking's turnaround time`() {
-    givenAUser(roles = listOf(UserRole.CAS3_ASSESSOR)) { userEntity, jwt ->
-      givenAnOffender { offenderDetails, inmateDetails ->
-        val premises = temporaryAccommodationPremisesEntityFactory.produceAndPersist {
-          withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-          withYieldedProbationRegion {
-            probationRegion
-          }
-        }
-
-        val bed = bedEntityFactory.produceAndPersist {
-          withName("test-bed")
-          withYieldedRoom {
-            roomEntityFactory.produceAndPersist {
-              withName("test-room")
-              withYieldedPremises { premises }
-            }
-          }
-        }
-
-        val conflictingLostBed = lostBedsEntityFactory.produceAndPersist {
-          withBed(bed)
-          withPremises(premises)
-          withStartDate(LocalDate.parse("2022-07-15"))
-          withEndDate(LocalDate.parse("2022-08-15"))
-          withYieldedReason { lostBedReasonEntityFactory.produceAndPersist() }
-        }
-
-        val booking = bookingEntityFactory.produceAndPersist {
-          withServiceName(ServiceName.temporaryAccommodation)
-          withCrn(offenderDetails.otherIds.crn)
-          withYieldedPremises { premises }
-          withYieldedBed { bed }
-          withArrivalDate(LocalDate.parse("2022-06-12"))
-          withDepartureDate(LocalDate.parse("2022-07-12"))
-        }
-
-        val turnarounds = turnaroundFactory.produceAndPersistMultiple(1) {
-          withWorkingDayCount(2)
-          withCreatedAt(booking.createdAt)
-          withBooking(booking)
-        }
-
-        booking.turnarounds += turnarounds
-
-        govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
-
-        webTestClient.post()
-          .uri("/premises/${premises.id}/bookings/${booking.id}/extensions")
-          .header("Authorization", "Bearer $jwt")
-          .bodyValue(
-            NewExtension(
-              newDepartureDate = LocalDate.parse("2022-07-13"),
-              notes = null,
-            ),
-          )
-          .exchange()
-          .expectStatus()
-          .is4xxClientError
-          .expectBody()
-          .jsonPath("title").isEqualTo("Conflict")
-          .jsonPath("status").isEqualTo(409)
-          .jsonPath("detail")
-          .isEqualTo("A Lost Bed already exists for dates from 2022-07-15 to 2022-08-15 which overlaps with the desired dates: ${conflictingLostBed.id}")
-      }
-    }
-  }
-
-  @ParameterizedTest
-  @EnumSource(value = UserRole::class, names = ["CAS1_MANAGER", "CAS1_MATCHER"])
-  fun `Create Extension on Approved Premises Booking returns OK with expected body, updates departureDate on Booking entity when user has one of roles MANAGER, MATCHER`(
-    role: UserRole,
-  ) {
-    givenAUser(roles = listOf(role)) { userEntity, jwt ->
-      val keyWorker = ContextStaffMemberFactory().produce()
-      apDeliusContextMockSuccessfulStaffMembersCall(keyWorker, "QCODE")
-
-      val premises = approvedPremisesEntityFactory.produceAndPersist {
-        withQCode("QCODE")
-        withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-        withYieldedProbationRegion {
-          probationRegion
-        }
-      }
-
-      val room = roomEntityFactory.produceAndPersist {
-        withPremises(premises)
-      }
-
-      val bed = bedEntityFactory.produceAndPersist {
-        withRoom(room)
-      }
-
-      val booking = bookingEntityFactory.produceAndPersist {
-        withArrivalDate(LocalDate.parse("2022-08-18"))
-        withDepartureDate(LocalDate.parse("2022-08-20"))
-        withStaffKeyWorkerCode(keyWorker.code)
-        withPremises(premises)
-        withBed(bed)
-      }
-
-      creatingNewExtensionReturnsCorrectly(booking, jwt, "2022-08-22")
-    }
-  }
-
-  @Test
-  fun `Create Extension on Approved Premises Booking returns OK when a booking has no bed`() {
-    givenAUser(roles = listOf(UserRole.CAS1_MANAGER)) { userEntity, jwt ->
-      val keyWorker = ContextStaffMemberFactory().produce()
-      apDeliusContextMockSuccessfulStaffMembersCall(keyWorker, "QCODE")
-
-      val premises = approvedPremisesEntityFactory.produceAndPersist {
-        withQCode("QCODE")
-        withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-        withYieldedProbationRegion {
-          probationRegion
-        }
-      }
-
-      val booking = bookingEntityFactory.produceAndPersist {
-        withArrivalDate(LocalDate.parse("2022-08-18"))
-        withDepartureDate(LocalDate.parse("2022-08-20"))
-        withStaffKeyWorkerCode(keyWorker.code)
-        withPremises(premises)
-      }
-
-      creatingNewExtensionReturnsCorrectly(booking, jwt, "2022-08-22")
-    }
-  }
-
-  @Test
-  fun `Create Approved Premises Extension returns OK when another booking for the same bed overlaps with the new departure date`() {
-    givenAUser(roles = listOf(UserRole.CAS1_MANAGER)) { _, jwt ->
-      val keyWorker = ContextStaffMemberFactory().produce()
-      apDeliusContextMockSuccessfulStaffMembersCall(keyWorker, "QCODE")
-
-      val premises = approvedPremisesEntityFactory.produceAndPersist {
-        withQCode("QCODE")
-        withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-        withYieldedProbationRegion {
-          probationRegion
-        }
-      }
-
-      val room = roomEntityFactory.produceAndPersist {
-        withPremises(premises)
-      }
-
-      val bed = bedEntityFactory.produceAndPersist {
-        withRoom(room)
-      }
-
-      val booking = bookingEntityFactory.produceAndPersist {
-        withArrivalDate(LocalDate.parse("2022-08-18"))
-        withDepartureDate(LocalDate.parse("2022-08-20"))
-        withStaffKeyWorkerCode(keyWorker.code)
-        withPremises(premises)
-        withBed(bed)
-      }
-
-      val conflictingBooking = bookingEntityFactory.produceAndPersist {
-        withServiceName(ServiceName.temporaryAccommodation)
-        withCrn("CRN123")
-        withYieldedPremises { premises }
-        withYieldedBed { bed }
-        withArrivalDate(LocalDate.parse("2022-07-15"))
-        withDepartureDate(LocalDate.parse("2022-08-15"))
-      }
-
-      creatingNewExtensionReturnsCorrectly(booking, jwt, "2022-09-20")
-    }
-  }
-
-  @Test
-  fun `Create Approved Premises Extension returns OK when another booking for the same bed overlaps with the updated booking's turnaround time`() {
-    givenAUser(roles = listOf(UserRole.CAS1_MANAGER)) { _, jwt ->
-      val keyWorker = ContextStaffMemberFactory().produce()
-      apDeliusContextMockSuccessfulStaffMembersCall(keyWorker, "QCODE")
-
-      val premises = approvedPremisesEntityFactory.produceAndPersist {
-        withQCode("QCODE")
-        withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-        withYieldedProbationRegion {
-          probationRegion
-        }
-      }
-
-      val bed = bedEntityFactory.produceAndPersist {
-        withName("test-bed")
-        withYieldedRoom {
-          roomEntityFactory.produceAndPersist {
-            withName("test-room")
-            withYieldedPremises { premises }
-          }
-        }
-      }
-
-      val conflictingBooking = bookingEntityFactory.produceAndPersist {
-        withServiceName(ServiceName.temporaryAccommodation)
-        withCrn("CRN123")
-        withYieldedPremises { premises }
-        withYieldedBed { bed }
-        withArrivalDate(LocalDate.parse("2022-08-21"))
-        withDepartureDate(LocalDate.parse("2022-08-29"))
-      }
-
-      val booking = bookingEntityFactory.produceAndPersist {
-        withArrivalDate(LocalDate.parse("2022-08-18"))
-        withDepartureDate(LocalDate.parse("2022-08-20"))
-        withStaffKeyWorkerCode(keyWorker.code)
-        withPremises(premises)
-        withBed(bed)
-      }
-
-      creatingNewExtensionReturnsCorrectly(booking, jwt, "2022-08-23")
-    }
-  }
-
-  @Test
-  fun `Create Approved Premises Extension returns OK when a lost bed for the same bed overlaps with the new departure date`() {
-    givenAUser(roles = listOf(UserRole.CAS1_MANAGER)) { _, jwt ->
-      val keyWorker = ContextStaffMemberFactory().produce()
-      apDeliusContextMockSuccessfulStaffMembersCall(keyWorker, "QCODE")
-
-      val premises = approvedPremisesEntityFactory.produceAndPersist {
-        withQCode("QCODE")
-        withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-        withYieldedProbationRegion {
-          probationRegion
-        }
-      }
-
-      val bed = bedEntityFactory.produceAndPersist {
-        withName("test-bed")
-        withYieldedRoom {
-          roomEntityFactory.produceAndPersist {
-            withName("test-room")
-            withYieldedPremises { premises }
-          }
-        }
-      }
-
-      val conflictingLostBed = lostBedsEntityFactory.produceAndPersist {
-        withBed(bed)
-        withPremises(premises)
-        withStartDate(LocalDate.parse("2022-07-15"))
-        withEndDate(LocalDate.parse("2022-08-22"))
-        withYieldedReason { lostBedReasonEntityFactory.produceAndPersist() }
-      }
-
-      val booking = bookingEntityFactory.produceAndPersist {
-        withArrivalDate(LocalDate.parse("2022-08-18"))
-        withDepartureDate(LocalDate.parse("2022-08-20"))
-        withStaffKeyWorkerCode(keyWorker.code)
-        withPremises(premises)
-        withBed(bed)
-      }
-
-      creatingNewExtensionReturnsCorrectly(booking, jwt, "2022-08-29")
-    }
-  }
-
-  @Test
-  fun `Create Extension on Temporary Accommodation Booking for a premises that's not in the user's region returns 403 Forbidden`() {
-    givenAUser { userEntity, jwt ->
-      val booking = bookingEntityFactory.produceAndPersist {
-        withDepartureDate(LocalDate.parse("2022-08-20"))
-        withYieldedPremises {
-          temporaryAccommodationPremisesEntityFactory.produceAndPersist {
-            withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-            withYieldedProbationRegion { probationRegion }
-          }
-        }
-      }
-
+    @Test
+    fun `Create Extension without JWT returns 401`() {
       webTestClient.post()
-        .uri("/premises/${booking.premises.id}/bookings/${booking.id}/extensions")
-        .header("Authorization", "Bearer $jwt")
-        .header("X-Service-Name", ServiceName.temporaryAccommodation.value)
+        .uri("/premises/e0f03aa2-1468-441c-aa98-0b98d86b67f9/bookings/1617e729-13f3-4158-bd88-c59affdb8a45/extensions")
         .bodyValue(
           NewExtension(
-            newDepartureDate = LocalDate.parse("2022-08-22"),
-            notes = "notes",
+            newDepartureDate = LocalDate.parse("2022-08-20"),
+            notes = null,
           ),
         )
         .exchange()
         .expectStatus()
-        .isForbidden
+        .isUnauthorized
+    }
+
+    @Test
+    fun `Create CAS3 Extension returns 409 Conflict when another booking for the same bed overlaps with the new departure date`() {
+      givenAUser(roles = listOf(UserRole.CAS3_ASSESSOR)) { _, jwt ->
+        givenAnOffender { offenderDetails, _ ->
+          val premises = temporaryAccommodationPremisesEntityFactory.produceAndPersist {
+            withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
+            withYieldedProbationRegion {
+              probationRegion
+            }
+          }
+
+          val bed = bedEntityFactory.produceAndPersist {
+            withName("test-bed")
+            withYieldedRoom {
+              roomEntityFactory.produceAndPersist {
+                withName("test-room")
+                withYieldedPremises { premises }
+              }
+            }
+          }
+
+          val conflictingBooking = bookingEntityFactory.produceAndPersist {
+            withServiceName(ServiceName.temporaryAccommodation)
+            withCrn("CRN123")
+            withYieldedPremises { premises }
+            withYieldedBed { bed }
+            withArrivalDate(LocalDate.parse("2022-07-15"))
+            withDepartureDate(LocalDate.parse("2022-08-15"))
+          }
+
+          val booking = bookingEntityFactory.produceAndPersist {
+            withServiceName(ServiceName.temporaryAccommodation)
+            withCrn(offenderDetails.otherIds.crn)
+            withYieldedPremises { premises }
+            withYieldedBed { bed }
+            withArrivalDate(LocalDate.parse("2022-06-14"))
+            withDepartureDate(LocalDate.parse("2022-07-14"))
+          }
+
+          govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
+
+          webTestClient.post()
+            .uri("/premises/${premises.id}/bookings/${booking.id}/extensions")
+            .header("Authorization", "Bearer $jwt")
+            .bodyValue(
+              NewExtension(
+                newDepartureDate = LocalDate.parse("2022-07-16"),
+                notes = null,
+              ),
+            )
+            .exchange()
+            .expectStatus()
+            .is4xxClientError
+            .expectBody()
+            .jsonPath("title").isEqualTo("Conflict")
+            .jsonPath("status").isEqualTo(409)
+            .jsonPath("detail")
+            .isEqualTo("A Booking already exists for dates from 2022-07-15 to 2022-08-15 which overlaps with the desired dates: ${conflictingBooking.id}")
+        }
+      }
+    }
+
+    @Test
+    fun `Create CAS3 Extension returns 409 Conflict when another booking for the same bed overlaps with the updated booking's turnaround time`() {
+      givenAUser(roles = listOf(UserRole.CAS3_ASSESSOR)) { _, jwt ->
+        givenAnOffender { offenderDetails, _ ->
+          val premises = temporaryAccommodationPremisesEntityFactory.produceAndPersist {
+            withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
+            withYieldedProbationRegion {
+              probationRegion
+            }
+          }
+
+          val bed = bedEntityFactory.produceAndPersist {
+            withName("test-bed")
+            withYieldedRoom {
+              roomEntityFactory.produceAndPersist {
+                withName("test-room")
+                withYieldedPremises { premises }
+              }
+            }
+          }
+
+          val conflictingBooking = bookingEntityFactory.produceAndPersist {
+            withServiceName(ServiceName.temporaryAccommodation)
+            withCrn("CRN123")
+            withYieldedPremises { premises }
+            withYieldedBed { bed }
+            withArrivalDate(LocalDate.parse("2022-07-15"))
+            withDepartureDate(LocalDate.parse("2022-08-15"))
+          }
+
+          val booking = bookingEntityFactory.produceAndPersist {
+            withServiceName(ServiceName.temporaryAccommodation)
+            withCrn(offenderDetails.otherIds.crn)
+            withYieldedPremises { premises }
+            withYieldedBed { bed }
+            withArrivalDate(LocalDate.parse("2022-06-12"))
+            withDepartureDate(LocalDate.parse("2022-07-12"))
+          }
+
+          val turnarounds = turnaroundFactory.produceAndPersistMultiple(1) {
+            withWorkingDayCount(2)
+            withCreatedAt(booking.createdAt)
+            withBooking(booking)
+          }
+
+          booking.turnarounds += turnarounds
+
+          govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
+
+          webTestClient.post()
+            .uri("/premises/${premises.id}/bookings/${booking.id}/extensions")
+            .header("Authorization", "Bearer $jwt")
+            .bodyValue(
+              NewExtension(
+                newDepartureDate = LocalDate.parse("2022-07-13"),
+                notes = null,
+              ),
+            )
+            .exchange()
+            .expectStatus()
+            .is4xxClientError
+            .expectBody()
+            .jsonPath("title").isEqualTo("Conflict")
+            .jsonPath("status").isEqualTo(409)
+            .jsonPath("detail")
+            .isEqualTo("A Booking already exists for dates from 2022-07-15 to 2022-08-15 which overlaps with the desired dates: ${conflictingBooking.id}")
+        }
+      }
+    }
+
+    @Test
+    fun `Create CAS3 Extension returns 409 Conflict when a lost bed for the same bed overlaps with the new departure date`() {
+      givenAUser(roles = listOf(UserRole.CAS3_ASSESSOR)) { _, jwt ->
+        givenAnOffender { offenderDetails, _ ->
+          val premises = temporaryAccommodationPremisesEntityFactory.produceAndPersist {
+            withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
+            withYieldedProbationRegion {
+              probationRegion
+            }
+          }
+
+          val bed = bedEntityFactory.produceAndPersist {
+            withName("test-bed")
+            withYieldedRoom {
+              roomEntityFactory.produceAndPersist {
+                withName("test-room")
+                withYieldedPremises { premises }
+              }
+            }
+          }
+
+          val conflictingLostBed = lostBedsEntityFactory.produceAndPersist {
+            withBed(bed)
+            withPremises(premises)
+            withStartDate(LocalDate.parse("2022-07-15"))
+            withEndDate(LocalDate.parse("2022-08-15"))
+            withYieldedReason { lostBedReasonEntityFactory.produceAndPersist() }
+          }
+
+          val booking = bookingEntityFactory.produceAndPersist {
+            withServiceName(ServiceName.temporaryAccommodation)
+            withCrn(offenderDetails.otherIds.crn)
+            withYieldedPremises { premises }
+            withYieldedBed { bed }
+            withArrivalDate(LocalDate.parse("2022-06-14"))
+            withDepartureDate(LocalDate.parse("2022-07-14"))
+          }
+
+          govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
+
+          webTestClient.post()
+            .uri("/premises/${premises.id}/bookings/${booking.id}/extensions")
+            .header("Authorization", "Bearer $jwt")
+            .bodyValue(
+              NewExtension(
+                newDepartureDate = LocalDate.parse("2022-07-16"),
+                notes = null,
+              ),
+            )
+            .exchange()
+            .expectStatus()
+            .is4xxClientError
+            .expectBody()
+            .jsonPath("title").isEqualTo("Conflict")
+            .jsonPath("status").isEqualTo(409)
+            .jsonPath("detail")
+            .isEqualTo("A Lost Bed already exists for dates from 2022-07-15 to 2022-08-15 which overlaps with the desired dates: ${conflictingLostBed.id}")
+        }
+      }
+    }
+
+    @Test
+    fun `Create CAS3 Extension returns 409 Conflict when a lost bed for the same bed overlaps with the updated booking's turnaround time`() {
+      givenAUser(roles = listOf(UserRole.CAS3_ASSESSOR)) { _, jwt ->
+        givenAnOffender { offenderDetails, _ ->
+          val premises = temporaryAccommodationPremisesEntityFactory.produceAndPersist {
+            withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
+            withYieldedProbationRegion {
+              probationRegion
+            }
+          }
+
+          val bed = bedEntityFactory.produceAndPersist {
+            withName("test-bed")
+            withYieldedRoom {
+              roomEntityFactory.produceAndPersist {
+                withName("test-room")
+                withYieldedPremises { premises }
+              }
+            }
+          }
+
+          val conflictingLostBed = lostBedsEntityFactory.produceAndPersist {
+            withBed(bed)
+            withPremises(premises)
+            withStartDate(LocalDate.parse("2022-07-15"))
+            withEndDate(LocalDate.parse("2022-08-15"))
+            withYieldedReason { lostBedReasonEntityFactory.produceAndPersist() }
+          }
+
+          val booking = bookingEntityFactory.produceAndPersist {
+            withServiceName(ServiceName.temporaryAccommodation)
+            withCrn(offenderDetails.otherIds.crn)
+            withYieldedPremises { premises }
+            withYieldedBed { bed }
+            withArrivalDate(LocalDate.parse("2022-06-12"))
+            withDepartureDate(LocalDate.parse("2022-07-12"))
+          }
+
+          val turnarounds = turnaroundFactory.produceAndPersistMultiple(1) {
+            withWorkingDayCount(2)
+            withCreatedAt(booking.createdAt)
+            withBooking(booking)
+          }
+
+          booking.turnarounds += turnarounds
+
+          govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
+
+          webTestClient.post()
+            .uri("/premises/${premises.id}/bookings/${booking.id}/extensions")
+            .header("Authorization", "Bearer $jwt")
+            .bodyValue(
+              NewExtension(
+                newDepartureDate = LocalDate.parse("2022-07-13"),
+                notes = null,
+              ),
+            )
+            .exchange()
+            .expectStatus()
+            .is4xxClientError
+            .expectBody()
+            .jsonPath("title").isEqualTo("Conflict")
+            .jsonPath("status").isEqualTo(409)
+            .jsonPath("detail")
+            .isEqualTo("A Lost Bed already exists for dates from 2022-07-15 to 2022-08-15 which overlaps with the desired dates: ${conflictingLostBed.id}")
+        }
+      }
+    }
+
+    @Test
+    fun `Create CAS3 Extension returns OK with expected body, updates departureDate on Booking entity when user has one of roles CAS3_ASSESSOR`() {
+      givenAUser(roles = listOf(UserRole.CAS3_ASSESSOR)) { _, jwt ->
+        val premises = temporaryAccommodationPremisesEntityFactory.produceAndPersist {
+          withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
+          withYieldedProbationRegion {
+            probationRegion
+          }
+        }
+
+        val room = roomEntityFactory.produceAndPersist {
+          withPremises(premises)
+        }
+
+        val bed = bedEntityFactory.produceAndPersist {
+          withRoom(room)
+        }
+
+        val booking = bookingEntityFactory.produceAndPersist {
+          withServiceName(ServiceName.temporaryAccommodation)
+          withArrivalDate(LocalDate.parse("2022-08-18"))
+          withDepartureDate(LocalDate.parse("2022-08-20"))
+          withPremises(premises)
+          withBed(bed)
+        }
+
+        creatingNewExtensionReturnsCorrectly(booking, jwt, "2022-08-22")
+      }
+    }
+
+    @Test
+    fun `Create CAS3 Extension returns 403 Forbidden for a premises that's not in the user's region`() {
+      givenAUser { _, jwt ->
+        val booking = bookingEntityFactory.produceAndPersist {
+          withDepartureDate(LocalDate.parse("2022-08-20"))
+          withYieldedPremises {
+            temporaryAccommodationPremisesEntityFactory.produceAndPersist {
+              withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
+              withYieldedProbationRegion { probationRegion }
+            }
+          }
+        }
+
+        webTestClient.post()
+          .uri("/premises/${booking.premises.id}/bookings/${booking.id}/extensions")
+          .header("Authorization", "Bearer $jwt")
+          .header("X-Service-Name", ServiceName.temporaryAccommodation.value)
+          .bodyValue(
+            NewExtension(
+              newDepartureDate = LocalDate.parse("2022-08-22"),
+              notes = "notes",
+            ),
+          )
+          .exchange()
+          .expectStatus()
+          .isForbidden
+      }
     }
   }
 
-  @Test
-  fun `Create Date Change without JWT returns 401`() {
-    webTestClient.post()
-      .uri("/premises/e0f03aa2-1468-441c-aa98-0b98d86b67f9/bookings/1617e729-13f3-4158-bd88-c59affdb8a45/date-changes")
-      .bodyValue(
-        NewDateChange(
-          newArrivalDate = null,
-          newDepartureDate = null,
-        ),
-      )
-      .exchange()
-      .expectStatus()
-      .isUnauthorized
-  }
+  @Nested
+  inner class Cas1DateChange {
 
-  @Test
-  fun `Create AP Date Change without MANAGER or MATCHER role returns 403`() {
-    givenAUser(roles = emptyList()) { userEntity, jwt ->
-      val premises = approvedPremisesEntityFactory.produceAndPersist {
-        withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-        withYieldedProbationRegion {
-          probationRegion
-        }
-      }
-
-      val room = roomEntityFactory.produceAndPersist {
-        withPremises(premises)
-      }
-
-      val bed = bedEntityFactory.produceAndPersist {
-        withRoom(room)
-      }
-
-      val booking = bookingEntityFactory.produceAndPersist {
-        withArrivalDate(LocalDate.parse("2022-08-18"))
-        withDepartureDate(LocalDate.parse("2022-08-20"))
-        withPremises(premises)
-        withBed(bed)
-      }
-
+    @Test
+    fun `CAS1 Date Change without JWT returns 401`() {
       webTestClient.post()
-        .uri("/premises/${premises.id}/bookings/${booking.id}/date-changes")
-        .header("Authorization", "Bearer $jwt")
+        .uri("/premises/e0f03aa2-1468-441c-aa98-0b98d86b67f9/bookings/1617e729-13f3-4158-bd88-c59affdb8a45/date-changes")
         .bodyValue(
           NewDateChange(
             newArrivalDate = null,
@@ -3561,61 +3211,100 @@ class BookingTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus()
-        .isForbidden
+        .isUnauthorized
     }
-  }
 
-  @ParameterizedTest
-  @EnumSource(value = UserRole::class, names = ["CAS1_MANAGER", "CAS1_MATCHER"])
-  fun `Create AP Date Change with MANAGER or MATCHER role returns 200, persists date change`(role: UserRole) {
-    govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
-
-    givenAUser(roles = listOf(role)) { userEntity, jwt ->
-      val premises = approvedPremisesEntityFactory.produceAndPersist {
-        withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-        withYieldedProbationRegion {
-          probationRegion
+    @Test
+    fun `CAS1 Date Change without correct role returns 403`() {
+      givenAUser(roles = emptyList()) { _, jwt ->
+        val premises = approvedPremisesEntityFactory.produceAndPersist {
+          withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
+          withYieldedProbationRegion {
+            probationRegion
+          }
         }
-      }
 
-      val room = roomEntityFactory.produceAndPersist {
-        withPremises(premises)
-      }
+        val room = roomEntityFactory.produceAndPersist {
+          withPremises(premises)
+        }
 
-      val bed = bedEntityFactory.produceAndPersist {
-        withRoom(room)
-      }
+        val booking = bookingEntityFactory.produceAndPersist {
+          withArrivalDate(LocalDate.parse("2022-08-18"))
+          withDepartureDate(LocalDate.parse("2022-08-20"))
+          withPremises(premises)
+        }
 
-      val booking = bookingEntityFactory.produceAndPersist {
-        withArrivalDate(LocalDate.parse("2022-08-18"))
-        withDepartureDate(LocalDate.parse("2022-08-20"))
-        withPremises(premises)
-        withBed(bed)
+        webTestClient.post()
+          .uri("/premises/${premises.id}/bookings/${booking.id}/date-changes")
+          .header("Authorization", "Bearer $jwt")
+          .bodyValue(
+            NewDateChange(
+              newArrivalDate = null,
+              newDepartureDate = null,
+            ),
+          )
+          .exchange()
+          .expectStatus()
+          .isForbidden
       }
+    }
 
-      webTestClient.post()
-        .uri("/premises/${premises.id}/bookings/${booking.id}/date-changes")
-        .header("Authorization", "Bearer $jwt")
-        .bodyValue(
-          NewDateChange(
-            newArrivalDate = LocalDate.parse("2023-07-13"),
-            newDepartureDate = LocalDate.parse("2023-07-15"),
-          ),
+    @ParameterizedTest
+    @EnumSource(value = UserRole::class, names = ["CAS1_FUTURE_MANAGER", "CAS1_MATCHER"])
+    fun `CAS1 Date Change with correct role returns 200, persists date change and raises domain event`(role: UserRole) {
+      govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
+
+      givenAUser(roles = listOf(role)) { user, jwt ->
+        val premises = approvedPremisesEntityFactory.produceAndPersist {
+          withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
+          withYieldedProbationRegion {
+            probationRegion
+          }
+        }
+
+        val application = givenASubmittedApplication(
+          createdByUser = user,
         )
-        .exchange()
-        .expectStatus()
-        .isOk
 
-      val persistedBooking = bookingRepository.findByIdOrNull(booking.id)!!
+        val booking = givenABooking(
+          crn = application.crn,
+          application = application,
+          premises = premises,
+          arrivalDate = LocalDate.parse("2022-08-18"),
+          departureDate = LocalDate.parse("2022-08-20"),
+        )
 
-      assertThat(persistedBooking.arrivalDate).isEqualTo(LocalDate.parse("2023-07-13"))
-      assertThat(persistedBooking.departureDate).isEqualTo(LocalDate.parse("2023-07-15"))
-      assertThat(persistedBooking.dateChanges).singleElement()
-      val persistedDateChange = persistedBooking.dateChanges.first()
-      assertThat(persistedDateChange.previousArrivalDate).isEqualTo(LocalDate.parse("2022-08-18"))
-      assertThat(persistedDateChange.previousDepartureDate).isEqualTo(LocalDate.parse("2022-08-20"))
-      assertThat(persistedDateChange.newArrivalDate).isEqualTo(LocalDate.parse("2023-07-13"))
-      assertThat(persistedDateChange.newDepartureDate).isEqualTo(LocalDate.parse("2023-07-15"))
+        webTestClient.post()
+          .uri("/premises/${premises.id}/bookings/${booking.id}/date-changes")
+          .header("Authorization", "Bearer $jwt")
+          .bodyValue(
+            NewDateChange(
+              newArrivalDate = LocalDate.parse("2023-07-13"),
+              newDepartureDate = LocalDate.parse("2023-07-15"),
+            ),
+          )
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        val persistedBooking = bookingRepository.findByIdOrNull(booking.id)!!
+
+        assertThat(persistedBooking.arrivalDate).isEqualTo(LocalDate.parse("2023-07-13"))
+        assertThat(persistedBooking.departureDate).isEqualTo(LocalDate.parse("2023-07-15"))
+        assertThat(persistedBooking.dateChanges).singleElement()
+        val persistedDateChange = persistedBooking.dateChanges.first()
+        assertThat(persistedDateChange.previousArrivalDate).isEqualTo(LocalDate.parse("2022-08-18"))
+        assertThat(persistedDateChange.previousDepartureDate).isEqualTo(LocalDate.parse("2022-08-20"))
+        assertThat(persistedDateChange.newArrivalDate).isEqualTo(LocalDate.parse("2023-07-13"))
+        assertThat(persistedDateChange.newDepartureDate).isEqualTo(LocalDate.parse("2023-07-15"))
+
+        domainEventAsserter.blockForEmittedDomainEvent(DomainEventType.APPROVED_PREMISES_BOOKING_CHANGED)
+        val savedEvent = domainEventAsserter.assertDomainEventOfTypeStored(
+          application.id,
+          DomainEventType.APPROVED_PREMISES_BOOKING_CHANGED,
+        )
+        assertThat(savedEvent.bookingId).isEqualTo(booking.id)
+      }
     }
   }
 
@@ -3634,8 +3323,8 @@ class BookingTest : IntegrationTestBase() {
   }
 
   @ParameterizedTest
-  @EnumSource(value = UserRole::class, names = ["CAS1_MANAGER", "CAS1_MATCHER"])
-  fun `Create Confirmation on Approved Premises Booking returns OK with correct body when user has one of roles MANAGER, MATCHER`(
+  @EnumSource(value = UserRole::class, names = ["CAS1_FUTURE_MANAGER", "CAS1_MATCHER"])
+  fun `Create Confirmation on Approved Premises Booking returns OK with correct body when user has one of roles FUTURE_MANAGER, MATCHER`(
     role: UserRole,
   ) {
     givenAUser(roles = listOf(role)) { userEntity, jwt ->

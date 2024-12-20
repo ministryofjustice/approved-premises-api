@@ -19,13 +19,12 @@ Although if will differ on a case-by-case basis, it's only possible to make a ch
 
 ## Making a schema change that is backwards-compatible
 
-Unit and Integration tests will automatically pick up a new schema version defined in DomainEventEntity.kt and test serialization and de-serialization. To enable this when adding a new schema version:
-
 1. Add a new schema version entry to the corresponding DomainEventType (in DomainEventEntity.kt)
-2. Update Cas1DomainEventFactory.kt to ensure that JSON provided for prior schema versions reflect the legacy JSON (see createCas1DomainEventEnvelopeForSchemaVersion for an example of this)
+2. When creating the domain event, be sure to set the schema version to the latest value
 
 ## Managing a change that is not backwards-compatible
 
-In addition to the changes mentioned in the prior section:
-
-1. Update the CAS-specific DomainEventService to adapt domain event json created against the older schema version to the new schema. For an example of this, see Cas1DomainEventMigrationService
+1. Add a new schema version entry to the corresponding DomainEventType (in DomainEventEntity.kt)
+2. When creating the domain event, be sure to set the schema version to the latest value
+3. Update the CAS-specific DomainEventService to adapt domain event json created against the older schema via the Cas1DomainEventMigrationService
+4. Add a test for the older version in the Domain Event Integration Tests (DomainEventTest)

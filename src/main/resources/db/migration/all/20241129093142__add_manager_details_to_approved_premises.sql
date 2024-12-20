@@ -1,0 +1,1 @@
+ALTER TABLE approved_premises ADD manager_details TEXT NULL;

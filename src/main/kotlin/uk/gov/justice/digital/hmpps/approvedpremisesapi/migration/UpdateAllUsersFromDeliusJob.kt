@@ -1,10 +1,12 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.migration
 
 import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 
+@Component
 class UpdateAllUsersFromDeliusJob(
   private val userRepository: UserRepository,
   private val userService: UserService,
@@ -13,7 +15,7 @@ class UpdateAllUsersFromDeliusJob(
   override val shouldRunInTransaction = false
 
   @SuppressWarnings("TooGenericExceptionCaught", "MagicNumber")
-  override fun process() {
+  override fun process(pageSize: Int) {
     userRepository.findAll().forEach {
       log.info("Updating user ${it.id}")
       try {

@@ -127,7 +127,7 @@ class Cas1PlacementRequestEmailServiceTest {
         mapOf(
           "applicationUrl" to "http://frontend/applications/${application.id}",
           "applicationTimelineUrl" to "http://frontend/applications/${application.id}?tab=timeline",
-          "crn" to TestConstants.CRN,
+          "crn" to CRN,
           "applicationArea" to AREA_NAME,
           "startDate" to placementRequest.expectedArrival.toString(),
           "endDate" to placementRequest.expectedDeparture().toString(),

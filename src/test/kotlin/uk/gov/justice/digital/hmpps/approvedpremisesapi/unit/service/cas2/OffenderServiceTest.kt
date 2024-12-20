@@ -417,30 +417,26 @@ class OffenderServiceTest {
     @Test
     fun `throws NotFoundProblem when offender is PersonInfoResult-NotFound, status 404`() {
       val crn = "ABC123"
-      every { mockOffenderDetailsDataSource.getOffenderDetailSummary(crn) } returns ClientResult
-        .Failure
-        .StatusCode(
-          HttpMethod.GET,
-          "/secure/offenders/crn/ABC123",
-          HttpStatus.NOT_FOUND,
-          null,
-          true,
-        )
+      every { mockOffenderDetailsDataSource.getOffenderDetailSummary(crn) } returns StatusCode(
+        HttpMethod.GET,
+        "/secure/offenders/crn/ABC123",
+        HttpStatus.NOT_FOUND,
+        null,
+        true,
+      )
       assertThrows<NotFoundProblem> { offenderService.getFullInfoForPersonOrThrow(crn) }
     }
 
     @Test
     fun `throws NotFoundProblem exception when offender is PersonInfoResult-Unknown, status 500`() {
       val crn = "ABC123"
-      every { mockOffenderDetailsDataSource.getOffenderDetailSummary(crn) } returns ClientResult
-        .Failure
-        .StatusCode(
-          HttpMethod.GET,
-          "/secure/offenders/crn/ABC123",
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          null,
-          true,
-        )
+      every { mockOffenderDetailsDataSource.getOffenderDetailSummary(crn) } returns StatusCode(
+        HttpMethod.GET,
+        "/secure/offenders/crn/ABC123",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        null,
+        true,
+      )
       assertThrows<NotFoundProblem> { offenderService.getFullInfoForPersonOrThrow(crn) }
     }
 
@@ -481,15 +477,13 @@ class OffenderServiceTest {
   inner class GetOffenderNameOrPlaceholder {
     @Test
     fun `returns Not Found when offender is PersonInfoResult-NotFound, status 404`() {
-      every { mockOffenderDetailsDataSource.getOffenderDetailSummary("NOTFOUND") } returns ClientResult
-        .Failure
-        .StatusCode(
-          HttpMethod.GET,
-          "/secure/offenders/crn/ABC123",
-          HttpStatus.NOT_FOUND,
-          null,
-          true,
-        )
+      every { mockOffenderDetailsDataSource.getOffenderDetailSummary("NOTFOUND") } returns StatusCode(
+        HttpMethod.GET,
+        "/secure/offenders/crn/ABC123",
+        HttpStatus.NOT_FOUND,
+        null,
+        true,
+      )
 
       val result = offenderService.getOffenderNameOrPlaceholder("NOTFOUND")
       assertThat(result).isEqualTo("Person Not Found")
@@ -497,15 +491,13 @@ class OffenderServiceTest {
 
     @Test
     fun `returns Unknown when offender returns any other code except 404`() {
-      every { mockOffenderDetailsDataSource.getOffenderDetailSummary("UNKNOWN") } returns ClientResult
-        .Failure
-        .StatusCode(
-          HttpMethod.GET,
-          "/secure/offenders/crn/ABC123",
-          HttpStatus.FORBIDDEN,
-          null,
-          true,
-        )
+      every { mockOffenderDetailsDataSource.getOffenderDetailSummary("UNKNOWN") } returns StatusCode(
+        HttpMethod.GET,
+        "/secure/offenders/crn/ABC123",
+        HttpStatus.FORBIDDEN,
+        null,
+        true,
+      )
 
       val result = offenderService.getOffenderNameOrPlaceholder("UNKNOWN")
       assertThat(result).isEqualTo("Unknown")
@@ -538,15 +530,13 @@ class OffenderServiceTest {
     fun `returns Not Found when offender is PersonInfoResult-NotFound, status 404`() {
       every { mockOffenderDetailsDataSource.getOffenderDetailSummaries(listOf("NOTFOUND")) } returns mapOf(
         "NOTFOUND" to
-          ClientResult
-            .Failure
-            .StatusCode(
-              HttpMethod.GET,
-              "/secure/offenders/crn/ABC123",
-              HttpStatus.NOT_FOUND,
-              null,
-              true,
-            ),
+          StatusCode(
+            HttpMethod.GET,
+            "/secure/offenders/crn/ABC123",
+            HttpStatus.NOT_FOUND,
+            null,
+            true,
+          ),
       )
 
       val result = offenderService.getMapOfPersonNamesAndCrns(listOf("NOTFOUND"))
@@ -557,15 +547,13 @@ class OffenderServiceTest {
     fun `returns Unknown when offender returns any other code except 404`() {
       every { mockOffenderDetailsDataSource.getOffenderDetailSummaries(listOf("UNKNOWN")) } returns mapOf(
         "UNKNOWN" to
-          ClientResult
-            .Failure
-            .StatusCode(
-              HttpMethod.GET,
-              "/secure/offenders/crn/ABC123",
-              HttpStatus.FORBIDDEN,
-              null,
-              true,
-            ),
+          StatusCode(
+            HttpMethod.GET,
+            "/secure/offenders/crn/ABC123",
+            HttpStatus.FORBIDDEN,
+            null,
+            true,
+          ),
       )
 
       val result = offenderService.getMapOfPersonNamesAndCrns(listOf("UNKNOWN"))

@@ -21,6 +21,8 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.Cancellation
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.PersonTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.UserTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.toLocalDate
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.toLocalDateTime
+import java.time.format.DateTimeFormatter
 
 @Component
 class Cas1SpaceBookingTransformer(
@@ -37,7 +39,16 @@ class Cas1SpaceBookingTransformer(
   ): Cas1SpaceBooking {
     val placementRequest = jpa.placementRequest
     val application = jpa.application
-    val applicationId = application?.id ?: jpa.offlineApplication!!.id
+    val applicationId = jpa.applicationFacade.id
+    val status = Cas1SpaceBookingStatusTransformer().transformToSpaceBookingSummaryStatus(
+      SpaceBookingDates(
+        jpa.expectedArrivalDate,
+        jpa.expectedDepartureDate,
+        jpa.actualArrivalDate,
+        jpa.actualDepartureDate,
+        jpa.nonArrivalConfirmedAt?.toLocalDateTime(),
+      ),
+    )
     return Cas1SpaceBooking(
       id = jpa.id,
       applicationId = applicationId,
@@ -62,8 +73,12 @@ class Cas1SpaceBookingTransformer(
       createdAt = jpa.createdAt.toInstant(),
       tier = application?.riskRatings?.tier?.value?.level,
       keyWorkerAllocation = jpa.extractKeyWorkerAllocation(),
-      actualArrivalDate = jpa.actualArrivalDateTime,
-      actualDepartureDate = jpa.actualDepartureDateTime,
+      actualArrivalDate = jpa.actualArrivalAsDateTime(),
+      actualArrivalDateOnly = jpa.actualArrivalDate,
+      actualArrivalTime = jpa.actualArrivalTime?.format(DateTimeFormatter.ofPattern("HH:mm")),
+      actualDepartureDate = jpa.actualDepartureAsDateTime(),
+      actualDepartureDateOnly = jpa.actualDepartureDate,
+      actualDepartureTime = jpa.actualDepartureTime?.format(DateTimeFormatter.ofPattern("HH:mm")),
       canonicalArrivalDate = jpa.canonicalArrivalDate,
       canonicalDepartureDate = jpa.canonicalDepartureDate,
       otherBookingsInPremisesForCrn = otherBookingsAtPremiseForCrn.map { it.toSpaceBookingDate() },
@@ -72,6 +87,7 @@ class Cas1SpaceBookingTransformer(
       nonArrival = jpa.extractNonArrival(),
       deliusEventNumber = jpa.deliusEventNumber,
       departure = jpa.extractDeparture(),
+      status = status,
     )
   }
 
@@ -86,14 +102,14 @@ class Cas1SpaceBookingTransformer(
     val staffCode = keyWorkerStaffCode
     val name = keyWorkerName
     val assignedAt = keyWorkerAssignedAt
-    return if (staffCode != null && name != null && assignedAt != null) {
+    return if (staffCode != null && name != null) {
       Cas1KeyWorkerAllocation(
         keyWorker = StaffMember(
           code = staffCode,
           keyWorker = true,
           name = name,
         ),
-        allocatedAt = assignedAt.toLocalDate(),
+        allocatedAt = assignedAt?.toLocalDate(),
       )
     } else {
       null
@@ -157,7 +173,7 @@ class Cas1SpaceBookingTransformer(
     tier = searchResult.tier,
     keyWorkerAllocation = searchResult.keyWorkerStaffCode?.let { staffCode ->
       Cas1KeyWorkerAllocation(
-        allocatedAt = searchResult.keyWorkerAssignedAt!!.toLocalDate(),
+        allocatedAt = searchResult.keyWorkerAssignedAt?.toLocalDate(),
         keyWorker = StaffMember(
           code = staffCode,
           keyWorker = true,
@@ -169,8 +185,8 @@ class Cas1SpaceBookingTransformer(
       SpaceBookingDates(
         searchResult.expectedArrivalDate,
         searchResult.expectedDepartureDate,
-        searchResult.actualArrivalDateTime,
-        searchResult.actualDepartureDateTime,
+        searchResult.actualArrivalDate,
+        searchResult.actualDepartureDate,
         searchResult.nonArrivalConfirmedAtDateTime,
       ),
     ),

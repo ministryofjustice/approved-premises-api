@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserPermissio
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualificationAssignmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRoleAssignmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomEmailAddress
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomInt
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomNumberChars
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringUpperCase
 import java.time.OffsetDateTime
@@ -45,7 +44,6 @@ class UserEntityFactory : Factory<UserEntity> {
   private var telephoneNumber: Yielded<String?> = { randomNumberChars(12) }
   private var deliusUsername: Yielded<String> = { randomStringUpperCase(12) }
   private var deliusStaffCode: Yielded<String> = { randomStringUpperCase(6) }
-  private var deliusStaffIdentifier: Yielded<Long> = { randomInt(1000, 10000).toLong() }
   private var applications: Yielded<MutableList<ApplicationEntity>> = { mutableListOf() }
   private var roles: Yielded<MutableList<UserRoleAssignmentEntity>> = { mutableListOf() }
   private var qualifications: Yielded<MutableList<UserQualificationAssignmentEntity>> = { mutableListOf() }
@@ -73,10 +71,6 @@ class UserEntityFactory : Factory<UserEntity> {
 
   fun withDeliusStaffCode(deliusStaffCode: String) = apply {
     this.deliusStaffCode = { deliusStaffCode }
-  }
-
-  fun withDeliusStaffIdentifier(deliusStaffIdentifier: Long) = apply {
-    this.deliusStaffIdentifier = { deliusStaffIdentifier }
   }
 
   fun withApplications(applications: MutableList<ApplicationEntity>) = apply {
@@ -171,7 +165,6 @@ class UserEntityFactory : Factory<UserEntity> {
     telephoneNumber = this.telephoneNumber(),
     deliusUsername = this.deliusUsername(),
     deliusStaffCode = this.deliusStaffCode(),
-    deliusStaffIdentifier = this.deliusStaffIdentifier(),
     applications = this.applications(),
     roles = this.roles(),
     qualifications = this.qualifications(),

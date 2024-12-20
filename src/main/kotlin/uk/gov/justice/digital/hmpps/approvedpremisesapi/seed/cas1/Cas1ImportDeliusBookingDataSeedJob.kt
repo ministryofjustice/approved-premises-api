@@ -2,19 +2,23 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1
 
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas1.Cas1DeliusBookingImportEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas1.Cas1DeliusBookingImportRepository
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedColumns
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedJob
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
+@Component
 class Cas1ImportDeliusBookingDataSeedJob(
   private val jdbcTemplate: NamedParameterJdbcTemplate,
   private val cas1DeliusBookingImportRepository: Cas1DeliusBookingImportRepository,
 ) : SeedJob<Cas1DeliusBookingManagementDataRow>(
-  id = UUID.randomUUID(),
   requiredHeaders = setOf(
     "BOOKING_ID",
     "CRN",
@@ -49,47 +53,30 @@ class Cas1ImportDeliusBookingDataSeedJob(
     jdbcTemplate.update("TRUNCATE cas1_delius_booking_import", emptyMap<String, String>())
   }
 
-  override fun deserializeRow(columns: Map<String, String>) = Cas1DeliusBookingManagementDataRow(
-    bookingId = UUID.fromString(columns["BOOKING_ID"]!!.trim()),
-    crn = columns.stringOrNull("CRN")!!,
-    eventNumber = columns.stringOrNull("EVENT_NUMBER")!!,
-    keyWorkerStaffCode = columns.stringOrNull("KEY_WORKER_STAFF_CODE"),
-    keyWorkerForename = columns.stringOrNull("KEY_WORKER_FORENAME"),
-    keyWorkerMiddleName = columns.stringOrNull("KEY_WORKER_MIDDLE_NAME"),
-    keyWorkerSurname = columns.stringOrNull("KEY_WORKER_SURNAME"),
-    departureReasonCode = columns.stringOrNull("DEPARTURE_REASON_CODE"),
-    moveOnCategoryCode = columns.stringOrNull("MOVE_ON_CATEGORY_CODE"),
-    moveOnCategoryDescription = columns.stringOrNull("MOVE_ON_CATEGORY_DESCRIPTION"),
-    expectedArrivalDate = columns.dateFromUtcDateTime("EXPECTED_ARRIVAL_DATE")!!,
-    arrivalDate = columns.dateFromUtcDateTime("ARRIVAL_DATE"),
-    expectedDepartureDate = columns.dateFromUtcDateTime("EXPECTED_DEPARTURE_DATE"),
-    departureDate = columns.dateFromUtcDateTime("DEPARTURE_DATE"),
-    nonArrivalDate = columns.dateFromUtcDateTime("NON_ARRIVAL_DATE"),
-    nonArrivalContactDateTime = columns.dateTimeFromList("NON_ARRIVAL_CONTACT_DATETIME_LIST"),
-    nonArrivalReasonCode = columns.stringOrNull("NON_ARRIVAL_REASON_CODE"),
-    nonArrivalReasonDescription = columns.stringOrNull("NON_ARRIVAL_REASON_DESCRIPTION"),
-    nonArrivalNotes = columns.stringOrNull("NON_ARRIVAL_NOTES"),
-  )
+  override fun deserializeRow(columns: Map<String, String>): Cas1DeliusBookingManagementDataRow {
+    val seedColumns = SeedColumns(columns)
 
-  private fun Map<String, String>.stringOrNull(label: String?) = this[label]?.trim()?.ifBlank { null }
-
-  private fun Map<String, String>.dateTimeFromList(label: String?): LocalDateTime? {
-    val dateTimeList = stringOrNull(label)
-    if (dateTimeList.isNullOrBlank()) {
-      return null
-    }
-
-    val lastDateTime = dateTimeList.split(",").last()
-    return LocalDateTime.parse(lastDateTime, DELIUS_IMPORT_DATE_TIME_FORMATTER)
-  }
-
-  private fun Map<String, String>.dateFromUtcDateTime(label: String?): LocalDate? {
-    val dateTime = stringOrNull(label)
-    if (dateTime.isNullOrBlank()) {
-      return null
-    }
-
-    return LocalDate.parse(dateTime.substring(startIndex = 0, endIndex = 10))
+    return Cas1DeliusBookingManagementDataRow(
+      bookingId = seedColumns.getUuidOrNull("BOOKING_ID")!!,
+      crn = seedColumns.getStringOrNull("CRN")!!,
+      eventNumber = seedColumns.getStringOrNull("EVENT_NUMBER")!!,
+      keyWorkerStaffCode = seedColumns.getStringOrNull("KEY_WORKER_STAFF_CODE"),
+      keyWorkerForename = seedColumns.getStringOrNull("KEY_WORKER_FORENAME"),
+      keyWorkerMiddleName = seedColumns.getStringOrNull("KEY_WORKER_MIDDLE_NAME"),
+      keyWorkerSurname = seedColumns.getStringOrNull("KEY_WORKER_SURNAME"),
+      departureReasonCode = seedColumns.getStringOrNull("DEPARTURE_REASON_CODE"),
+      moveOnCategoryCode = seedColumns.getStringOrNull("MOVE_ON_CATEGORY_CODE"),
+      moveOnCategoryDescription = seedColumns.getStringOrNull("MOVE_ON_CATEGORY_DESCRIPTION"),
+      expectedArrivalDate = seedColumns.getDateFromUtcDateTimeOrNull("EXPECTED_ARRIVAL_DATE")!!,
+      arrivalDate = seedColumns.getDateFromUtcDateTimeOrNull("ARRIVAL_DATE"),
+      expectedDepartureDate = seedColumns.getDateFromUtcDateTimeOrNull("EXPECTED_DEPARTURE_DATE"),
+      departureDate = seedColumns.getDateFromUtcDateTimeOrNull("DEPARTURE_DATE"),
+      nonArrivalDate = seedColumns.getDateFromUtcDateTimeOrNull("NON_ARRIVAL_DATE"),
+      nonArrivalContactDateTime = seedColumns.getLastDateTimeFromListOrNull("NON_ARRIVAL_CONTACT_DATETIME_LIST", DELIUS_IMPORT_DATE_TIME_FORMATTER),
+      nonArrivalReasonCode = seedColumns.getStringOrNull("NON_ARRIVAL_REASON_CODE"),
+      nonArrivalReasonDescription = seedColumns.getStringOrNull("NON_ARRIVAL_REASON_DESCRIPTION"),
+      nonArrivalNotes = seedColumns.getStringOrNull("NON_ARRIVAL_NOTES"),
+    )
   }
 
   override fun processRow(row: Cas1DeliusBookingManagementDataRow) {
@@ -110,7 +97,9 @@ class Cas1ImportDeliusBookingDataSeedJob(
         row.expectedDepartureDate,
         row.departureDate,
         row.nonArrivalDate,
-        row.nonArrivalContactDateTime,
+        row.nonArrivalContactDateTime?.let {
+          ZonedDateTime.of(it, ZoneId.of("Europe/London")).toOffsetDateTime()
+        },
         row.nonArrivalReasonCode,
         row.nonArrivalReasonDescription,
         row.nonArrivalNotes,

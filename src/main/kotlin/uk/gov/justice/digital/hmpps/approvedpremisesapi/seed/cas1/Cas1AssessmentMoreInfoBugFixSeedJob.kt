@@ -2,14 +2,15 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1
 
 import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedJob
 import java.util.UUID
 
+@Component
 class Cas1FurtherInfoBugFixSeedJob(
   private val assessmentRepository: AssessmentRepository,
 ) : SeedJob<Cas1FurtherInfoBugFixSeedCsvRow>(
-  id = UUID.randomUUID(),
   requiredHeaders = setOf(
     "assessment_id",
   ),

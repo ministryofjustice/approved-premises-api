@@ -1,20 +1,20 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.reporting.generator
 
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.ApplicationAssessedEnvelope
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.ApplicationSubmittedEnvelope
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.BookingMadeEnvelope
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.ApplicationAssessedEnvelope
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.ApplicationSubmittedEnvelope
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.BookingMadeEnvelope
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.reporting.model.ApprovedPremisesApplicationMetricsSummaryDto
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.reporting.model.DailyMetricReportRow
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.DomainEventService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1DomainEventService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1ReportService
 import java.time.LocalDate
 
 class DailyMetricsReportGenerator(
   private val domainEvents: List<DomainEventEntity>,
   private val applications: List<ApprovedPremisesApplicationMetricsSummaryDto>,
-  private val domainEventService: DomainEventService,
+  private val domainEventService: Cas1DomainEventService,
 ) : ReportGenerator<LocalDate, DailyMetricReportRow, Cas1ReportService.MonthSpecificReportParams>(DailyMetricReportRow::class) {
   override fun filter(properties: Cas1ReportService.MonthSpecificReportParams): (LocalDate) -> Boolean = {
     true
@@ -52,9 +52,9 @@ class DailyMetricsReportGenerator(
         applicationsStarted = applicationsCreatedToday.size,
         uniqueUsersStartingApplications = applicationsCreatedToday.groupBy { application -> application.createdByUserId }.size,
         applicationsSubmitted = applicationsSubmittedToday.size,
-        uniqueUsersSubmittingApplications = applicationsSubmittedToday.groupBy { domainEvent -> domainEvent.data.eventDetails.submittedBy.staffMember.staffIdentifier }.size,
+        uniqueUsersSubmittingApplications = applicationsSubmittedToday.groupBy { domainEvent -> domainEvent.data.eventDetails.submittedBy.staffMember.staffCode }.size,
         assessmentsCompleted = assessmentsCompletedToday.size,
-        uniqueUsersCompletingAssessments = assessmentsCompletedToday.groupBy { domainEvent -> domainEvent.data.eventDetails.assessedBy.staffMember!!.staffIdentifier }.size,
+        uniqueUsersCompletingAssessments = assessmentsCompletedToday.groupBy { domainEvent -> domainEvent.data.eventDetails.assessedBy.staffMember!!.staffCode }.size,
         bookingsMade = bookingsMadeToday.size,
         uniqueUsersMakingBookings = bookingsMadeToday.groupBy { domainEvent -> domainEvent.data.eventDetails.bookedBy }.size,
       ),

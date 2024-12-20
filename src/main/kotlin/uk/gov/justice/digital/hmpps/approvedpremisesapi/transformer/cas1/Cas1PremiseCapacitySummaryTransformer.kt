@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1PremiseCapacity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1PremiseCapacityForDay
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1PremiseCharacteristicAvailability
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceCharacteristic
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBookingCharacteristic
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1PremisesService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.planning.SpacePlanningService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.planning.SpacePlanningService.PremiseCapacitySummary
@@ -25,6 +25,7 @@ class Cas1PremiseCapacitySummaryTransformer(
   )
 
   private fun SpacePlanningService.PremiseCapacityForDay.toApiType() = Cas1PremiseCapacityForDay(
+    date = day,
     totalBedCount = totalBedCount,
     availableBedCount = availableBedCount,
     bookingCount = bookingCount,
@@ -33,8 +34,8 @@ class Cas1PremiseCapacitySummaryTransformer(
 
   private fun SpacePlanningService.PremiseCharacteristicAvailability.toApiType() =
     Cas1PremiseCharacteristicAvailability(
-      characteristic = Cas1SpaceCharacteristic.entries.first { it.value == this.characteristicPropertyName },
-      availableBedsCount = availableBedsCount,
-      bookingsCount = bookingsCount,
+      characteristic = Cas1SpaceBookingCharacteristic.entries.first { it.value == this.characteristicPropertyName },
+      availableBedsCount = availableBedCount,
+      bookingsCount = bookingCount,
     )
 }

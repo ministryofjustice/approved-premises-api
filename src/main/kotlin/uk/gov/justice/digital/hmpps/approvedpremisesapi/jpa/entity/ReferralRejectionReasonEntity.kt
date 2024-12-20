@@ -13,6 +13,9 @@ import java.util.UUID
 interface ReferralRejectionReasonRepository : JpaRepository<ReferralRejectionReasonEntity, UUID> {
   @Query("SELECT m FROM ReferralRejectionReasonEntity m WHERE m.serviceScope = :serviceName OR m.serviceScope = '*' ORDER BY m.sortOrder")
   fun findAllByServiceScope(serviceName: String): List<ReferralRejectionReasonEntity>
+
+  @Query("SELECT rr FROM ReferralRejectionReasonEntity rr WHERE rr.serviceScope = :serviceName AND rr.name = :name AND rr.isActive = true")
+  fun findByNameAndActive(name: String, serviceName: String): ReferralRejectionReasonEntity?
 }
 
 @Entity

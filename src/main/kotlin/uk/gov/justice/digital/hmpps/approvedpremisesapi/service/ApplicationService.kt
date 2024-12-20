@@ -6,7 +6,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApplicationSortField
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApplicationTimelineNote
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1ApplicationTimelinessCategory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1ApplicationUserDetails
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
@@ -58,6 +57,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.CasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.ValidatableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1ApplicationDomainEventService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1ApplicationEmailService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1DomainEventService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.WithdrawableState
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.ApplicationTimelineNoteTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.ApplicationTimelineTransformer
@@ -88,7 +88,7 @@ class ApplicationService(
   private val offlineApplicationRepository: OfflineApplicationRepository,
   private val applicationTimelineNoteService: ApplicationTimelineNoteService,
   private val applicationTimelineNoteTransformer: ApplicationTimelineNoteTransformer,
-  private val domainEventService: DomainEventService,
+  private val domainEventService: Cas1DomainEventService,
   private val cas3DomainEventService: uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas3.DomainEventService,
   private val apDeliusContextApiClient: ApDeliusContextApiClient,
   private val applicationTeamCodeRepository: ApplicationTeamCodeRepository,
@@ -105,7 +105,6 @@ class ApplicationService(
   private val lockableApplicationRepository: LockableApplicationRepository,
   private val probationDeliveryUnitRepository: ProbationDeliveryUnitRepository,
   private val cas1CruManagementAreaRepository: Cas1CruManagementAreaRepository,
-  private val featureFlagService: FeatureFlagService,
 ) {
   fun getApplication(applicationId: UUID) = applicationRepository.findByIdOrNull(applicationId)
 
@@ -181,9 +180,9 @@ class ApplicationService(
   fun getApplicationForUsername(
     applicationId: UUID,
     userDistinguishedName: String,
-  ): AuthorisableActionResult<ApplicationEntity> {
+  ): CasResult<ApplicationEntity> {
     val applicationEntity = applicationRepository.findByIdOrNull(applicationId)
-      ?: return AuthorisableActionResult.NotFound()
+      ?: return CasResult.NotFound("Application", applicationId.toString())
 
     val userEntity = userRepository.findByDeliusUsername(userDistinguishedName)
       ?: throw RuntimeException("Could not get user")
@@ -191,18 +190,18 @@ class ApplicationService(
     val canAccess = userAccessService.userCanViewApplication(userEntity, applicationEntity)
 
     return if (canAccess) {
-      AuthorisableActionResult.Success(jsonSchemaService.checkSchemaOutdated(applicationEntity))
+      CasResult.Success(jsonSchemaService.checkSchemaOutdated(applicationEntity))
     } else {
-      AuthorisableActionResult.Unauthorised()
+      CasResult.Unauthorised()
     }
   }
 
   fun getOfflineApplicationForUsername(
     applicationId: UUID,
     deliusUsername: String,
-  ): AuthorisableActionResult<OfflineApplicationEntity> {
+  ): CasResult<OfflineApplicationEntity> {
     val applicationEntity = offlineApplicationRepository.findByIdOrNull(applicationId)
-      ?: return AuthorisableActionResult.NotFound()
+      ?: return CasResult.NotFound("Application", applicationId.toString())
 
     val userEntity = userRepository.findByDeliusUsername(deliusUsername)
       ?: throw RuntimeException("Could not get user")
@@ -211,14 +210,14 @@ class ApplicationService(
         UserRole.CAS1_WORKFLOW_MANAGER,
         UserRole.CAS1_ASSESSOR,
         UserRole.CAS1_MATCHER,
-        UserRole.CAS1_MANAGER,
+        UserRole.CAS1_FUTURE_MANAGER,
       ) &&
       offenderService.canAccessOffender(deliusUsername, applicationEntity.crn)
     ) {
-      return AuthorisableActionResult.Success(applicationEntity)
+      return CasResult.Success(applicationEntity)
     }
 
-    return AuthorisableActionResult.Unauthorised()
+    return CasResult.Unauthorised()
   }
 
   fun createApprovedPremisesApplication(
@@ -338,6 +337,7 @@ class ApplicationService(
       caseManagerIsNotApplicant = null,
       caseManagerUserDetails = null,
       noticeType = null,
+      licenceExpiryDate = null,
     )
   }
 
@@ -495,38 +495,30 @@ class ApplicationService(
     applicationId: UUID,
     updateFields: Cas1ApplicationUpdateFields,
     userForRequest: UserEntity,
-  ): AuthorisableActionResult<ValidatableActionResult<ApplicationEntity>> {
+  ): CasResult<ApplicationEntity> {
     val application = applicationRepository.findByIdOrNull(applicationId)?.let(jsonSchemaService::checkSchemaOutdated)
-      ?: return AuthorisableActionResult.NotFound()
+      ?: return CasResult.NotFound("Application", applicationId.toString())
 
     if (application !is ApprovedPremisesApplicationEntity) {
-      return AuthorisableActionResult.Success(
-        ValidatableActionResult.GeneralValidationError("onlyCas1Supported"),
-      )
+      return CasResult.GeneralValidationError("onlyCas1Supported")
     }
 
     if (updateFields.isUsingLegacyApTypeFields && updateFields.isUsingNewApTypeField) {
-      return AuthorisableActionResult.Success(
-        ValidatableActionResult.GeneralValidationError(
-          "`isPipeApplication`/`isEsapApplication` should not be used in conjunction with `apType`",
-        ),
+      return CasResult.GeneralValidationError(
+        "`isPipeApplication`/`isEsapApplication` should not be used in conjunction with `apType`",
       )
     }
 
     if (application.createdByUser.id != userForRequest.id) {
-      return AuthorisableActionResult.Unauthorised()
+      return CasResult.Unauthorised()
     }
 
     if (!application.schemaUpToDate) {
-      return AuthorisableActionResult.Success(
-        ValidatableActionResult.GeneralValidationError("The schema version is outdated"),
-      )
+      return CasResult.GeneralValidationError("The schema version is outdated")
     }
 
     if (application.submittedAt != null) {
-      return AuthorisableActionResult.Success(
-        ValidatableActionResult.GeneralValidationError("This application has already been submitted"),
-      )
+      return CasResult.GeneralValidationError("This application has already been submitted")
     }
 
     application.apply {
@@ -547,9 +539,7 @@ class ApplicationService(
     applicationListener.preUpdate(application)
     val savedApplication = applicationRepository.save(application)
 
-    return AuthorisableActionResult.Success(
-      ValidatableActionResult.Success(savedApplication),
-    )
+    return CasResult.Success(savedApplication)
   }
 
   private fun upsertCas1ApplicationUserDetails(
@@ -637,32 +627,26 @@ class ApplicationService(
   fun updateTemporaryAccommodationApplication(
     applicationId: UUID,
     data: String,
-  ): AuthorisableActionResult<ValidatableActionResult<ApplicationEntity>> {
+  ): CasResult<ApplicationEntity> {
     val application = applicationRepository.findByIdOrNull(applicationId)?.let(jsonSchemaService::checkSchemaOutdated)
-      ?: return AuthorisableActionResult.NotFound()
+      ?: return CasResult.NotFound("Application", applicationId.toString())
 
     if (application !is TemporaryAccommodationApplicationEntity) {
-      return AuthorisableActionResult.Success(
-        ValidatableActionResult.GeneralValidationError("onlyCas3Supported"),
-      )
+      return CasResult.GeneralValidationError("onlyCas3Supported")
     }
 
     val user = userService.getUserForRequest()
 
     if (application.createdByUser != user) {
-      return AuthorisableActionResult.Unauthorised()
+      return CasResult.Unauthorised()
     }
 
     if (!application.schemaUpToDate) {
-      return AuthorisableActionResult.Success(
-        ValidatableActionResult.GeneralValidationError("The schema version is outdated"),
-      )
+      return CasResult.GeneralValidationError("The schema version is outdated")
     }
 
     if (application.submittedAt != null) {
-      return AuthorisableActionResult.Success(
-        ValidatableActionResult.GeneralValidationError("This application has already been submitted"),
-      )
+      return CasResult.GeneralValidationError("This application has already been submitted")
     }
 
     application.apply {
@@ -671,9 +655,7 @@ class ApplicationService(
 
     val savedApplication = applicationRepository.save(application)
 
-    return AuthorisableActionResult.Success(
-      ValidatableActionResult.Success(savedApplication),
-    )
+    return CasResult.Success(savedApplication)
   }
 
   @SuppressWarnings("CyclomaticComplexMethod")
@@ -779,9 +761,7 @@ class ApplicationService(
       situation = submitApplication.situation?.toString()
       inmateInOutStatusOnSubmission = inmateDetails?.custodyStatus?.name
       this.apArea = apArea
-      this.cruManagementArea = if (featureFlagService.getBooleanFlag("cas1-womens-estate-enabled") &&
-        submitApplication.isWomensApplication == true
-      ) {
+      this.cruManagementArea = if (submitApplication.isWomensApplication == true) {
         cas1CruManagementAreaRepository.findByIdOrNull(Cas1CruManagementAreaEntity.WOMENS_ESTATE_ID)
           ?: throw InternalServerErrorProblem("Could not find women's estate CRU Management Area Entity with ID ${Cas1CruManagementAreaEntity.WOMENS_ESTATE_ID}")
       } else {
@@ -798,6 +778,7 @@ class ApplicationService(
         },
       )
       this.noticeType = getNoticeType(submitApplication.noticeType, submitApplication.isEmergencyApplication, this)
+      this.licenceExpiryDate = submitApplication.licenseExpiryDate
     }
 
     cas1ApplicationDomainEventService.applicationSubmitted(application, submitApplication, username)
@@ -960,15 +941,6 @@ class ApplicationService(
     return noteEntities.map {
       applicationTimelineNoteTransformer.transformToTimelineEvents(it)
     }
-  }
-
-  fun addNoteToApplication(
-    applicationId: UUID,
-    note: String,
-    user: UserEntity?,
-  ): ApplicationTimelineNote {
-    val savedNote = applicationTimelineNoteService.saveApplicationTimelineNote(applicationId, note, user)
-    return applicationTimelineNoteTransformer.transformJpaToApi(savedNote)
   }
 
   private fun getPrisonName(personInfo: PersonInfoResult.Success.Full): String? {

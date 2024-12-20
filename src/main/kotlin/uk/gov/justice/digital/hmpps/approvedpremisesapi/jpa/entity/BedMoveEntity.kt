@@ -6,16 +6,12 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import java.time.OffsetDateTime
 import java.util.UUID
 
 @Repository
-interface BedMoveRepository : JpaRepository<BedMoveEntity, UUID> {
-  @Query("SELECT b FROM BedMoveEntity b WHERE b.booking.id = :bookingId")
-  fun findByBookingIdOrNull(bookingId: UUID): BedMoveEntity?
-}
+interface BedMoveRepository : JpaRepository<BedMoveEntity, UUID>
 
 @Entity
 @Table(name = "bed_moves")

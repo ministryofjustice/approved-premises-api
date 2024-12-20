@@ -19,8 +19,10 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEventU
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAUser
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnApplication
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnOffender
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualification
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonInfoResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.PersonTransformer
+import kotlin.collections.listOf
 
 class PersonalTimelineTest : IntegrationTestBase() {
   @Autowired
@@ -360,9 +362,11 @@ class PersonalTimelineTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `Getting a personal timeline for a CRN with an offline application returns OK with correct body`() {
-    givenAUser { _, jwt ->
-      givenAnOffender { offenderDetails, inmateDetails ->
+  fun `Getting a personal timeline for a CRN where the Offender is LAO, and the user does have LAO qualification returns OK with correct body`() {
+    givenAUser(qualifications = listOf(UserQualification.LAO)) { _, jwt ->
+      givenAnOffender(
+        offenderDetailsConfigBlock = { withCurrentRestriction(true) },
+      ) { offenderDetails, inmateDetails ->
         val personInfoResult = PersonInfoResult.Success.Full(
           crn = offenderDetails.otherIds.crn,
           offenderDetailSummary = offenderDetails,
@@ -426,6 +430,36 @@ class PersonalTimelineTest : IntegrationTestBase() {
                     ),
                   ),
                 ),
+              ),
+            ),
+          )
+      }
+    }
+  }
+
+  @Test
+  fun `Getting a personal timeline for a CRN where the Offender is LAO,but the user does not have LAO qualification returns OK with empty timeline`() {
+    givenAUser { _, jwt ->
+      givenAnOffender(
+        offenderDetailsConfigBlock = { withCurrentRestriction(true) },
+      ) { offenderDetails, inmateDetails ->
+        val personInfoResult = PersonInfoResult.Success.Restricted(
+          crn = offenderDetails.otherIds.crn,
+          nomsNumber = offenderDetails.otherIds.nomsNumber!!,
+        )
+
+        webTestClient.get()
+          .uri("/people/${offenderDetails.otherIds.crn}/timeline")
+          .header("Authorization", "Bearer $jwt")
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .json(
+            objectMapper.writeValueAsString(
+              PersonalTimeline(
+                person = personTransformer.transformModelToPersonApi(personInfoResult),
+                applications = emptyList(),
               ),
             ),
           )

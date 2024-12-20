@@ -59,7 +59,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.given
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenSomeOffenders
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextAddListCaseSummaryToBulkResponse
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextMockUserAccess
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockOffenderUserAccessCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesApplicationEntity
@@ -90,6 +89,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.domainevent.SnsEve
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.InmateDetail
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.AssessmentTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.asCaseSummary
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.nonRepeatingRandomDateAfter
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomDateAfter
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringMultiCaseWithNumbers
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.roundNanosToMillisToAccountForLossOfPrecisionInPostgres
@@ -1412,7 +1412,7 @@ class AssessmentTest : IntegrationTestBase() {
 
           val assessments = offenders.map { (offenderDetails, inmateDetails) ->
             val application = produceAndPersistTemporaryAccommodationApplication(offenderDetails.otherIds.crn, user) {
-              withArrivalDate(LocalDate.now().randomDateAfter(512))
+              withArrivalDate(LocalDate.now().nonRepeatingRandomDateAfter("assessmentArrivalDate", 512))
             }
 
             val assessment =
@@ -1640,7 +1640,6 @@ class AssessmentTest : IntegrationTestBase() {
 
           otherAssessment.schemaUpToDate = true
 
-          mockOffenderUserAccessCommunityApiCall(user.deliusUsername, otherOffender.first.otherIds.crn, true, true)
           apDeliusContextAddListCaseSummaryToBulkResponse(listOf(offender.first.asCaseSummary(), otherOffender.first.asCaseSummary()))
 
           assertResponseForUrl(
@@ -1689,8 +1688,6 @@ class AssessmentTest : IntegrationTestBase() {
           }
 
           assessment.schemaUpToDate = true
-
-          mockOffenderUserAccessCommunityApiCall(user.deliusUsername, offenderDetails.otherIds.crn, true, true)
 
           assertResponseForUrl(
             jwt,
@@ -1849,12 +1846,6 @@ class AssessmentTest : IntegrationTestBase() {
           withCurrentExclusion(true)
         },
       ) { offenderDetails, inmateDetails ->
-        communityAPIMockOffenderUserAccessCall(
-          username = userEntity.deliusUsername,
-          crn = offenderDetails.otherIds.crn,
-          inclusion = false,
-          exclusion = true,
-        )
 
         val applicationSchema = approvedPremisesApplicationJsonSchemaEntityFactory.produceAndPersist {
           withPermissiveSchema()
@@ -1897,12 +1888,6 @@ class AssessmentTest : IntegrationTestBase() {
           withCurrentExclusion(true)
         },
       ) { offenderDetails, inmateDetails ->
-        communityAPIMockOffenderUserAccessCall(
-          username = userEntity.deliusUsername,
-          crn = offenderDetails.otherIds.crn,
-          inclusion = false,
-          exclusion = false,
-        )
 
         apDeliusContextMockUserAccess(
           CaseAccessFactory()
@@ -1963,12 +1948,6 @@ class AssessmentTest : IntegrationTestBase() {
           withCurrentRestriction(true)
         },
       ) { offenderDetails, inmateDetails ->
-        communityAPIMockOffenderUserAccessCall(
-          username = userEntity.deliusUsername,
-          crn = offenderDetails.otherIds.crn,
-          inclusion = true,
-          exclusion = false,
-        )
 
         val applicationSchema = approvedPremisesApplicationJsonSchemaEntityFactory.produceAndPersist {
           withPermissiveSchema()
@@ -2863,7 +2842,6 @@ class AssessmentTest : IntegrationTestBase() {
   fun `assessmentUpdated Domain Events are returned with the assessment notes with latest first`() {
     givenAUser(roles = listOf(UserRole.CAS3_ASSESSOR, UserRole.CAS3_REPORTER)) { userEntity, jwt ->
       givenAnOffender { offenderDetails, inmateDetails ->
-        mockFeatureFlagService.setFlag("include-assessment-updated-domain-events", true)
 
         val originalDate = LocalDate.now().plusDays(1)
         val newDate = LocalDate.now().plusDays(7)

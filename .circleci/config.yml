@@ -292,7 +292,7 @@ jobs:
             git clone https://github.com/ministryofjustice/hmpps-community-accommodation-tier-2-ui.git .
       - run:
           name: Update npm
-          command: 'npm install -g npm@latest'
+          command: 'npm install -g npm@10.1.0'
       - node/install-packages
       - run:
           name: Install Playwright

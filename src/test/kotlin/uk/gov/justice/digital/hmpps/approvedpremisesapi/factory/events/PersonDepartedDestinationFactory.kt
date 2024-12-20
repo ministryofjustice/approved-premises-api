@@ -2,10 +2,10 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.events
 
 import io.github.bluegroundltd.kfactory.Factory
 import io.github.bluegroundltd.kfactory.Yielded
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.DestinationPremises
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.DestinationProvider
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.MoveOnCategory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.PersonDepartedDestination
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.DestinationPremises
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.DestinationProvider
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.MoveOnCategory
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.PersonDepartedDestination
 
 class PersonDepartedDestinationFactory : Factory<PersonDepartedDestination> {
   private var premises: Yielded<DestinationPremises?> = { null }

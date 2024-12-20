@@ -59,6 +59,7 @@ class OAuth2ResourceServerSecurityConfiguration {
         authorize(HttpMethod.GET, "/favicon.ico", permitAll)
         authorize(HttpMethod.GET, "/info", permitAll)
         authorize(HttpMethod.POST, "/seed", permitAll)
+        authorize(HttpMethod.POST, "/seedFromExcel", permitAll)
         authorize(HttpMethod.DELETE, "/cache/*", permitAll)
         authorize(HttpMethod.POST, "/migration-job", permitAll)
         authorize(HttpMethod.DELETE, "/internal/premises/*", permitAll)
@@ -122,7 +123,7 @@ class OAuth2ResourceServerSecurityConfiguration {
   }
 }
 
-class AuthAwareTokenConverter() : Converter<Jwt, AbstractAuthenticationToken> {
+class AuthAwareTokenConverter : Converter<Jwt, AbstractAuthenticationToken> {
   private val jwtGrantedAuthoritiesConverter: Converter<Jwt, Collection<GrantedAuthority>> =
     JwtGrantedAuthoritiesConverter()
 

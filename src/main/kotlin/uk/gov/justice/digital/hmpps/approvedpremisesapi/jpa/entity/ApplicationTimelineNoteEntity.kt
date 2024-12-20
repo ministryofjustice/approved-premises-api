@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
@@ -25,4 +26,6 @@ data class ApplicationTimelineNoteEntity(
   val createdBy: UserEntity?,
   val createdAt: OffsetDateTime,
   val body: String,
+  @Column(name = "cas1_space_booking_id")
+  val cas1SpaceBookingId: UUID?,
 )

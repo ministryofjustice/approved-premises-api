@@ -187,10 +187,6 @@ interface AssessmentRepository : JpaRepository<AssessmentEntity, UUID> {
   @Modifying
   @Query("UPDATE ApprovedPremisesAssessmentEntity a SET a.dueAt = :dueAt WHERE a.id = :id")
   fun updateDueAt(id: UUID, dueAt: OffsetDateTime?)
-
-  @Modifying
-  @Query("UPDATE ApprovedPremisesAssessmentEntity a set a.data = :updatedJson where a.id = :id")
-  fun updateData(id: UUID, updatedJson: Any)
 }
 
 @Repository

@@ -7,8 +7,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.IntegrationT
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextMockCaseSummary
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextMockSuccessfulCaseDetailCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextMockUserAccess
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockServerErrorOffenderDetailsCall
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockSuccessfulOffenderDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.prisonAPIMockNotFoundInmateDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.prisonAPIMockServerErrorInmateDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.prisonAPIMockSuccessfulInmateDetailsCall
@@ -19,7 +17,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.asCaseDetail
 fun IntegrationTestBase.givenAnOffender(
   offenderDetailsConfigBlock: (OffenderDetailsSummaryFactory.() -> Unit)? = null,
   inmateDetailsConfigBlock: (InmateDetailFactory.() -> Unit)? = null,
-  mockServerErrorForCommunityApi: Boolean = false,
   mockServerErrorForPrisonApi: Boolean = false,
   mockNotFoundErrorForPrisonApi: Boolean = false,
 ): Pair<OffenderDetailSummary, InmateDetail> {
@@ -38,11 +35,6 @@ fun IntegrationTestBase.givenAnOffender(
   }
 
   val offenderDetails = offenderDetailsFactory.produce()
-
-  when (mockServerErrorForCommunityApi) {
-    true -> communityAPIMockServerErrorOffenderDetailsCall(offenderDetails.otherIds.crn)
-    false -> communityAPIMockSuccessfulOffenderDetailsCall(offenderDetails)
-  }
 
   val caseDetail = offenderDetails.asCaseDetail()
 
@@ -76,7 +68,6 @@ fun IntegrationTestBase.givenAnOffender(
 fun IntegrationTestBase.givenAnOffender(
   offenderDetailsConfigBlock: (OffenderDetailsSummaryFactory.() -> Unit)? = null,
   inmateDetailsConfigBlock: (InmateDetailFactory.() -> Unit)? = null,
-  mockServerErrorForCommunityApi: Boolean = false,
   mockServerErrorForPrisonApi: Boolean = false,
   mockNotFoundErrorForPrisonApi: Boolean = false,
   block: ((offenderDetails: OffenderDetailSummary, inmateDetails: InmateDetail) -> Unit)? = null,
@@ -84,7 +75,6 @@ fun IntegrationTestBase.givenAnOffender(
   val (offenderDetails, inmateDetails) = givenAnOffender(
     offenderDetailsConfigBlock,
     inmateDetailsConfigBlock,
-    mockServerErrorForCommunityApi,
     mockServerErrorForPrisonApi,
     mockNotFoundErrorForPrisonApi,
   )
@@ -116,8 +106,6 @@ fun IntegrationTestBase.givenSomeOffenders(
 
     val offenderDetails = offenderDetailsFactory.produce()
     val caseDetail = offenderDetails.asCaseDetail()
-
-    communityAPIMockSuccessfulOffenderDetailsCall(offenderDetails)
 
     apDeliusContextMockSuccessfulCaseDetailCall(offenderDetails.otherIds.crn, caseDetail)
 

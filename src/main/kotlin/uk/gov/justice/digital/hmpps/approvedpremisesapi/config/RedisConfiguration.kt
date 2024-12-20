@@ -20,11 +20,11 @@ import redis.lock.redlock.RedLock
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.client.ClientResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.client.MarshallableHttpMethod
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.bankholidaysapi.UKBankHolidays
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.UserOffenderAccess
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.CaseDetail
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.ManagingTeamsResponse
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.StaffDetail
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.StaffMembersPage
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.UserOffenderAccess
 import java.time.Duration
 
 @Configuration
@@ -132,7 +132,7 @@ class ClientResultRedisSerializer(
     return objectMapper.writeValueAsBytes(toSerialize)
   }
 
-  override fun deserialize(bytes: ByteArray?): ClientResult<Any>? {
+  override fun deserialize(bytes: ByteArray?): ClientResult<Any> {
     val deserializedWrapper = objectMapper.readValue(bytes, SerializableClientResult::class.java)
 
     if (deserializedWrapper.discriminator == ClientResultDiscriminator.SUCCESS) {

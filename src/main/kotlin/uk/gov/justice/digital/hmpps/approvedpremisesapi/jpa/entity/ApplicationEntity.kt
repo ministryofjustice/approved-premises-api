@@ -143,18 +143,6 @@ AND (
   ): List<ApprovedPremisesApplicationMetricsSummary>
 
   @Query(
-    """
-      SELECT cast(a.id as varchar) 
-      FROM applications a
-      WHERE a.submitted_at IS NOT NULL AND 
-            a.service = 'approved-premises' AND
-            length(trim(a.data -> 'basic-information' -> 'reason-for-short-notice' ->> 'reason')) > 0 
-    """,
-    nativeQuery = true,
-  )
-  fun findAllSubmittedApprovedPremisesApplicationsWithShortNotice(): List<UUID>
-
-  @Query(
     value = """
     SELECT 
      CAST(id AS text) as id,
@@ -246,14 +234,8 @@ WHERE taa.probation_region_id = :probationRegionId AND a.submitted_at IS NOT NUL
   )
   fun findAllSubmittedTemporaryAccommodationSummariesByRegion(probationRegionId: UUID): List<TemporaryAccommodationApplicationSummary>
 
-  @Query("SELECT DISTINCT(a.crn) FROM ApplicationEntity a")
-  fun getDistinctCrns(): List<String>
-
   @Query("SELECT DISTINCT(a.nomsNumber) FROM ApplicationEntity a WHERE a.nomsNumber IS NOT NULL")
   fun getDistinctNomsNumbers(): List<String>
-
-  @Query("SELECT ap FROM ApprovedPremisesApplicationEntity ap WHERE ap.submittedAt IS NOT NULL and ap.applicantUserDetails IS NULL")
-  fun getSubmittedApprovedPremisesApplicationsWithoutApplicantUserDetails(pageable: Pageable?): Slice<ApprovedPremisesApplicationEntity>
 
   @Query("SELECT taa FROM TemporaryAccommodationApplicationEntity taa WHERE taa.id = :id")
   fun findTemporaryAccommodationApplicationById(id: UUID): TemporaryAccommodationApplicationEntity?
@@ -308,6 +290,9 @@ WHERE taa.probation_region_id = :probationRegionId AND a.submitted_at IS NOT NUL
   )
   fun findAllExpiredApplications(): List<UUID>
 }
+
+@Repository
+interface ApprovedPremiseApplicationRepository : JpaRepository<ApprovedPremisesApplicationEntity, UUID>
 
 @Repository
 interface LockableApplicationRepository : JpaRepository<LockableApplicationEntity, UUID> {
@@ -401,6 +386,11 @@ class ApprovedPremisesApplicationEntity(
   var sentenceType: String?,
   var situation: String?,
   var arrivalDate: OffsetDateTime?,
+  /**
+   * The offender name. This should only be used for search purposes (i.e. SQL)
+   * If returning the offender name to the user, use the [OffenderService], which
+   * will consider any LAO restrictions
+   */
   var name: String,
   var targetLocation: String?,
   @Enumerated(value = EnumType.STRING)
@@ -427,6 +417,7 @@ class ApprovedPremisesApplicationEntity(
   var caseManagerUserDetails: Cas1ApplicationUserDetailsEntity?,
   @Enumerated(value = EnumType.STRING)
   var noticeType: Cas1ApplicationTimelinessCategory?,
+  var licenceExpiryDate: LocalDate?,
 ) : ApplicationEntity(
   id,
   crn,
@@ -447,7 +438,6 @@ class ApprovedPremisesApplicationEntity(
     get() = apType == ApprovedPremisesType.ESAP
 
   fun hasTeamCode(code: String) = teamCodes.any { it.teamCode == code }
-  fun hasAnyTeamCode(codes: List<String>) = codes.any(::hasTeamCode)
   override fun getRequiredQualifications(): List<UserQualification> {
     val requiredQualifications = mutableListOf<UserQualification>()
 

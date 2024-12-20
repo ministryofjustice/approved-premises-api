@@ -17,7 +17,7 @@ class ApplicationTimelineTransformer(
   @Value("\${url-templates.frontend.application}") private val applicationUrlTemplate: UrlTemplate,
   @Value("\${url-templates.frontend.assessment}") private val assessmentUrlTemplate: UrlTemplate,
   @Value("\${url-templates.frontend.booking}") private val bookingUrlTemplate: UrlTemplate,
-  @Value("\${url-templates.frontend.cas1.space-booking-made}") private val cas1SpaceBookingUrlTemplate: UrlTemplate,
+  @Value("\${url-templates.frontend.cas1.space-booking}") private val cas1SpaceBookingUrlTemplate: UrlTemplate,
   @Value("\${url-templates.frontend.application-appeal}") private val appealUrlTemplate: UrlTemplate,
   private val domainEventDescriber: DomainEventDescriber,
   private val userTransformer: UserTransformer,

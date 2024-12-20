@@ -36,9 +36,6 @@ interface UserRepository : JpaRepository<UserEntity, UUID>, JpaSpecificationExec
   @Query("SELECT DISTINCT u FROM UserEntity u join u.roles r where r.role = :role and u.isActive = true")
   fun findActiveUsersWithRole(role: UserRole): List<UserEntity>
 
-  @Query("SELECT DISTINCT u FROM UserEntity u join u.roles r where r.role = :role")
-  fun findUsersWithRole(role: UserRole): List<UserEntity>
-
   @Query("SELECT DISTINCT u FROM UserEntity u join u.roles r where r.role in (:roles) and u.isActive = true")
   fun findActiveUsersWithAtLeastOneRole(roles: List<UserRole>): List<UserEntity>
 
@@ -276,7 +273,6 @@ data class UserEntity(
   var name: String,
   val deliusUsername: String,
   var deliusStaffCode: String,
-  var deliusStaffIdentifier: Long,
   var email: String?,
   var telephoneNumber: String?,
   var isActive: Boolean,

@@ -62,6 +62,7 @@ class PlacementRequestService(
   private val cas1PlacementRequestDomainEventService: Cas1PlacementRequestDomainEventService,
   private val taskDeadlineService: TaskDeadlineService,
   private val cas1BookingDomainEventService: Cas1BookingDomainEventService,
+  private val offenderService: OffenderService,
 ) {
 
   var log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -122,6 +123,10 @@ class PlacementRequestService(
   ): CasResult<PlacementRequestAndCancellations> {
     val placementRequest = placementRequestRepository.findByIdOrNull(id)
       ?: return CasResult.NotFound("PlacementRequest", id.toString())
+
+    if (!offenderService.canAccessOffender(placementRequest.application.crn, user.cas1LimitedAccessStrategy())) {
+      return CasResult.Unauthorised()
+    }
 
     if (placementRequest.allocatedToUser?.id != user.id && !user.hasRole(UserRole.CAS1_WORKFLOW_MANAGER)) {
       return CasResult.Unauthorised()

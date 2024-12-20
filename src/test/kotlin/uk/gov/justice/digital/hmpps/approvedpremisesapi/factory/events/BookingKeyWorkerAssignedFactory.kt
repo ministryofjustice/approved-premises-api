@@ -2,9 +2,10 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.events
 
 import io.github.bluegroundltd.kfactory.Factory
 import io.github.bluegroundltd.kfactory.Yielded
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.BookingKeyWorkerAssigned
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.PersonReference
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.Premises
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.BookingKeyWorkerAssigned
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.PersonReference
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.Premises
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.StaffMember
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringMultiCaseWithNumbers
 import java.time.LocalDate
 import java.util.UUID
@@ -12,6 +13,7 @@ import java.util.UUID
 class BookingKeyWorkerAssignedFactory : Factory<BookingKeyWorkerAssigned> {
   private var applicationId: Yielded<UUID> = { UUID.randomUUID() }
   private var applicationUrl: Yielded<String> = { randomStringMultiCaseWithNumbers(10) }
+  private var keyWorker: Yielded<StaffMember> = { StaffMemberFactory().produce() }
   private var bookingId: Yielded<UUID> = { UUID.randomUUID() }
   private var personReference: Yielded<PersonReference> = { PersonReferenceFactory().produce() }
   private var deliusEventNumber: Yielded<String> = { randomStringMultiCaseWithNumbers(6) }
@@ -41,6 +43,10 @@ class BookingKeyWorkerAssignedFactory : Factory<BookingKeyWorkerAssigned> {
     this.bookingId = { bookingId }
   }
 
+  fun withKeyWorker(keyWorker: StaffMember) = apply {
+    this.keyWorker = { keyWorker }
+  }
+
   fun withPremises(premises: Premises) = apply {
     this.premises = { premises }
   }
@@ -67,6 +73,7 @@ class BookingKeyWorkerAssignedFactory : Factory<BookingKeyWorkerAssigned> {
     personReference = this.personReference(),
     deliusEventNumber = this.deliusEventNumber(),
     bookingId = this.bookingId(),
+    keyWorker = this.keyWorker(),
     premises = this.premises(),
     arrivalDate = this.arrivalDate(),
     departureDate = this.departureDate(),

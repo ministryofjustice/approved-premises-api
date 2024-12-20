@@ -4,17 +4,19 @@ import org.slf4j.LoggerFactory
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
+import org.springframework.stereotype.Component
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApplicationEntity
 import java.util.UUID
 
+@Component
 class UpdateSentenceTypeAndSituationJob(
   private val applicationRepository: UpdateSentenceTypeAndSituationRepository,
 ) : MigrationJob() {
   private val log = LoggerFactory.getLogger(this::class.java)
   override val shouldRunInTransaction = true
 
-  override fun process() {
+  override fun process(pageSize: Int) {
     val items = applicationRepository.getIdSentenceTypeAndSituationFromAllApplicationData()
 
     items.forEach { item ->

@@ -20,6 +20,7 @@ class ApplicationTimelineNoteEntityFactory : Factory<ApplicationTimelineNoteEnti
   private var createdBy: Yielded<UserEntity?>? = null
   private var createdAt: Yielded<OffsetDateTime> = { OffsetDateTime.now().randomDateTimeBefore(30) }
   private var body: Yielded<String> = { randomStringUpperCase(12) }
+  private var cas1SpaceBookingId: Yielded<UUID?> = { null }
 
   fun withDefaults() = apply {
   }
@@ -50,5 +51,6 @@ class ApplicationTimelineNoteEntityFactory : Factory<ApplicationTimelineNoteEnti
     createdBy = this.createdBy?.invoke(),
     createdAt = this.createdAt(),
     body = this.body(),
+    cas1SpaceBookingId = this.cas1SpaceBookingId(),
   )
 }

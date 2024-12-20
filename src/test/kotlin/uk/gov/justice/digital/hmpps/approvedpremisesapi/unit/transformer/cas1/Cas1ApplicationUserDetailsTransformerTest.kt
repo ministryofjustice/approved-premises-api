@@ -9,7 +9,7 @@ import java.util.UUID
 class Cas1ApplicationUserDetailsTransformerTest {
 
   @Test
-  fun `transformJpaToApi`() {
+  fun transformJpaToApi() {
     val result = Cas1ApplicationUserDetailsTransformer().transformJpaToApi(
       Cas1ApplicationUserDetailsEntity(
         id = UUID.randomUUID(),

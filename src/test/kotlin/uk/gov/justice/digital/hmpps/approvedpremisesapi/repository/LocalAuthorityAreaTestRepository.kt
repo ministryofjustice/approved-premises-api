@@ -6,4 +6,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.LocalAuthorit
 import java.util.UUID
 
 @Repository
-interface LocalAuthorityAreaTestRepository : JpaRepository<LocalAuthorityAreaEntity, UUID>
+interface LocalAuthorityAreaTestRepository : JpaRepository<LocalAuthorityAreaEntity, UUID> {
+  fun findByName(name: String): LocalAuthorityAreaEntity?
+}

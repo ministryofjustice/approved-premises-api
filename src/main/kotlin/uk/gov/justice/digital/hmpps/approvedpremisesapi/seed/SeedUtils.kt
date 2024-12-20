@@ -20,7 +20,7 @@ fun appendCharacteristicIfSet(
   characteristicName: String,
   csvColumnName: String? = null,
 ) {
-  val columnName = csvColumnName ?: "$characteristicName"
+  val columnName = csvColumnName ?: characteristicName
 
   if (columns[columnName].toBoolean()) {
     characteristics.add(characteristicName)

@@ -37,7 +37,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.OfflineApplic
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualification
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonInfoResult
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.GroupedDocuments
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.APDeliusDocument
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.BadRequestProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ConflictProblem
@@ -45,18 +44,20 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ForbiddenProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.NotFoundProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.NotImplementedProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActionResult
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.CasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.ValidatableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.AppealService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationTimelineNoteService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.AssessmentService
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.FeatureFlagService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.HttpAuthService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.OffenderService
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.RequestForPlacementService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1RequestForPlacementService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1WithdrawableService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.WithdrawableEntitiesWithNotes
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.AppealTransformer
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.ApplicationTimelineNoteTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.ApplicationsTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.AssessmentTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.DocumentTransformer
@@ -82,9 +83,10 @@ class ApplicationsController(
   private val cas1WithdrawableService: Cas1WithdrawableService,
   private val appealService: AppealService,
   private val appealTransformer: AppealTransformer,
-  private val requestForPlacementService: RequestForPlacementService,
+  private val cas1RequestForPlacementService: Cas1RequestForPlacementService,
   private val withdrawableTransformer: WithdrawableTransformer,
-  private val featureFlagService: FeatureFlagService,
+  private val applicationTimelineNoteService: ApplicationTimelineNoteService,
+  private val applicationTimelineNoteTransformer: ApplicationTimelineNoteTransformer,
 ) : ApplicationsApiDelegate {
 
   override fun applicationsGet(xServiceName: ServiceName?): ResponseEntity<List<ApplicationSummary>> {
@@ -150,41 +152,32 @@ class ApplicationsController(
   override fun applicationsApplicationIdGet(applicationId: UUID): ResponseEntity<Application> {
     val user = userService.getUserForRequest()
 
-    val application = when (
-      val applicationResult =
-        applicationService.getApplicationForUsername(applicationId, user.deliusUsername)
-    ) {
-      is AuthorisableActionResult.NotFound -> null
-      is AuthorisableActionResult.Unauthorised -> throw ForbiddenProblem()
-      is AuthorisableActionResult.Success -> applicationResult.entity
-    }
-
-    if (application != null) {
+    val applicationResult = applicationService.getApplicationForUsername(applicationId, user.deliusUsername)
+    // check for offlineApplication if not found
+    if (applicationResult !is CasResult.NotFound) {
+      val application = extractEntityFromCasResult(applicationResult)
       return ResponseEntity.ok(
         getPersonDetailAndTransform(
           application = application,
           user = user,
-          ignoreLaoRestrictions = application is ApprovedPremisesApplicationEntity && user.hasQualification(UserQualification.LAO),
+          ignoreLaoRestrictions = application is ApprovedPremisesApplicationEntity && user.hasQualification(
+            UserQualification.LAO,
+          ),
+        ),
+      )
+    } else {
+      val offlineApplication = extractEntityFromCasResult(
+        applicationService.getOfflineApplicationForUsername(applicationId, user.deliusUsername),
+      )
+
+      return ResponseEntity.ok(
+        getPersonDetailAndTransform(
+          offlineApplication = offlineApplication,
+          user = user,
+          ignoreLaoRestrictions = user.hasQualification(UserQualification.LAO),
         ),
       )
     }
-
-    val offlineApplication = when (
-      val offlineApplicationResult =
-        applicationService.getOfflineApplicationForUsername(applicationId, user.deliusUsername)
-    ) {
-      is AuthorisableActionResult.Unauthorised -> throw ForbiddenProblem()
-      is AuthorisableActionResult.NotFound -> throw NotFoundProblem(applicationId, "Application")
-      is AuthorisableActionResult.Success -> offlineApplicationResult.entity
-    }
-
-    return ResponseEntity.ok(
-      getPersonDetailAndTransform(
-        offlineApplication = offlineApplication,
-        user = user,
-        ignoreLaoRestrictions = user.hasQualification(UserQualification.LAO),
-      ),
-    )
   }
 
   @Transactional
@@ -302,24 +295,7 @@ class ApplicationsController(
       else -> throw RuntimeException("Unsupported UpdateApplication type: ${body::class.qualifiedName}")
     }
 
-    val validationResult = when (applicationResult) {
-      is AuthorisableActionResult.NotFound -> throw NotFoundProblem(applicationId, "Application")
-      is AuthorisableActionResult.Unauthorised -> throw ForbiddenProblem()
-      is AuthorisableActionResult.Success -> applicationResult.entity
-    }
-
-    val updatedApplication = when (validationResult) {
-      is ValidatableActionResult.GeneralValidationError ->
-        throw BadRequestProblem(errorDetail = validationResult.message)
-
-      is ValidatableActionResult.FieldValidationError ->
-        throw BadRequestProblem(invalidParams = validationResult.validationMessages)
-
-      is ValidatableActionResult.ConflictError ->
-        throw ConflictProblem(id = validationResult.conflictingEntityId, conflictReason = validationResult.message)
-
-      is ValidatableActionResult.Success -> validationResult.entity
-    }
+    val updatedApplication = extractEntityFromCasResult(applicationResult)
 
     return ResponseEntity.ok(getPersonDetailAndTransform(updatedApplication, user))
   }
@@ -329,8 +305,9 @@ class ApplicationsController(
     body: NewApplicationTimelineNote,
   ): ResponseEntity<ApplicationTimelineNote> {
     val user = userService.getUserForRequest()
-    val savedNote = applicationService.addNoteToApplication(applicationId, body.note, user)
-    return ResponseEntity.ok(savedNote)
+    val savedNote = applicationTimelineNoteService.saveApplicationTimelineNote(applicationId, body.note, user)
+
+    return ResponseEntity.ok(applicationTimelineNoteTransformer.transformJpaToApi(savedNote))
   }
 
   override fun applicationsApplicationIdWithdrawalPost(applicationId: UUID, body: NewWithdrawal): ResponseEntity<Unit> {
@@ -357,13 +334,9 @@ class ApplicationsController(
   }
 
   override fun applicationsApplicationIdRequestsForPlacementGet(applicationId: UUID): ResponseEntity<List<RequestForPlacement>> {
-    val requestsForPlacement = when (val result = requestForPlacementService.getRequestsForPlacementByApplication(applicationId, userService.getUserForRequest())) {
-      is AuthorisableActionResult.Success -> result.entity
-      is AuthorisableActionResult.NotFound -> throw NotFoundProblem(applicationId, "Application")
-      is AuthorisableActionResult.Unauthorised -> throw ForbiddenProblem()
-    }
-
-    return ResponseEntity.ok(requestsForPlacement)
+    return ResponseEntity.ok(
+      extractEntityFromCasResult(cas1RequestForPlacementService.getRequestsForPlacementByApplication(applicationId, userService.getUserForRequest())),
+    )
   }
 
   override fun applicationsApplicationIdRequestsForPlacementRequestForPlacementIdGet(
@@ -372,13 +345,9 @@ class ApplicationsController(
   ): ResponseEntity<RequestForPlacement> {
     val application = applicationService.getApplication(applicationId) ?: throw NotFoundProblem(applicationId, "Application")
 
-    val requestForPlacement = when (val result = requestForPlacementService.getRequestForPlacement(application, requestForPlacementId, userService.getUserForRequest())) {
-      is AuthorisableActionResult.Success -> result.entity
-      is AuthorisableActionResult.NotFound -> throw NotFoundProblem(applicationId, "RequestForPlacement")
-      is AuthorisableActionResult.Unauthorised -> throw ForbiddenProblem()
-    }
-
-    return ResponseEntity.ok(requestForPlacement)
+    return ResponseEntity.ok(
+      extractEntityFromCasResult(cas1RequestForPlacementService.getRequestForPlacement(application, requestForPlacementId, userService.getUserForRequest())),
+    )
   }
 
   override fun applicationsApplicationIdSubmissionPost(
@@ -435,38 +404,20 @@ class ApplicationsController(
   override fun applicationsApplicationIdDocumentsGet(applicationId: UUID): ResponseEntity<List<Document>> {
     val deliusPrincipal = httpAuthService.getDeliusPrincipalOrThrow()
     val username = deliusPrincipal.name
+    val application = extractEntityFromCasResult(applicationService.getApplicationForUsername(applicationId, username))
 
-    val application = when (
-      val applicationResult =
-        applicationService.getApplicationForUsername(applicationId, username)
-    ) {
-      is AuthorisableActionResult.NotFound -> throw NotFoundProblem(applicationId, "Application")
-      is AuthorisableActionResult.Unauthorised -> throw ForbiddenProblem()
-      is AuthorisableActionResult.Success -> applicationResult.entity
-    }
+    val documentsResult = getDocuments(application.crn)
+    val apiDocuments = documentTransformer.transformToApi(documentsResult)
 
-    val documentsFromApDeliusFlag = featureFlagService.getBooleanFlag("get-documents-from-ap-delius")
-    val documents = when (val documentsResult = getDocuments(isDocumentFromAPDelius = documentsFromApDeliusFlag, application.crn)) {
-      is AuthorisableActionResult.NotFound -> throw NotFoundProblem(application.crn, "Person")
-      is AuthorisableActionResult.Unauthorised -> throw ForbiddenProblem()
-      is AuthorisableActionResult.Success -> documentsResult.entity
-    }
-
-    val transformedDocuments = when (documents) {
-      is GroupedDocuments -> documentTransformer.transformToApi(documents)
-      is List<*> -> documentTransformer.transformToApi(
-        documents.filterIsInstance<APDeliusDocument>(),
-      )
-      else -> emptyList()
-    }
-
-    return ResponseEntity(transformedDocuments, HttpStatus.OK)
+    return ResponseEntity(apiDocuments, HttpStatus.OK)
   }
 
-  private fun getDocuments(isDocumentFromAPDelius: Boolean, crn: String) = if (isDocumentFromAPDelius) {
-    offenderService.getDocumentsFromApDeliusApi(crn)
-  } else {
-    offenderService.getDocumentsFromCommunityApi(crn)
+  private fun getDocuments(crn: String): List<APDeliusDocument> {
+    return when (val result = offenderService.getDocumentsFromApDeliusApi(crn)) {
+      is AuthorisableActionResult.NotFound -> throw NotFoundProblem(crn, "Documents")
+      is AuthorisableActionResult.Unauthorised -> throw ForbiddenProblem()
+      is AuthorisableActionResult.Success -> result.entity
+    }
   }
 
   override fun applicationsApplicationIdAppealsAppealIdGet(
@@ -474,13 +425,8 @@ class ApplicationsController(
     appealId: UUID,
   ): ResponseEntity<Appeal> {
     val user = userService.getUserForRequest()
-    val applicationResult = applicationService.getApplicationForUsername(applicationId, user.deliusUsername)
-
-    val application = when (applicationResult) {
-      is AuthorisableActionResult.NotFound -> throw NotFoundProblem(applicationId, "Application")
-      is AuthorisableActionResult.Unauthorised -> throw ForbiddenProblem()
-      is AuthorisableActionResult.Success -> applicationResult.entity
-    }
+    val application =
+      extractEntityFromCasResult(applicationService.getApplicationForUsername(applicationId, user.deliusUsername))
 
     val appeal = when (val getAppealResult = appealService.getAppeal(appealId, application)) {
       is AuthorisableActionResult.NotFound -> throw NotFoundProblem(appealId, "Appeal")
@@ -492,13 +438,8 @@ class ApplicationsController(
 
   override fun applicationsApplicationIdAppealsPost(applicationId: UUID, body: NewAppeal): ResponseEntity<Appeal> {
     val user = userService.getUserForRequest()
-    val applicationResult = applicationService.getApplicationForUsername(applicationId, user.deliusUsername)
-
-    val application = when (applicationResult) {
-      is AuthorisableActionResult.NotFound -> throw NotFoundProblem(applicationId, "Application")
-      is AuthorisableActionResult.Unauthorised -> throw ForbiddenProblem()
-      is AuthorisableActionResult.Success -> applicationResult.entity
-    }
+    val application =
+      extractEntityFromCasResult(applicationService.getApplicationForUsername(applicationId, user.deliusUsername))
 
     val assessment = application.getLatestAssessment()
       ?: throw ConflictProblem(
@@ -584,14 +525,8 @@ class ApplicationsController(
     }
 
     val user = userService.getUserForRequest()
-
-    val application = when (
-      val applicationResult = applicationService.getApplicationForUsername(applicationId, user.deliusUsername)
-    ) {
-      is AuthorisableActionResult.NotFound -> throw NotFoundProblem(applicationId, "Application")
-      is AuthorisableActionResult.Unauthorised -> throw ForbiddenProblem()
-      is AuthorisableActionResult.Success -> applicationResult.entity
-    }
+    val application =
+      extractEntityFromCasResult(applicationService.getApplicationForUsername(applicationId, user.deliusUsername))
 
     if (application !is ApprovedPremisesApplicationEntity) {
       throw RuntimeException("Unsupported Application type: ${application::class.qualifiedName}")

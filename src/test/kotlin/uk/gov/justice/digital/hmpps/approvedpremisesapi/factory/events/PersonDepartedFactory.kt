@@ -2,11 +2,11 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.events
 
 import io.github.bluegroundltd.kfactory.Factory
 import io.github.bluegroundltd.kfactory.Yielded
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.PersonDeparted
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.PersonDepartedDestination
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.PersonReference
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.Premises
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.StaffMember
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.PersonDeparted
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.PersonDepartedDestination
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.PersonReference
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.Premises
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.StaffMember
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomDateTimeBefore
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomOf
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringMultiCaseWithNumbers
@@ -21,6 +21,7 @@ class PersonDepartedFactory : Factory<PersonDeparted> {
   private var bookingId: Yielded<UUID> = { UUID.randomUUID() }
   private var premises: Yielded<Premises> = { EventPremisesFactory().produce() }
   private var keyWorker: Yielded<StaffMember> = { StaffMemberFactory().produce() }
+  private var recordedBy: Yielded<StaffMember> = { StaffMemberFactory().produce() }
   private var departedAt: Yielded<Instant> = { Instant.now().randomDateTimeBefore(5) }
   private var reason: Yielded<String> = { randomOf(listOf("Bed Withdrawn", "Died", "Other", "Planned move-on")) }
   private var legacyReasonCode: Yielded<String> = { randomOf(listOf("A", "B", "C", "D")) }
@@ -71,6 +72,7 @@ class PersonDepartedFactory : Factory<PersonDeparted> {
     bookingId = this.bookingId(),
     premises = this.premises(),
     keyWorker = this.keyWorker(),
+    recordedBy = this.recordedBy(),
     departedAt = this.departedAt(),
     reason = this.reason(),
     legacyReasonCode = this.legacyReasonCode(),

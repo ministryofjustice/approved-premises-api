@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# script/run_seed_job_from_excel: Run a seed job for given type and name of XLSX file in seed directory.  e.g.
+#                      script/run_seed_job_from_excel approved_premises ap_upload
+#                      Would start a seed job for the hmpps-approved-premises-api/seed/ap_upload.xlsx file
+
+set -e
+
+curl --location --request POST 'http://127.0.0.1:8080/seedFromExcel' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "seedType": "'$1'",
+    "premisesId": "'$2'",
+    "fileName": "'"$3"'"
+}'
+
+echo "Requested job - check the application logs for processing status"

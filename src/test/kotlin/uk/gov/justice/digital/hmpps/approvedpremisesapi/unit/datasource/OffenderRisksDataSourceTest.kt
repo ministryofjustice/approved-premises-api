@@ -74,13 +74,13 @@ class OffenderRisksDataSourceTest {
     assertThat(result.mappa.status).isEqualTo(RiskStatus.Error)
     assertThat(result.flags.status).isEqualTo(RiskStatus.Error)
 
-    var exceptions = mutableListOf<RuntimeException>()
+    val exceptions = mutableListOf<RuntimeException>()
     verify { mockSentryService.captureException(capture(exceptions)) }
 
-    assertThat(exceptions[0].message).isEqualTo("Error occurred obtaining Risks for getRoshRatings, crn: a-crn")
-    assertThat(exceptions[1].message).isEqualTo("Error occurred obtaining Risks for toMappa, body: null")
-    assertThat(exceptions[2].message).isEqualTo("Error occurred obtaining Risks for getTier, crn: a-crn")
-    assertThat(exceptions[3].message).isEqualTo("Error occurred obtaining Risks for toRiskFlags, body: null")
+    assertThat(exceptions[0].message).isEqualTo("An error occurred obtaining Risks for getRoshRatings, crn: a-crn. Returning RiskWithStatus(status=Error). This does not necessarily block processing")
+    assertThat(exceptions[1].message).isEqualTo("An error occurred obtaining Risks for toMappa, body: null. Returning RiskWithStatus(status=Error). This does not necessarily block processing")
+    assertThat(exceptions[2].message).isEqualTo("An error occurred obtaining Risks for getTier, crn: a-crn. Returning RiskWithStatus(status=Error). This does not necessarily block processing")
+    assertThat(exceptions[3].message).isEqualTo("An error occurred obtaining Risks for toRiskFlags, body: null. Returning RiskWithStatus(status=Error). This does not necessarily block processing")
   }
 
   @Test
@@ -103,10 +103,10 @@ class OffenderRisksDataSourceTest {
     assertThat(result.mappa.status).isEqualTo(RiskStatus.Error)
     assertThat(result.flags.status).isEqualTo(RiskStatus.Error)
 
-    var exceptions = mutableListOf<RuntimeException>()
+    val exceptions = mutableListOf<RuntimeException>()
     verify { mockSentryService.captureException(capture(exceptions)) }
 
-    assertThat(exceptions[0].message).isEqualTo("Error occurred obtaining Risks for getRoshRatings, crn: a-crn")
+    assertThat(exceptions[0].message).isEqualTo("An error occurred obtaining Risks for getRoshRatings, crn: a-crn. Returning RiskWithStatus(status=Error). This does not necessarily block processing")
     assertThat(exceptions[0].cause.toString()).isEqualTo("java.lang.RuntimeException: Unable to complete GET request to /rosh/a-crn")
   }
 

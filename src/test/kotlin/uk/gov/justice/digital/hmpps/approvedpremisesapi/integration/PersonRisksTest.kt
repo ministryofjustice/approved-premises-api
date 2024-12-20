@@ -11,18 +11,13 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.RiskTierEnvelo
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.RoshRisks
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.RoshRisksEnvelope
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.CaseDetailFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.RegistrationClientResponseFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.RoshRatingsFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.from
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAUser
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnOffender
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextMockSuccessfulCaseDetailCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apOASysContextMockSuccessfulRoshRatingsCall
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockNotFoundOffenderDetailsCall
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockSuccessfulRegistrationsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.hmppsTierMockSuccessfulTierCall
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.RegistrationKeyValue
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.Registrations
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.MappaDetail
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.Registration
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.hmppstier.Tier
@@ -79,8 +74,6 @@ class PersonRisksTest : InitialiseDatabasePerClassTestBase() {
     givenAUser { userEntity, jwt ->
       val crn = "CRN123"
 
-      communityAPIMockNotFoundOffenderDetailsCall(crn)
-
       webTestClient.get()
         .uri("/people/$crn/risks")
         .header("Authorization", "Bearer $jwt")
@@ -112,23 +105,6 @@ class PersonRisksTest : InitialiseDatabasePerClassTestBase() {
             tierScore = "M2",
             calculationId = UUID.randomUUID(),
             calculationDate = LocalDateTime.parse("2022-09-06T14:59:00"),
-          ),
-        )
-
-        communityAPIMockSuccessfulRegistrationsCall(
-          offenderDetails.otherIds.crn,
-          Registrations(
-            registrations = listOf(
-              RegistrationClientResponseFactory()
-                .withType(RegistrationKeyValue(code = "MAPP", description = "MAPPA"))
-                .withRegisterCategory(RegistrationKeyValue(code = "C1", description = "C1"))
-                .withRegisterLevel(RegistrationKeyValue(code = "L1", description = "L1"))
-                .withStartDate(LocalDate.parse("2022-09-06"))
-                .produce(),
-              RegistrationClientResponseFactory()
-                .withType(RegistrationKeyValue(code = "FLAG", description = "RISK FLAG"))
-                .produce(),
-            ),
           ),
         )
 

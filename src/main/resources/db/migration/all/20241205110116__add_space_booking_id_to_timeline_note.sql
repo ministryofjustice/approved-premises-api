@@ -1,0 +1,2 @@
+ALTER TABLE application_timeline_notes ADD cas1_space_booking_id uuid NULL;
+ALTER TABLE application_timeline_notes ADD CONSTRAINT application_timeline_notes_cas1_space_bookings_fk FOREIGN KEY (cas1_space_booking_id) REFERENCES cas1_space_bookings(id);

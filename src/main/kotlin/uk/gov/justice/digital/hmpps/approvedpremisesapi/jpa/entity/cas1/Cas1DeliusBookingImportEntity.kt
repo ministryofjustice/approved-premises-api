@@ -6,11 +6,13 @@ import jakarta.persistence.Table
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Repository
-interface Cas1DeliusBookingImportRepository : JpaRepository<Cas1DeliusBookingImportEntity, UUID>
+interface Cas1DeliusBookingImportRepository : JpaRepository<Cas1DeliusBookingImportEntity, UUID> {
+  fun findByBookingId(id: UUID): Cas1DeliusBookingImportEntity?
+}
 
 @Entity
 @Table(name = "cas1_delius_booking_import")
@@ -31,7 +33,7 @@ data class Cas1DeliusBookingImportEntity(
   val expectedDepartureDate: LocalDate?,
   val departureDate: LocalDate?,
   val nonArrivalDate: LocalDate?,
-  val nonArrivalContactDatetime: LocalDateTime?,
+  val nonArrivalContactDatetime: OffsetDateTime?,
   val nonArrivalReasonCode: String?,
   val nonArrivalReasonDescription: String?,
   val nonArrivalNotes: String?,

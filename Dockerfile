@@ -31,10 +31,11 @@ COPY --from=builder --chown=appuser:appgroup /app/applicationinsights.json /app
 COPY --from=builder --chown=appuser:appgroup /app/applicationinsights.nonprod.json /app
 
 COPY --from=builder --chown=appuser:appgroup /app/script/run_seed_job /app
+COPY --from=builder --chown=appuser:appgroup /app/script/run_seed_from_excel_job /app
 COPY --from=builder --chown=appuser:appgroup /app/script/run_migration_job /app
 COPY --from=builder --chown=appuser:appgroup /app/script/hard_delete /app
 COPY --from=builder --chown=appuser:appgroup /app/script/clear_cache /app
-RUN mkdir /tmp/seed && chown appuser:appgroup /tmp/seed && chmod +x /app/run_seed_job && chmod +x /app/run_migration_job && chmod +x /app/hard_delete && chmod +x /app/clear_cache
+RUN mkdir /tmp/seed && chown appuser:appgroup /tmp/seed && chmod +x /app/run_seed_job && chmod +x /app/run_seed_from_excel_job && chmod +x /app/run_migration_job && chmod +x /app/hard_delete && chmod +x /app/clear_cache
 
 USER 2000
 

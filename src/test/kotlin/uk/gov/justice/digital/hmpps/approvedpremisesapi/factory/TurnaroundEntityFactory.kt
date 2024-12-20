@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomInt
 import java.time.OffsetDateTime
 import java.util.UUID
 
-public class TurnaroundEntityFactory : Factory<TurnaroundEntity> {
+class TurnaroundEntityFactory : Factory<TurnaroundEntity> {
   private var id: Yielded<UUID> = { UUID.randomUUID() }
   private var workingDayCount: Yielded<Int> = { randomInt(0, 14) }
   private var createdAt: Yielded<OffsetDateTime> = { OffsetDateTime.now().minusDays(14L).randomDateTimeBefore(14) }

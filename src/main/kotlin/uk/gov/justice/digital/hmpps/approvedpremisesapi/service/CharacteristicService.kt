@@ -18,9 +18,6 @@ class CharacteristicService(
   fun getCharacteristic(characteristicId: UUID): CharacteristicEntity? =
     characteristicRepository.findByIdOrNull(characteristicId)
 
-  fun getCharacteristic(characteristicName: String): CharacteristicEntity? =
-    characteristicRepository.findByName(characteristicName)
-
   fun getCharacteristicByPropertyName(propertyName: String, serviceName: ServiceName): CharacteristicEntity? =
     characteristicRepository.findByPropertyName(propertyName, serviceName.value)
 

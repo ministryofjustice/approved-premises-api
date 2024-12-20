@@ -1,7 +1,7 @@
 import org.apache.commons.io.FileUtils
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.0.6"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.1.0"
   kotlin("plugin.spring") version "2.0.20"
   id("org.openapi.generator") version "7.7.0"
   id("org.jetbrains.kotlin.plugin.jpa") version "1.9.22"
@@ -21,10 +21,8 @@ configurations.matching { it.name == "detekt" }.all {
   }
 }
 
-val springDocVersion = "1.7.0"
-
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.0.2-beta-4")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.1.0")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -38,13 +36,9 @@ dependencies {
   implementation("com.github.ben-manes.caffeine:caffeine")
   implementation("com.google.guava:guava:33.3.1-jre")
   implementation("org.postgresql:postgresql:42.7.4")
+  implementation("org.javers:javers-core:7.7.0")
 
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-api:2.5.0")
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
-  implementation("org.springdoc:springdoc-openapi-starter-common:2.5.0")
-  implementation("org.springdoc:springdoc-openapi-ui:1.8.0")
-  implementation("org.springdoc:springdoc-openapi-kotlin:1.8.0")
-  implementation("org.springdoc:springdoc-openapi-data-rest:1.8.0")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
 
   implementation("org.zalando:problem-spring-web-starter:0.29.1")
 
@@ -52,7 +46,6 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
   implementation("io.sentry:sentry-spring-boot-starter-jakarta:7.11.0")
-  implementation("org.springframework.boot:spring-boot-starter-cache")
 
   runtimeOnly("org.ehcache:ehcache")
   runtimeOnly("org.flywaydb:flyway-database-postgresql")
@@ -74,6 +67,7 @@ dependencies {
 
   implementation("net.javacrumbs.shedlock:shedlock-spring:5.16.0")
   implementation("net.javacrumbs.shedlock:shedlock-provider-redis-spring:5.16.0")
+  implementation("org.jetbrains.kotlinx:dataframe-excel:0.13.1")
 
   testImplementation("io.github.bluegroundltd:kfactory:1.0.0")
   testImplementation("io.mockk:mockk:1.13.13")
@@ -109,7 +103,6 @@ tasks {
       jvmTarget = "21"
     }
 
-    kotlin.sourceSets["main"].kotlin.srcDir("$buildDir/generated/src/main")
     dependsOn("openApiGenerate")
     getByName("check") {
       dependsOn(":ktlintCheck", "detekt")
@@ -118,6 +111,15 @@ tasks {
 
   compileJava { enabled = false }
   compileTestJava { enabled = false }
+}
+
+// set the generated set globally
+sourceSets {
+  main {
+    kotlin {
+      srcDirs("src/main/kotlin", "$buildDir/generated/src/main/kotlin")
+    }
+  }
 }
 
 // this is deprecated in favour of bootRunDebug, which does not set an active profile
@@ -283,7 +285,7 @@ registerAdditionalOpenApiGenerateTask(
   name = "openApiGenerateDomainEvents",
   ymlPath = "$rootDir/src/main/resources/static/domain-events-api.yml",
   apiPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api",
-  modelPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model",
+  modelPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model",
 )
 
 registerAdditionalOpenApiGenerateTask(

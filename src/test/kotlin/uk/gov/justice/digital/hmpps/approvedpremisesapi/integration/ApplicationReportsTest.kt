@@ -18,7 +18,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.AssessmentReje
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1ApplicationUserDetails
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Gender
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewAppeal
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewBooking
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewPlacementApplication
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewReallocation
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PlacementApplication
@@ -38,7 +37,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.client.ApDeliusContextAp
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.client.ClientResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.CaseDetailFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PersonRisksFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.RegistrationClientResponseFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.StaffDetailFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.TeamFactoryDeliusContext
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.from
@@ -47,7 +45,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.given
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnApArea
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnOffender
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextMockSuccessfulCaseDetailCall
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockSuccessfulRegistrationsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AppealEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AppealRepository
@@ -61,8 +58,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremi
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentDecision
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentRepository
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.BookingEntity
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.BookingRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.Mappa
@@ -71,8 +66,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.RiskStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.RiskTier
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.RiskWithStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.OffenderDetailSummary
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.RegistrationKeyValue
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.Registrations
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.CaseDetail
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.MappaDetail
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.ProbationArea
@@ -94,9 +87,6 @@ class ApplicationReportsTest : InitialiseDatabasePerClassTestBase() {
   lateinit var realAssessmentRepository: AssessmentRepository
 
   @Autowired
-  lateinit var realBookingRepository: BookingRepository
-
-  @Autowired
   lateinit var realAppealRepository: AppealRepository
 
   @Autowired
@@ -113,7 +103,7 @@ class ApplicationReportsTest : InitialiseDatabasePerClassTestBase() {
   lateinit var referrerProbationArea: String
 
   lateinit var assessorDetails: Pair<UserEntity, String>
-  lateinit var managerDetails: Pair<UserEntity, String>
+  lateinit var futureManagerDetails: Pair<UserEntity, String>
   lateinit var workflowManagerDetails: Pair<UserEntity, String>
   lateinit var matcherDetails: Pair<UserEntity, String>
   lateinit var appealManagerDetails: Pair<UserEntity, String>
@@ -123,7 +113,7 @@ class ApplicationReportsTest : InitialiseDatabasePerClassTestBase() {
   lateinit var placementApplicationSchema: ApprovedPremisesPlacementApplicationJsonSchemaEntity
 
   lateinit var applicationWithoutAssessment: ApprovedPremisesApplicationEntity
-  lateinit var applicationWithBooking: ApprovedPremisesApplicationEntity
+  lateinit var applicationWithAssessment: ApprovedPremisesApplicationEntity
   lateinit var applicationWithPlacementApplication: ApprovedPremisesApplicationEntity
   lateinit var applicationWithReallocatedCompleteAssessments: ApprovedPremisesApplicationEntity
   lateinit var applicationShortNotice: ApprovedPremisesApplicationEntity
@@ -157,7 +147,7 @@ class ApplicationReportsTest : InitialiseDatabasePerClassTestBase() {
         }
       },
     )
-    managerDetails = givenAUser(roles = listOf(UserRole.CAS1_MANAGER))
+    futureManagerDetails = givenAUser(roles = listOf(UserRole.CAS1_FUTURE_MANAGER))
     workflowManagerDetails = givenAUser(roles = listOf(UserRole.CAS1_WORKFLOW_MANAGER))
     matcherDetails = givenAUser(roles = listOf(UserRole.CAS1_MATCHER))
     appealManagerDetails = givenAUser(roles = listOf(UserRole.CAS1_APPEALS_MANAGER))
@@ -180,12 +170,10 @@ class ApplicationReportsTest : InitialiseDatabasePerClassTestBase() {
 
     applicationWithoutAssessment = createApplication("applicationWithoutAssessment")
 
-    val applicationWithBookingArgs = createApplicationWithBooking("applicationWithBooking")
-    applicationWithBooking = applicationWithBookingArgs.first
+    applicationWithAssessment = createApplicationWithCompletedAssessment("application")
 
     applicationWithPlacementApplication = createApplicationWithCompletedAssessment("applicationWithPlacementApplication")
     createAndAcceptPlacementApplication(applicationWithPlacementApplication)
-    createBookingForApplication(applicationWithPlacementApplication)
 
     applicationWithMultipleAssessments = createApplication("applicationWithMultipleAssessments")
     reallocateAssessment(applicationWithMultipleAssessments)
@@ -268,7 +256,7 @@ class ApplicationReportsTest : InitialiseDatabasePerClassTestBase() {
           assertThat(actual.size).isEqualTo(9)
 
           assertApplicationRowHasCorrectData(actual, applicationWithoutAssessment.id, userEntity, ApplicationFacets(isAssessed = false, isAccepted = false))
-          assertApplicationRowHasCorrectData(actual, applicationWithBooking.id, userEntity)
+          assertApplicationRowHasCorrectData(actual, applicationWithAssessment.id, userEntity)
           assertApplicationRowHasCorrectData(actual, applicationWithPlacementApplication.id, userEntity, ApplicationFacets(hasPlacementApplication = true))
           assertApplicationRowHasCorrectData(actual, applicationWithReallocatedCompleteAssessments.id, userEntity)
           assertApplicationRowHasCorrectData(actual, applicationWithMultipleAssessments.id, userEntity)
@@ -405,31 +393,10 @@ class ApplicationReportsTest : InitialiseDatabasePerClassTestBase() {
     return application
   }
 
-  private fun createApplicationWithBooking(crn: String): Pair<ApprovedPremisesApplicationEntity, BookingEntity> {
-    val application = createApplicationWithCompletedAssessment(crn)
-    val booking = createBookingForApplication(application)
-
-    return Pair(application, booking)
-  }
-
   private fun createAndSubmitApplication(apType: ApType, crn: String, withArrivalDate: Boolean = true, shortNotice: Boolean = false): ApprovedPremisesApplicationEntity {
     val (referrer, jwt) = referrerDetails
     val (offenderDetails, _) = givenAnOffender(
       offenderDetailsConfigBlock = { withCrn(crn) },
-    )
-
-    communityAPIMockSuccessfulRegistrationsCall(
-      offenderDetails.otherIds.crn,
-      Registrations(
-        registrations = listOf(
-          RegistrationClientResponseFactory()
-            .withType(RegistrationKeyValue(code = "MAPP", description = "MAPPA"))
-            .withRegisterCategory(RegistrationKeyValue(code = "M2", description = "M2"))
-            .withRegisterLevel(RegistrationKeyValue(code = "M2", description = "M2"))
-            .withStartDate(LocalDate.parse("2022-09-06"))
-            .produce(),
-        ),
-      ),
     )
 
     apDeliusContextMockSuccessfulCaseDetailCall(
@@ -602,48 +569,6 @@ class ApplicationReportsTest : InitialiseDatabasePerClassTestBase() {
       .isOk
 
     return realAssessmentRepository.findByIdOrNull(assessment.id) as ApprovedPremisesAssessmentEntity
-  }
-
-  private fun createBookingForApplication(application: ApprovedPremisesApplicationEntity): BookingEntity {
-    val (_, jwt) = matcherDetails
-
-    val premises = approvedPremisesEntityFactory.produceAndPersist {
-      withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
-      withYieldedProbationRegion {
-        probationRegionEntityFactory.produceAndPersist {
-          withYieldedApArea {
-            givenAnApArea()
-          }
-        }
-      }
-    }
-
-    val room = roomEntityFactory.produceAndPersist {
-      withPremises(premises)
-    }
-
-    val bed = bedEntityFactory.produceAndPersist {
-      withRoom(room)
-    }
-
-    webTestClient.post()
-      .uri("/premises/${premises.id}/bookings")
-      .header("Authorization", "Bearer $jwt")
-      .bodyValue(
-        NewBooking(
-          crn = application.crn,
-          arrivalDate = LocalDate.parse("2022-08-12"),
-          departureDate = LocalDate.parse("2022-08-30"),
-          serviceName = ServiceName.approvedPremises,
-          bedId = bed.id,
-          eventNumber = "eventNumber",
-        ),
-      )
-      .exchange()
-      .expectStatus()
-      .isOk
-
-    return realBookingRepository.findAllByCrn(application.crn).maxByOrNull { it.createdAt }!!
   }
 
   private fun reallocateAssessment(application: ApprovedPremisesApplicationEntity) {

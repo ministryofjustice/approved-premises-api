@@ -88,11 +88,6 @@ class Cas1FutureManagerUserAccessTest {
     }
 
     @Test
-    fun `may manage premises out-of-service (aka lost) beds`() {
-      assertThat(userAccessService.userCanManagePremisesLostBeds(futureManager, approvedPremises)).isTrue
-    }
-
-    @Test
     fun `may view premises staff`() {
       assertThat(userAccessService.userCanViewPremisesStaff(futureManager, approvedPremises)).isTrue
     }

@@ -410,7 +410,6 @@ class UserService(
         id = UUID.randomUUID(),
         name = staffUserDetails.name.deliusName(),
         deliusUsername = normalisedUsername,
-        deliusStaffIdentifier = staffUserDetails.staffIdentifier,
         deliusStaffCode = staffUserDetails.code,
         email = staffUserDetails.email,
         telephoneNumber = staffUserDetails.telephoneNumber,

@@ -19,7 +19,7 @@ class DepartureEntityFactory : Factory<DepartureEntity> {
   private var reason: Yielded<DepartureReasonEntity>? = null
   private var moveOnCategory: Yielded<MoveOnCategoryEntity>? = null
   private var destinationProvider: Yielded<DestinationProviderEntity>? = null
-  private var notes: Yielded<String> = { randomStringMultiCaseWithNumbers(20) }
+  private var notes: Yielded<String?> = { randomStringMultiCaseWithNumbers(20) }
   private var booking: Yielded<BookingEntity>? = null
   private var createdAt: Yielded<OffsetDateTime> = { OffsetDateTime.now().minusDays(14L).randomDateTimeBefore(14) }
 
@@ -47,7 +47,7 @@ class DepartureEntityFactory : Factory<DepartureEntity> {
     this.moveOnCategory = { moveOnCategory }
   }
 
-  fun withNotes(notes: String) = apply {
+  fun withNotes(notes: String?) = apply {
     this.notes = { notes }
   }
 

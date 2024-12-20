@@ -43,13 +43,13 @@ class Cas2BailApplicationController(
     prisonCode: String?,
   ): ResponseEntity<List<ModelCas2ApplicationSummary>> {
     /*This gets a NomisUser. Toby and Gareth discussed creating a third user service
-   * The third user service will return a Cas2BailUser. That user will have two nullable fields/properties
-   * 1. DeliusUser
-   * 2. NomisUser
-   * We discussed using transformers if we need any specific data about the user eg their name.
-   *
-   * In the Cas2BailApplicationEntity the created_by field would be of type Cas2BailUser
-   * */
+     * The third user service will return a Cas2BailUser. That user will have two nullable fields/properties
+     * 1. DeliusUser
+     * 2. NomisUser
+     * We discussed using transformers if we need any specific data about the user eg their name.
+     *
+     * In the Cas2BailApplicationEntity the created_by field would be of type Cas2BailUser
+     * */
     val user = userService.getUserForRequest()
 
     prisonCode?.let { if (prisonCode != user.activeCaseloadId) throw ForbiddenProblem() }

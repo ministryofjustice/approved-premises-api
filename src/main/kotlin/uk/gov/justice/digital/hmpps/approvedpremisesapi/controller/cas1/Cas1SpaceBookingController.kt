@@ -7,13 +7,14 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.cas1.SpaceBookingsCa
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1AssignKeyWorker
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NewArrival
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NewDeparture
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NewSpaceBooking
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NewSpaceBookingCancellation
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NonArrival
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBooking
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBookingResidency
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBookingSummary
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBookingSummarySortField
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewCas1SpaceBooking
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewCas1SpaceBookingCancellation
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1UpdateSpaceBooking
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SortDirection
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEvent
@@ -24,12 +25,14 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserPermissio
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserPermission.CAS1_SPACE_BOOKING_VIEW
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualification
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.forCrn
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.BadRequestProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.CharacteristicService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.OffenderService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserAccessService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1SpaceBookingManagementDomainEventService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1SpaceBookingService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1SpaceBookingService.DepartureInfo
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1SpaceBookingService.SpaceBookingFilterCriteria
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1WithdrawableService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1LimitedAccessStrategy
@@ -37,6 +40,9 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.cas1.Cas1Spa
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.PageCriteria
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.ensureEntityFromCasResultIsSuccess
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromCasResult
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.toLocalDate
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.toLocalDateTime
+import java.time.LocalTime
 import java.util.UUID
 
 @Service
@@ -59,7 +65,7 @@ class Cas1SpaceBookingController(
 
   override fun createSpaceBooking(
     placementRequestId: UUID,
-    body: NewCas1SpaceBooking,
+    body: Cas1NewSpaceBooking,
   ): ResponseEntity<Cas1SpaceBooking> {
     userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_SPACE_BOOKING_CREATE)
 
@@ -151,6 +157,14 @@ class Cas1SpaceBookingController(
       .body(toCas1SpaceBooking(booking))
   }
 
+  override fun updateSpaceBooking(
+    premisesId: UUID,
+    bookingId: UUID,
+    cas1UpdateSpaceBooking: Cas1UpdateSpaceBooking,
+  ): ResponseEntity<Unit> {
+    return super.updateSpaceBooking(premisesId, bookingId, cas1UpdateSpaceBooking)
+  }
+
   override fun recordArrival(
     premisesId: UUID,
     bookingId: UUID,
@@ -158,11 +172,28 @@ class Cas1SpaceBookingController(
   ): ResponseEntity<Unit> {
     userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_SPACE_BOOKING_RECORD_ARRIVAL)
 
+    val arrivalDateAndTime = if (cas1NewArrival.arrivalDateTime != null) {
+      Pair(
+        cas1NewArrival.arrivalDateTime!!.toLocalDate(),
+        cas1NewArrival.arrivalDateTime!!.toLocalDateTime().toLocalTime(),
+      )
+    } else {
+      val arrivalDate = cas1NewArrival.arrivalDate
+        ?: throw BadRequestProblem(invalidParams = mapOf("arrivalDate" to "is required"))
+      val arrivalTime = cas1NewArrival.arrivalTime
+        ?: throw BadRequestProblem(invalidParams = mapOf("arrivalTime" to "is required"))
+      Pair(
+        arrivalDate,
+        LocalTime.parse(arrivalTime),
+      )
+    }
+
     ensureEntityFromCasResultIsSuccess(
       cas1SpaceBookingService.recordArrivalForBooking(
         premisesId,
         bookingId,
-        cas1NewArrival,
+        arrivalDate = arrivalDateAndTime.first,
+        arrivalTime = arrivalDateAndTime.second,
       ),
     )
     return ResponseEntity(HttpStatus.OK)
@@ -175,11 +206,33 @@ class Cas1SpaceBookingController(
   ): ResponseEntity<Unit> {
     userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_SPACE_BOOKING_RECORD_DEPARTURE)
 
+    val departureDateAndTime = if (cas1NewDeparture.departureDateTime != null) {
+      Pair(
+        cas1NewDeparture.departureDateTime!!.toLocalDate(),
+        cas1NewDeparture.departureDateTime!!.toLocalDateTime().toLocalTime(),
+      )
+    } else {
+      val departureDate = cas1NewDeparture.departureDate
+        ?: throw BadRequestProblem(invalidParams = mapOf("departureDate" to "is required"))
+      val departureTime = cas1NewDeparture.departureTime
+        ?: throw BadRequestProblem(invalidParams = mapOf("departureTime" to "is required"))
+      Pair(
+        departureDate,
+        LocalTime.parse(departureTime),
+      )
+    }
+
     ensureEntityFromCasResultIsSuccess(
       cas1SpaceBookingService.recordDepartureForBooking(
         premisesId,
         bookingId,
-        cas1NewDeparture,
+        DepartureInfo(
+          departureDate = departureDateAndTime.first,
+          departureTime = departureDateAndTime.second,
+          reasonId = cas1NewDeparture.reasonId,
+          moveOnCategoryId = cas1NewDeparture.moveOnCategoryId,
+          notes = cas1NewDeparture.notes,
+        ),
       ),
     )
     return ResponseEntity(HttpStatus.OK)
@@ -205,7 +258,7 @@ class Cas1SpaceBookingController(
   override fun cancelSpaceBooking(
     premisesId: UUID,
     bookingId: UUID,
-    body: NewCas1SpaceBookingCancellation,
+    body: Cas1NewSpaceBookingCancellation,
   ): ResponseEntity<Unit> {
     userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_SPACE_BOOKING_WITHDRAW)
 

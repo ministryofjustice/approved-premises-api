@@ -1,15 +1,16 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed
 
 import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Characteristic
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository
 import java.util.UUID
 
+@Component
 class CharacteristicsSeedJob(
   private val characteristicRepository: CharacteristicRepository,
 ) : SeedJob<CharacteristicsSeedCsvRow>(
-  id = UUID.randomUUID(),
   requiredHeaders = setOf(
     "characteristic_name",
     "characteristic_property_name",

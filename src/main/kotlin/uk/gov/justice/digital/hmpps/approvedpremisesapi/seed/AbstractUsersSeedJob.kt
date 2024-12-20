@@ -5,7 +5,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualification
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
-import java.util.UUID
 /**
  * Seeds users, along with their roles and qualifications.
  *
@@ -20,7 +19,6 @@ abstract class AbstractUsersSeedJob(
   private val useRolesForServices: List<ServiceName>,
   private val userService: UserService,
 ) : SeedJob<UsersSeedCsvRow>(
-  id = UUID.randomUUID(),
   requiredHeaders = setOf(
     "deliusUsername",
     "roles",
@@ -40,7 +38,7 @@ abstract class AbstractUsersSeedJob(
 
     val roles = roleNames.mapNotNull {
       try {
-        parseUserRole(it)
+        UserRole.valueOf(it)
       } catch (_: Exception) {
         unknownRoles += it
         null
@@ -91,18 +89,6 @@ abstract class AbstractUsersSeedJob(
     row.qualifications.forEach {
       userService.addQualificationToUser(user, it)
     }
-  }
-
-  private fun parseUserRole(value: String) = when (value) {
-    "APPLICANT" -> UserRole.CAS1_APPLICANT
-    "ASSESSOR" -> UserRole.CAS1_ASSESSOR
-    "MANAGER" -> UserRole.CAS1_MANAGER
-    "MATCHER" -> UserRole.CAS1_MATCHER
-    "ROLE_ADMIN" -> UserRole.CAS1_ADMIN
-    "WORKFLOW_MANAGER" -> UserRole.CAS1_WORKFLOW_MANAGER
-    else -> UserRole.valueOf(value)
-  }.let {
-    if (useRolesForServices.contains(it.service)) it else null
   }
 }
 

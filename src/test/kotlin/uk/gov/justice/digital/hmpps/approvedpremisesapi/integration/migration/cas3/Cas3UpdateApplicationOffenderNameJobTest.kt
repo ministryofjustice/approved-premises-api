@@ -107,8 +107,6 @@ class Cas3UpdateApplicationOffenderNameJobTest : MigrationJobTestBase() {
 
       apDeliusContextAddListCaseSummaryToBulkResponse(cases)
 
-      mockOffenderUserAccessCommunityApiCall("", temporaryAccommodationApplications.first().crn, true, true)
-
       migrationJobService.runMigrationJob(MigrationJobType.cas3ApplicationOffenderName, 10)
 
       temporaryAccommodationApplications.forEach {
@@ -144,8 +142,6 @@ class Cas3UpdateApplicationOffenderNameJobTest : MigrationJobTestBase() {
       }
 
       apDeliusContextAddListCaseSummaryToBulkResponse(listOf())
-
-      mockOffenderUserAccessCommunityApiCall("", temporaryAccommodationApplication.crn, true, true)
 
       migrationJobService.runMigrationJob(MigrationJobType.cas3ApplicationOffenderName, 10)
 

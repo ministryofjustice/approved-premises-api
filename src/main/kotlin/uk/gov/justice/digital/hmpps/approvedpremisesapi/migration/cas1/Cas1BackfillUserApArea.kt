@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.migration.cas1
 import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
+import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.client.ApDeliusContextApiClient
@@ -12,6 +13,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRepositor
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.migration.MigrationJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 
+@Component
 class Cas1BackfillUserApArea(
   private val userRepository: UserRepository,
   private val userService: UserService,
@@ -22,7 +24,7 @@ class Cas1BackfillUserApArea(
   override val shouldRunInTransaction = false
 
   @SuppressWarnings("MagicNumber")
-  override fun process() {
+  override fun process(pageSize: Int) {
     userRepository.findAll().forEach { user ->
       transactionTemplate.executeWithoutResult {
         updateUser(user)

@@ -4,17 +4,18 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedJob
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationTimelineNoteService
 import java.util.UUID
 
+@Component
 class Cas1RemoveAssessmentDetailsSeedJob(
   private val assessmentRepository: AssessmentRepository,
   private val objectMapper: ObjectMapper,
-  private val applicationService: ApplicationService,
+  private val applicationTimelineNoteService: ApplicationTimelineNoteService,
 ) : SeedJob<Cas1RemoveAssessmentDetailsSeedCsvRow>(
-  id = UUID.randomUUID(),
   requiredHeaders = setOf(
     "assessment_id",
   ),
@@ -35,7 +36,7 @@ class Cas1RemoveAssessmentDetailsSeedJob(
     assessmentRepository.save(assessment)
 
     if (assessment.data != null || assessment.document != null) {
-      applicationService.addNoteToApplication(
+      applicationTimelineNoteService.saveApplicationTimelineNote(
         applicationId = assessment.application.id,
         note = "Assessment details redacted",
         user = null,

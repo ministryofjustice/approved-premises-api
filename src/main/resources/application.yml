@@ -109,6 +109,8 @@ spring:
 springdoc:
   swagger-ui:
     urls-primary-name: "All CAS"
+  remove-broken-reference-definitions: false
+  writer-with-order-by-keys: true
 
 server:
   port: 8080
@@ -143,8 +145,6 @@ management:
         time-to-live: 2000ms
 
 services:
-  community-api:
-    base-url: http://localhost:9590
   hmpps-tier:
     base-url: http://localhost:9004
   prisons-api:
@@ -253,7 +253,7 @@ url-templates:
     assessment: http://localhost:3000/assessments/#id
     booking: http://localhost:3000/premises/#premisesId/bookings/#bookingId
     cas1:
-      space-booking-made: http://localhost:3000/manage/premises/#premisesId/bookings/#bookingId
+      space-booking: http://localhost:3000/manage/premises/#premisesId/placements/#bookingId
     cas2:
       application: http://localhost:3000/applications/#id
       application-overview: http://localhost:3000/applications/#id/overview
@@ -291,11 +291,4 @@ scheduling:
   enabled: true
 
 feature-flags:
-  cas1-only-list-adjudications-up-to-12-months: false
-  cas1-only-list-specific-prison-note-types: false
-  cas1-womens-estate-enabled: false
-  cas1-expired-applications-enabled: false
-  include-assessment-updated-domain-events: false
-  get-documents-from-ap-delius: false
-  get-offences-from-ap-delius: false
 

@@ -4,7 +4,6 @@ import io.github.bluegroundltd.kfactory.Factory
 import io.github.bluegroundltd.kfactory.Yielded
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesEntity
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.BookingEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CancellationReasonEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas1SpaceBookingEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicEntity
@@ -18,6 +17,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringUpperCase
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -31,8 +31,10 @@ class Cas1SpaceBookingEntityFactory : Factory<Cas1SpaceBookingEntity> {
   private var createdAt: Yielded<OffsetDateTime> = { OffsetDateTime.now() }
   private var expectedArrivalDate: Yielded<LocalDate> = { LocalDate.now() }
   private var expectedDepartureDate: Yielded<LocalDate> = { LocalDate.now() }
-  private var actualArrivalDateTime: Yielded<Instant?> = { null }
-  private var actualDepartureDateTime: Yielded<Instant?> = { null }
+  private var actualArrivalDate: Yielded<LocalDate?> = { null }
+  private var actualArrivalTime: Yielded<LocalTime?> = { null }
+  private var actualDepartureDate: Yielded<LocalDate?> = { null }
+  private var actualDepartureTime: Yielded<LocalTime?> = { null }
   private var canonicalArrivalDate: Yielded<LocalDate> = { LocalDate.now() }
   private var canonicalDepartureDate: Yielded<LocalDate> = { LocalDate.now() }
   private var crn: Yielded<String> = { randomStringUpperCase(6) }
@@ -46,11 +48,10 @@ class Cas1SpaceBookingEntityFactory : Factory<Cas1SpaceBookingEntity> {
   private var departureReason: Yielded<DepartureReasonEntity?> = { null }
   private var departureMoveOnCategory: Yielded<MoveOnCategoryEntity?> = { null }
   private var departureNotes: Yielded<String?> = { null }
-  private var criteria: Yielded<List<CharacteristicEntity>> = { emptyList() }
+  private var criteria: Yielded<MutableList<CharacteristicEntity>> = { emptyList<CharacteristicEntity>().toMutableList() }
   private var nonArrivalConfirmedAt: Yielded<Instant?> = { null }
   private var nonArrivalReason: Yielded<NonArrivalReasonEntity?> = { null }
   private var nonArrivalNotes: Yielded<String?> = { null }
-  private var migratedFromBooking: Yielded<BookingEntity?> = { null }
   private var migratedManagementInfoFrom: Yielded<ManagementInfoSource?> = { null }
   private var deliusEventNumber: Yielded<String?> = { null }
 
@@ -106,22 +107,20 @@ class Cas1SpaceBookingEntityFactory : Factory<Cas1SpaceBookingEntity> {
     this.canonicalDepartureDate = { canonicalDepartureDate }
   }
 
-  @Deprecated(message = "Use more specific expected arrival date", replaceWith = ReplaceWith("withExpectedArrivalDate(expectedArrivalDate)"))
-  fun withArrivalDate(expectedArrivalDate: LocalDate) = apply {
-    this.expectedArrivalDate = { expectedArrivalDate }
+  fun withActualArrivalDate(actualArrivalDate: LocalDate?) = apply {
+    this.actualArrivalDate = { actualArrivalDate }
   }
 
-  @Deprecated(message = "Use more specific expected departure date", replaceWith = ReplaceWith("withExpectedDepartureDate(expectedDepartureDate)"))
-  fun withDepartureDate(expectedDepartureDate: LocalDate) = apply {
-    this.expectedDepartureDate = { expectedDepartureDate }
+  fun withActualArrivalTime(actualArrivalTime: LocalTime?) = apply {
+    this.actualArrivalTime = { actualArrivalTime }
   }
 
-  fun withActualArrivalDateTime(actualArrivalDateTime: Instant?) = apply {
-    this.actualArrivalDateTime = { actualArrivalDateTime }
+  fun withActualDepartureDate(actualDepartureDate: LocalDate?) = apply {
+    this.actualDepartureDate = { actualDepartureDate }
   }
 
-  fun withActualDepartureDateTime(actualDepartureDateTime: Instant?) = apply {
-    this.actualDepartureDateTime = { actualDepartureDateTime }
+  fun withActualDepartureTime(actualDepartureTime: LocalTime?) = apply {
+    this.actualDepartureTime = { actualDepartureTime }
   }
 
   fun withApplication(application: ApprovedPremisesApplicationEntity?) = apply {
@@ -172,7 +171,7 @@ class Cas1SpaceBookingEntityFactory : Factory<Cas1SpaceBookingEntity> {
     this.departureMoveOnCategory = { moveOnCategory }
   }
 
-  fun withCriteria(criteria: List<CharacteristicEntity>) = apply {
+  fun withCriteria(criteria: MutableList<CharacteristicEntity>) = apply {
     this.criteria = { criteria }
   }
 
@@ -188,16 +187,12 @@ class Cas1SpaceBookingEntityFactory : Factory<Cas1SpaceBookingEntity> {
     this.nonArrivalReason = { reason }
   }
 
-  fun withMigratedFromBooking(booking: BookingEntity?) = apply {
-    this.migratedFromBooking = { booking }
-  }
-
   fun withDeliusEventNumber(deliusEventNumber: String?) = apply {
     this.deliusEventNumber = { deliusEventNumber }
   }
 
   fun withCriteria(vararg criteria: CharacteristicEntity) = apply {
-    this.criteria = { criteria.toList() }
+    this.criteria = { criteria.toMutableList() }
   }
 
   fun withDepartureNotes(departureNotes: String?) = apply {
@@ -212,8 +207,10 @@ class Cas1SpaceBookingEntityFactory : Factory<Cas1SpaceBookingEntity> {
     createdAt = this.createdAt(),
     expectedArrivalDate = this.expectedArrivalDate(),
     expectedDepartureDate = this.expectedDepartureDate(),
-    actualArrivalDateTime = this.actualArrivalDateTime(),
-    actualDepartureDateTime = this.actualDepartureDateTime(),
+    actualArrivalDate = this.actualArrivalDate(),
+    actualArrivalTime = this.actualArrivalTime(),
+    actualDepartureDate = this.actualDepartureDate(),
+    actualDepartureTime = this.actualDepartureTime(),
     canonicalArrivalDate = this.canonicalArrivalDate(),
     canonicalDepartureDate = this.canonicalDepartureDate(),
     crn = this.crn(),
@@ -234,7 +231,6 @@ class Cas1SpaceBookingEntityFactory : Factory<Cas1SpaceBookingEntity> {
     nonArrivalNotes = this.nonArrivalNotes(),
     nonArrivalReason = this.nonArrivalReason(),
     deliusEventNumber = this.deliusEventNumber(),
-    migratedFromBooking = this.migratedFromBooking(),
     migratedManagementInfoFrom = this.migratedManagementInfoFrom(),
   )
 }

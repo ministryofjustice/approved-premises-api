@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -19,6 +20,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.BookingStatus
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas1.Cas1ApplicationFacade
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.BookingSummaryForAvailability
 import java.time.Instant
 import java.time.LocalDate
@@ -102,17 +104,6 @@ interface BookingRepository : JpaRepository<BookingEntity, UUID> {
   @Query("SELECT MAX(b.departureDate) FROM BookingEntity b WHERE b.premises.id = :premisesId")
   fun getHighestBookingDate(premisesId: UUID): LocalDate?
 
-  @Query("SELECT b FROM BookingEntity b WHERE b.bed.id = :bedId AND b.arrivalDate <= :endDate AND b.departureDate >= :startDate AND SIZE(b.cancellations) = 0 AND (CAST(:thisEntityId as org.hibernate.type.UUIDCharType) IS NULL OR b.id != :thisEntityId)")
-  fun findByBedIdAndOverlappingDate(
-    bedId: UUID,
-    startDate: LocalDate,
-    endDate: LocalDate,
-    thisEntityId: UUID?,
-  ): List<BookingEntity>
-
-  @Query("SELECT DISTINCT(b.crn) FROM BookingEntity b")
-  fun getDistinctCrns(): List<String>
-
   @Modifying
   @Query(
     """
@@ -186,45 +177,6 @@ interface BookingRepository : JpaRepository<BookingEntity, UUID> {
   fun findAllAdhocOrUnknownByApplication(application: ApplicationEntity): List<BookingEntity>
 
   fun findAllByApplication(application: ApplicationEntity): List<BookingEntity>
-
-  @Query(
-    """
-      SELECT
-        b.crn AS personCrn,
-        Cast(b.id as varchar) bookingId,
-        CASE 
-              WHEN :serviceName='approved-premises' THEN COALESCE(b.status, 'awaiting-arrival')
-              ELSE COALESCE(b.status, 'provisional')
-        END as bookingStatus,
-        b.arrival_date AS bookingStartDate,
-        b.departure_date AS bookingEndDate,
-        b.created_at AS bookingCreatedAt,
-        Cast(p.id as varchar) premisesId,
-        p.name AS premisesName,
-        p.address_line1 AS premisesAddressLine1,
-        p.address_line2 AS premisesAddressLine2,
-        p.town AS premisesTown,
-        p.postcode AS premisesPostcode,
-        Cast(r.id as varchar) roomId,
-        r.name AS roomName,
-        Cast(b2.id as varchar) bedId,
-        b2.name AS bedName
-      FROM bookings b
-      LEFT JOIN beds b2 ON b.bed_id = b2.id
-      LEFT JOIN rooms r ON b2.room_id = r.id
-      LEFT JOIN premises p ON r.premises_id = p.id
-      WHERE b.service = :serviceName
-      AND (:status is null or b.status = :status)
-      AND (:crn is null OR b.crn = :crn)
-    """,
-    nativeQuery = true,
-  )
-  fun findBookings(
-    serviceName: String,
-    status: String?,
-    crn: String?,
-    pageable: Pageable?,
-  ): Page<BookingSearchResult>
 
   companion object {
     private const val OFFENDERS_QUERY = """
@@ -310,10 +262,6 @@ interface BookingRepository : JpaRepository<BookingEntity, UUID> {
   )
   fun findActiveOverlappingBookingByBed(bedId: UUID, date: LocalDate): List<BookingEntity>
 
-  @Modifying
-  @Query("UPDATE BookingEntity b set b.adhoc = :adhoc where b.id = :bookingId")
-  fun updateBookingAdhocStatus(bookingId: UUID, adhoc: Boolean): Int
-
   @Query(
     """
       SELECT id from bookings where premises_id = :premisesId 
@@ -333,13 +281,13 @@ data class BookingEntity(
   var departureDate: LocalDate,
   @Deprecated(message = "This is a legacy CAS1-only field that is no longer captured and will be removed once bookings have been fully migrated to space bookings")
   var keyWorkerStaffCode: String?,
-  @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY, cascade = [ CascadeType.REMOVE ])
   var arrivals: MutableList<ArrivalEntity>,
-  @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY, cascade = [ CascadeType.REMOVE ])
   var departures: MutableList<DepartureEntity>,
-  @OneToOne(mappedBy = "booking")
+  @OneToOne(mappedBy = "booking", cascade = [ CascadeType.REMOVE ])
   var nonArrival: NonArrivalEntity?,
-  @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY, cascade = [ CascadeType.REMOVE ])
   var cancellations: MutableList<CancellationEntity>,
   @OneToOne(mappedBy = "booking")
   var confirmation: ConfirmationEntity?,
@@ -351,7 +299,7 @@ data class BookingEntity(
   var offlineApplication: OfflineApplicationEntity?,
   @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
   var extensions: MutableList<ExtensionEntity>,
-  @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY, cascade = [ CascadeType.REMOVE ])
   var dateChanges: MutableList<DateChangeEntity>,
   @ManyToOne
   @JoinColumn(name = "premises_id")
@@ -388,6 +336,14 @@ data class BookingEntity(
 
   val arrival: ArrivalEntity?
     get() = arrivals.maxByOrNull { it.createdAt }
+
+  val cas1ApplicationFacade: Cas1ApplicationFacade
+    get() {
+      if (offlineApplication == null && application !is ApprovedPremisesApplicationEntity) {
+        error("Can only return CAS1 application facade for bookings linked to CAS1 applications")
+      }
+      return Cas1ApplicationFacade(application as ApprovedPremisesApplicationEntity?, offlineApplication)
+    }
 
   fun isInCancellableStateCas1() = !isCancelled && !hasArrivals()
 

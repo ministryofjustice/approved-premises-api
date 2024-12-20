@@ -1,0 +1,1 @@
+DELETE FROM user_role_assignments WHERE role = 'CAS1_ADMIN';

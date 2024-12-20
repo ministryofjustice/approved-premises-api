@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApplicationRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesApplicationEntity
@@ -30,6 +31,7 @@ import java.util.UUID
  * WITHDRAWN/WITHDRAWN_BY_PP overwriting 'ACCEPTED' (if set). This will result in an error being logged for the particular
  * application
  */
+@Component
 class Cas1FixPlacementApplicationLinksJob(
   private val placementApplicationRepository: PlacementApplicationRepository,
   private val applicationRepository: ApplicationRepository,
@@ -40,7 +42,7 @@ class Cas1FixPlacementApplicationLinksJob(
   override val shouldRunInTransaction = false
   var log: Logger = LoggerFactory.getLogger(this::class.java)
 
-  override fun process() {
+  override fun process(pageSize: Int) {
     applyManualFixes()
     applyAutomatedFixes()
 

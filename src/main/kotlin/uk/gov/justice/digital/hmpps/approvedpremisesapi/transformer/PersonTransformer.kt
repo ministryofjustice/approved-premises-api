@@ -32,6 +32,7 @@ class PersonTransformer {
           crn = personSummaryInfo.crn,
           personType = PersonSummaryDiscriminator.fullPersonSummary,
           name = getNameFromPersonSummaryInfoResult(personSummaryInfo),
+          isRestricted = personSummaryInfo.summary.currentRestriction || personSummaryInfo.summary.currentExclusion,
         )
       }
       is PersonSummaryInfoResult.Success.Restricted -> {

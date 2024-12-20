@@ -336,54 +336,6 @@ paths:
                 $ref: '_shared.yml#/components/schemas/Problem'
         500:
           $ref: '_shared.yml#/components/responses/500Response'
-  /premises/{premisesId}/calendar:
-    get:
-      tags:
-        - Operations on premises
-      summary: Returns information about the occupancy of each bed in the Premises over the specified time period
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises to get bed information for
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: startDate
-          in: query
-          description: Start of date range to return occupancy for
-          required: true
-          schema:
-            type: string
-            format: date
-        - name: endDate
-          in: query
-          description: End of date range to return occupancy for
-          required: true
-          schema:
-            type: string
-            format: date
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '_shared.yml#/components/schemas/BedOccupancyRange'
-        401:
-          $ref: '_shared.yml#/components/responses/401Response'
-        403:
-          $ref: '_shared.yml#/components/responses/403Response'
-        404:
-          description: invalid premises ID
-          content:
-            'application/json':
-              schema:
-                $ref: '_shared.yml#/components/schemas/Problem'
-        500:
-          $ref: '_shared.yml#/components/responses/500Response'
   /premises/{premisesId}/bookings/{bookingId}:
     get:
       tags:
@@ -4164,6 +4116,24 @@ paths:
           'application/json':
             schema:
               $ref: '_shared.yml#/components/schemas/SeedRequest'
+        required: true
+      responses:
+        202:
+          description: successfully requested task
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+  /seedFromExcel:
+    post:
+      summary: Starts the data seeding from Excel process, can only be called from a local connection
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '_shared.yml#/components/schemas/SeedFromExcelRequest'
         required: true
       responses:
         202:

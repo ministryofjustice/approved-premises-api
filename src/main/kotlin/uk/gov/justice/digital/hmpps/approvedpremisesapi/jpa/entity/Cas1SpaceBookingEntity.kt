@@ -11,22 +11,31 @@ import jakarta.persistence.ManyToMany
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import jakarta.persistence.Version
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository.Constants.CAS1_PROPERTY_NAME_ARSON_SUITABLE
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository.Constants.CAS1_PROPERTY_NAME_ENSUITE
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository.Constants.CAS1_PROPERTY_NAME_SINGLE_ROOM
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository.Constants.CAS1_PROPERTY_NAME_STEP_FREE_DESIGNATED
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository.Constants.CAS1_PROPERTY_NAME_SUITED_FOR_SEX_OFFENDERS
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository.Constants.CAS1_PROPERTY_NAME_WHEELCHAIR_DESIGNATED
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas1.Cas1ApplicationFacade
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.toInstant
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.util.UUID
 
 @Repository
 interface Cas1SpaceBookingRepository : JpaRepository<Cas1SpaceBookingEntity, UUID> {
   fun findByPlacementRequestId(placementRequestId: UUID): List<Cas1SpaceBookingEntity>
-
-  fun deleteByPremisesIdAndMigratedFromBookingIsNotNull(premisesId: UUID): Long
 
   @Query(
     value = """
@@ -37,16 +46,22 @@ interface Cas1SpaceBookingRepository : JpaRepository<Cas1SpaceBookingEntity, UUI
       b.canonical_departure_date as canonicalDepartureDate,
       b.expected_arrival_date as expectedArrivalDate,
       b.expected_departure_date as expectedDepartureDate,
-      b.actual_arrival_date_time as actualArrivalDateTime,
-      b.actual_departure_date_time as actualDepartureDateTime,
+      b.actual_arrival_date as actualArrivalDate,
+      b.actual_arrival_time as actualArrivalTime,
+      b.actual_departure_date as actualDepartureDate,
+      b.actual_departure_time as actualDepartureTime,
       b.non_arrival_confirmed_at as nonArrivalConfirmedAtDateTime,
       apa.risk_ratings -> 'tier' -> 'value' ->> 'level' as tier,
       b.key_worker_staff_code as keyWorkerStaffCode,
       b.key_worker_assigned_at as keyWorkerAssignedAt,
       b.key_worker_name as keyWorkerName,
-      apa.name as personName
+      CASE 
+        WHEN apa.id IS NOT NULL THEN apa.name
+        ELSE offline_app.name
+      END as personName
       FROM cas1_space_bookings b
-      INNER JOIN approved_premises_applications apa ON b.approved_premises_application_id = apa.id
+      LEFT OUTER JOIN approved_premises_applications apa ON b.approved_premises_application_id = apa.id
+      LEFT OUTER JOIN offline_applications offline_app ON b.offline_application_id = offline_app.id
       WHERE 
       b.premises_id = :premisesId AND 
       b.cancellation_occurred_at IS NULL AND 
@@ -54,23 +69,23 @@ interface Cas1SpaceBookingRepository : JpaRepository<Cas1SpaceBookingEntity, UUI
         cast(:residency as text) IS NULL OR (
           (
             :residency = 'upcoming' AND (
-              b.actual_arrival_date_time IS NULL AND 
+              b.actual_arrival_date IS NULL AND 
               b.non_arrival_confirmed_at IS NULL AND
               b.expected_departure_date >= '2024-06-01'
             )
           ) OR
           (
             :residency = 'current' AND ( 
-              b.actual_arrival_date_time IS NOT NULL AND
+              b.actual_arrival_date IS NOT NULL AND
               b.non_arrival_confirmed_at IS NULL AND
-              b.actual_departure_date_time IS NULL  AND
+              b.actual_departure_date IS NULL  AND
               b.expected_departure_date >= '2024-06-01'
             )
           ) OR
           (
             :residency = 'historic' AND 
             (
-                b.actual_departure_date_time IS NOT NULL OR 
+                b.actual_departure_date IS NOT NULL OR 
                 b.non_arrival_confirmed_at IS NOT NULL OR 
                 b.expected_departure_date < '2024-06-01'
             )
@@ -81,7 +96,8 @@ interface Cas1SpaceBookingRepository : JpaRepository<Cas1SpaceBookingEntity, UUI
         cast(:crnOrName as text) IS NULL OR 
         (
             (b.crn ILIKE :crnOrName) OR
-            (apa.name ILIKE '%' || :crnOrName || '%')
+            ((apa.id IS NOT NULL) AND (apa.name ILIKE '%' || :crnOrName || '%')) OR 
+            ((offline_app.id IS NOT NULL) AND (offline_app.name ILIKE '%' || :crnOrName || '%'))
         ) 
       ) AND
       (
@@ -138,6 +154,16 @@ interface Cas1SpaceBookingRepository : JpaRepository<Cas1SpaceBookingEntity, UUI
   ): List<Cas1SpaceBookingEntity>
 
   fun findAllByApplication(application: ApplicationEntity): List<Cas1SpaceBookingEntity>
+
+  @Modifying
+  @Query(
+    """
+    UPDATE Cas1SpaceBookingEntity sb set 
+    sb.deliusEventNumber = :eventNumber
+    where sb.application.id = :applicationId
+    """,
+  )
+  fun updateEventNumber(applicationId: UUID, eventNumber: String)
 }
 
 interface Cas1SpaceBookingSearchResult {
@@ -147,8 +173,10 @@ interface Cas1SpaceBookingSearchResult {
   val canonicalDepartureDate: LocalDate
   val expectedArrivalDate: LocalDate
   val expectedDepartureDate: LocalDate
-  val actualArrivalDateTime: LocalDateTime?
-  val actualDepartureDateTime: LocalDateTime?
+  val actualArrivalDate: LocalDate?
+  val actualArrivalTime: LocalTime?
+  val actualDepartureDate: LocalDate?
+  val actualDepartureTime: LocalTime?
   val nonArrivalConfirmedAtDateTime: LocalDateTime?
   val tier: String?
   val keyWorkerStaffCode: String?
@@ -180,7 +208,7 @@ data class Cas1SpaceBookingEntity(
   val application: ApprovedPremisesApplicationEntity?,
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "offline_application_id")
-  var offlineApplication: OfflineApplicationEntity?,
+  val offlineApplication: OfflineApplicationEntity?,
   /**
    * Placement request will only be null for migrated [BookingEntity]s, where adhoc = true
    */
@@ -197,13 +225,24 @@ data class Cas1SpaceBookingEntity(
   val createdAt: OffsetDateTime,
   val expectedArrivalDate: LocalDate,
   var expectedDepartureDate: LocalDate,
-  var actualArrivalDateTime: Instant?,
-  var actualDepartureDateTime: Instant?,
+  var actualArrivalDate: LocalDate?,
+  /**
+   * For data imported from delius this can be null even if an actual arrival date has been recorded
+   */
+  var actualArrivalTime: LocalTime?,
+  var actualDepartureDate: LocalDate?,
+  /**
+   * For data imported from delius this can be null even if an actual departure date has been recorded
+   */
+  var actualDepartureTime: LocalTime?,
   var canonicalArrivalDate: LocalDate,
   var canonicalDepartureDate: LocalDate,
   val crn: String,
   var keyWorkerStaffCode: String?,
   var keyWorkerName: String?,
+  /**
+   * For data imported from delius this can be null even if a key worker staff code is set
+   */
   var keyWorkerAssignedAt: Instant?,
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "departure_reason_id")
@@ -222,32 +261,68 @@ data class Cas1SpaceBookingEntity(
   @JoinColumn(name = "cancellation_reason_id")
   var cancellationReason: CancellationReasonEntity?,
   var cancellationReasonNotes: String?,
+  /**
+   * This is constrained to the characteristics with property names defined by
+   * [Constants.CRITERIA_CHARACTERISTIC_PROPERTY_NAMES_OF_INTEREST]
+   */
   @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
     name = "cas1_space_bookings_criteria",
     joinColumns = [JoinColumn(name = "space_booking_id")],
     inverseJoinColumns = [JoinColumn(name = "characteristic_id")],
   )
-  val criteria: List<CharacteristicEntity>,
+  val criteria: MutableList<CharacteristicEntity>,
   var nonArrivalConfirmedAt: Instant?,
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "non_arrival_reason_id")
   var nonArrivalReason: NonArrivalReasonEntity?,
   var nonArrivalNotes: String?,
-  val deliusEventNumber: String?,
-  @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "migrated_from_booking_id")
-  val migratedFromBooking: BookingEntity?,
+  /**
+   * All new bookings will have delius event number set, some legacy bookings do not
+   * have a value for this (because we didn't initially capture event number for
+   * offline applications)
+   */
+  var deliusEventNumber: String?,
+  /**
+   * If a value is set, this space booking was migrated from a booking
+   */
   @Enumerated(EnumType.STRING)
   val migratedManagementInfoFrom: ManagementInfoSource?,
+  @Version
+  var version: Long = 1,
 ) {
+
+  object Constants {
+    val CRITERIA_CHARACTERISTIC_PROPERTY_NAMES_OF_INTEREST = listOf(
+      CAS1_PROPERTY_NAME_ARSON_SUITABLE,
+      CAS1_PROPERTY_NAME_ENSUITE,
+      CAS1_PROPERTY_NAME_SINGLE_ROOM,
+      CAS1_PROPERTY_NAME_STEP_FREE_DESIGNATED,
+      CAS1_PROPERTY_NAME_SUITED_FOR_SEX_OFFENDERS,
+      CAS1_PROPERTY_NAME_WHEELCHAIR_DESIGNATED,
+    )
+  }
+
   fun isActive() = !isCancelled()
   fun isCancelled() = cancellationOccurredAt != null
-  fun hasDeparted() = actualDepartureDateTime != null
+  fun hasDeparted() = actualDepartureDate != null
   fun hasNonArrival() = nonArrivalConfirmedAt != null
-  fun hasArrival() = actualArrivalDateTime != null
+  fun hasArrival() = actualArrivalDate != null
   fun isResident(day: LocalDate) = canonicalArrivalDate <= day && canonicalDepartureDate > day
+
+  @Deprecated("Any usage of this should instead be updated to use individual date and time fields")
+  fun actualArrivalAsDateTime(): Instant? {
+    return actualArrivalDate?.atTime(actualArrivalTime ?: LocalTime.NOON)?.toInstant()
+  }
+
+  @Deprecated("Any usage of this should be updated to use individual date and time fields")
+  fun actualDepartureAsDateTime(): Instant? {
+    return actualDepartureDate?.atTime(actualDepartureTime ?: LocalTime.NOON)?.toInstant()
+  }
+
   override fun toString() = "Cas1SpaceBookingEntity:$id"
+  val applicationFacade: Cas1ApplicationFacade
+    get() = Cas1ApplicationFacade(application, offlineApplication)
 }
 
 enum class ManagementInfoSource {

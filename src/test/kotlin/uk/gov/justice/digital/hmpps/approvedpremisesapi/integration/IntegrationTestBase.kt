@@ -204,8 +204,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas2bail.Cas2
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas2bail.Cas2BailAssessmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas2bail.Cas2BailAssessmentRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas2bail.Cas2BailStatusUpdateEntity
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.OffenderDetailSummary
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.UserOffenderAccess
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.StaffMember
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.StaffMembersPage
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.hmppsauth.GetTokenResponse
@@ -795,63 +793,10 @@ abstract class IntegrationTestBase {
     )
   }
 
-  fun mockOffenderDetailsCommunityApiCall(offenderDetails: OffenderDetailSummary) = wiremockServer.stubFor(
-    WireMock.get(urlEqualTo("/secure/offenders/crn/${offenderDetails.otherIds.crn}"))
-      .willReturn(
-        WireMock.aResponse()
-          .withHeader("Content-Type", "application/json")
-          .withStatus(200)
-          .withBody(
-            objectMapper.writeValueAsString(offenderDetails),
-          ),
-      ),
-  )
-
-  fun mockOffenderUserAccessCommunityApiCall(username: String, crn: String, inclusion: Boolean, exclusion: Boolean) {
-    if (!inclusion && !exclusion) {
-      wiremockServer.stubFor(
-        WireMock.get(urlEqualTo("/secure/offenders/crn/$crn/user/$username/userAccess"))
-          .willReturn(
-            aResponse()
-              .withHeader("Content-Type", "application/json")
-              .withStatus(200)
-              .withBody(
-                objectMapper.writeValueAsString(
-                  UserOffenderAccess(
-                    userRestricted = false,
-                    userExcluded = false,
-                    restrictionMessage = null,
-                  ),
-                ),
-              ),
-          ),
-      )
-      return
-    }
-
-    wiremockServer.stubFor(
-      WireMock.get(urlEqualTo("/secure/offenders/crn/$crn/user/$username/userAccess"))
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withStatus(403)
-            .withBody(
-              objectMapper.writeValueAsString(
-                UserOffenderAccess(
-                  userRestricted = inclusion,
-                  userExcluded = exclusion,
-                  restrictionMessage = null,
-                ),
-              ),
-            ),
-        ),
-    )
-  }
-
   fun mockStaffMembersContextApiCall(staffMember: StaffMember, qCode: String) = wiremockServer.stubFor(
     WireMock.get(urlEqualTo("/approved-premises/$qCode/staff"))
       .willReturn(
-        WireMock.aResponse()
+        aResponse()
           .withHeader("Content-Type", "application/json")
           .withStatus(200)
           .withBody(
@@ -867,21 +812,12 @@ abstract class IntegrationTestBase {
   fun mockInmateDetailPrisonsApiCall(inmateDetail: InmateDetail) = wiremockServer.stubFor(
     WireMock.get(urlEqualTo("/api/offenders/${inmateDetail.offenderNo}"))
       .willReturn(
-        WireMock.aResponse()
+        aResponse()
           .withHeader("Content-Type", "application/json")
           .withStatus(200)
           .withBody(
             objectMapper.writeValueAsString(inmateDetail),
           ),
-      ),
-  )
-
-  fun mockStaffUserInfoCommunityApiCallNotFound(username: String) = wiremockServer.stubFor(
-    WireMock.get(urlEqualTo("/secure/staff/username/$username"))
-      .willReturn(
-        aResponse()
-          .withHeader("Content-Type", "application/json")
-          .withStatus(404),
       ),
   )
 
@@ -946,10 +882,10 @@ abstract class IntegrationTestBase {
     responseBody: Any,
     additionalConfig: MappingBuilder.() -> Unit = { },
   ) = wiremockServer.editStub(
-    WireMock.get(WireMock.urlPathEqualTo(url)).withId(uuid)
+    WireMock.get(urlPathEqualTo(url)).withId(uuid)
       .withRequestBody(requestBody)
       .willReturn(
-        WireMock.aResponse()
+        aResponse()
           .withHeader("Content-Type", "application/json")
           .withStatus(200)
           .withBody(
@@ -973,7 +909,7 @@ abstract class IntegrationTestBase {
   fun mockUnsuccessfulPostCall(url: String, responseStatus: Int) =
     mockOAuth2ClientCredentialsCallIfRequired {
       wiremockServer.stubFor(
-        WireMock.post(urlEqualTo(url))
+        post(urlEqualTo(url))
           .willReturn(
             aResponse()
               .withStatus(responseStatus),

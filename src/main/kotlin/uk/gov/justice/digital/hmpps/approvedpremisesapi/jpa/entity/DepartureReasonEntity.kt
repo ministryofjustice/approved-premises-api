@@ -24,8 +24,6 @@ interface DepartureReasonRepository : JpaRepository<DepartureReasonEntity, UUID>
 
   @Query("SELECT d FROM DepartureReasonEntity d WHERE d.isActive = true")
   fun findActive(): List<DepartureReasonEntity>
-
-  fun findByNameAndServiceScope(name: String, serviceScope: String): DepartureReasonEntity?
 }
 
 @Entity
@@ -43,12 +41,6 @@ data class DepartureReasonEntity(
   val parentReasonId: DepartureReasonEntity?,
 ) {
   override fun toString() = "DepartureReasonEntity:$id"
-
-  fun generateParentChildName(): Pair<UUID, String> {
-    return parentReasonId?.let { parentReason ->
-      return Pair(id, "${parentReason.name} - $name")
-    } ?: return Pair(id, name)
-  }
 
   companion object {
     fun valueOf(apiValue: WithdrawPlacementRequestReason): PlacementRequestWithdrawalReason? =

@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.AlertFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAUser
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnOffender
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockNotFoundOffenderDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.prisonAPIMockSuccessfulAlertsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.AlertTransformer
 
@@ -56,8 +55,6 @@ class PersonAcctAlertsTest : InitialiseDatabasePerClassTestBase() {
   fun `Getting ACCT alerts for a CRN that does not exist returns 404`() {
     givenAUser { _, jwt ->
       val crn = "CRN123"
-
-      communityAPIMockNotFoundOffenderDetailsCall(crn)
 
       webTestClient.get()
         .uri("/people/$crn/acct-alerts")

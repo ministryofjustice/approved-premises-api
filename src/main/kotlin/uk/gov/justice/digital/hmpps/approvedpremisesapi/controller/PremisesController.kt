@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.PremisesApiDelegate
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Arrival
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.BedDetail
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.BedOccupancyRange
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.BedSummary
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Booking
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cancellation
@@ -59,7 +58,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActi
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.ValidatableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.BedService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.BookingService
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.CalendarService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.GetBookingForPremisesResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.LostBedService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.OffenderService
@@ -73,7 +71,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.ArrivalTrans
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.BedDetailTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.BedSummaryTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.BookingTransformer
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.CalendarTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.CancellationTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.ConfirmationTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.DateChangeTransformer
@@ -102,7 +99,6 @@ class PremisesController(
   private val bookingService: BookingService,
   private val lostBedsService: LostBedService,
   private val bedService: BedService,
-  private val calendarService: CalendarService,
   private val premisesTransformer: PremisesTransformer,
   private val premisesSummaryTransformer: PremisesSummaryTransformer,
   private val bookingTransformer: BookingTransformer,
@@ -120,7 +116,6 @@ class PremisesController(
   private val turnaroundTransformer: TurnaroundTransformer,
   private val bedSummaryTransformer: BedSummaryTransformer,
   private val bedDetailTransformer: BedDetailTransformer,
-  private val calendarTransformer: CalendarTransformer,
   private val dateChangeTransformer: DateChangeTransformer,
   private val cas1WithdrawableService: Cas1WithdrawableService,
 ) : PremisesApiDelegate {
@@ -362,22 +357,6 @@ class PremisesController(
     if (personInfo !is PersonInfoResult.Success) throw InternalServerErrorProblem("Unable to get Person Info for CRN: ${body.crn}")
 
     val authorisableResult = when (premises) {
-      is ApprovedPremisesEntity -> {
-        bookingService.createApprovedPremisesAdHocBooking(
-          user = user,
-          crn = body.crn,
-          nomsNumber = when (personInfo) {
-            is PersonInfoResult.Success.Restricted -> personInfo.nomsNumber
-            is PersonInfoResult.Success.Full -> personInfo.inmateDetail?.offenderNo
-          },
-          arrivalDate = body.arrivalDate,
-          departureDate = body.departureDate,
-          premises = premises,
-          bedId = body.bedId,
-          eventNumber = body.eventNumber,
-        )
-      }
-
       is TemporaryAccommodationPremisesEntity -> {
         bookingService.createTemporaryAccommodationBooking(
           user = user,
@@ -395,7 +374,7 @@ class PremisesController(
         )
       }
 
-      else -> throw RuntimeException("Unsupported New Booking type: ${body::class.qualifiedName}")
+      else -> error("This endpoint does not support creating bookings for premise type: ${premises::class.qualifiedName}")
     }
 
     val validatableResult = when (authorisableResult) {
@@ -580,7 +559,6 @@ class PremisesController(
     }
 
     val result = bookingService.createExtension(
-      user = usersService.getUserForRequest(),
       booking = booking,
       newDepartureDate = body.newDepartureDate,
       notes = body.notes,
@@ -896,36 +874,6 @@ class PremisesController(
     }
 
     return ResponseEntity.ok(bedDetailTransformer.transformToApi(validationResult))
-  }
-
-  override fun premisesPremisesIdCalendarGet(
-    premisesId: UUID,
-    startDate: LocalDate,
-    endDate: LocalDate,
-  ): ResponseEntity<List<BedOccupancyRange>> {
-    val premises = premisesService.getPremises(premisesId)
-      ?: throw NotFoundProblem(premisesId, "Premises")
-
-    val user = usersService.getUserForRequest()
-
-    if (!userAccessService.userCanManagePremisesBookings(user, premises)) {
-      throw ForbiddenProblem()
-    }
-
-    if (startDate >= endDate) {
-      throw BadRequestProblem(errorDetail = "startDate must be before endDate")
-    }
-
-    val calendarResult = calendarService.getCalendarInfo(
-      user = user,
-      premisesId = premises.id,
-      startDate = startDate,
-      endDate = endDate,
-    )
-
-    val transformedResult = calendarTransformer.transformDomainToApi(startDate, endDate, calendarResult)
-
-    return ResponseEntity(transformedResult, HttpStatus.OK)
   }
 
   override fun premisesPremisesIdSummaryGet(premisesId: UUID): ResponseEntity<ExtendedPremisesSummary> = runBlocking {

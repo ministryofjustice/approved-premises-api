@@ -2,10 +2,10 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.domainevents
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.BookingCancelledEnvelope
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.RequestForPlacementAssessed
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.RequestForPlacementType
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.model.StaffMember
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.BookingCancelledEnvelope
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.RequestForPlacementAssessed
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.RequestForPlacementType
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.StaffMember
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentClarificationNoteRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.BookingRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CancellationReasonRepository
@@ -13,20 +13,22 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas1SpaceBook
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.DomainEvent
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.DomainEventSummary
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.DomainEventService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1DomainEventService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1PlacementRequestDomainEventService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.javaConstantNameToSentence
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.toUiDateTimeFormat
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.toUiFormat
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.toWeekAndDayDurationString
 import java.time.LocalDate
-import java.time.ZoneOffset
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @SuppressWarnings("TooManyFunctions")
 @Component
 class DomainEventDescriber(
-  private val domainEventService: DomainEventService,
+  private val domainEventService: Cas1DomainEventService,
   private val assessmentClarificationNoteRepository: AssessmentClarificationNoteRepository,
   private val bookingRepository: BookingRepository,
   private val cas1SpaceBookingRepository: Cas1SpaceBookingRepository,
@@ -125,7 +127,7 @@ class DomainEventDescriber(
 
   private fun buildPersonArrivedDescription(domainEventSummary: DomainEventSummary): String? {
     val event = domainEventService.getPersonArrivedEvent(domainEventSummary.id())
-    return event.describe { "The person moved into the premises on ${LocalDate.ofInstant(it.eventDetails.arrivedAt, ZoneOffset.UTC).toUiFormat()}" }
+    return event.describe { "The person moved into the premises on ${LocalDateTime.ofInstant(it.eventDetails.arrivedAt, ZoneId.systemDefault()).toUiDateTimeFormat()}" }
   }
 
   private fun buildPersonNotArrivedDescription(domainEventSummary: DomainEventSummary): String? {
@@ -135,7 +137,7 @@ class DomainEventDescriber(
 
   private fun buildPersonDepartedDescription(domainEventSummary: DomainEventSummary): String? {
     val event = domainEventService.getPersonDepartedEvent(domainEventSummary.id())
-    return event.describe { "The person moved out of the premises on ${LocalDate.ofInstant(it.eventDetails.departedAt, ZoneOffset.UTC).toUiFormat()}" }
+    return event.describe { "The person moved out of the premises on ${LocalDateTime.ofInstant(it.eventDetails.departedAt, ZoneId.systemDefault()).toUiDateTimeFormat()}" }
   }
 
   private fun buildBookingNotMadeDescription(domainEventSummary: DomainEventSummary): String? {

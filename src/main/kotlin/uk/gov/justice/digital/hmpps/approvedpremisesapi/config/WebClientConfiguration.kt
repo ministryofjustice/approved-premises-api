@@ -46,44 +46,12 @@ class WebClientConfiguration(
     return manager
   }
 
-  @Bean(name = ["communityApiWebClient"])
-  fun communityApiWebClient(
-    clientRegistrations: ClientRegistrationRepository,
-    authorizedClients: OAuth2AuthorizedClientRepository,
-    authorizedClientManager: OAuth2AuthorizedClientManager,
-    @Value("\${services.community-api.base-url}") communityApiBaseUrl: String,
-  ): WebClientConfig {
-    val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
-
-    oauth2Client.setDefaultClientRegistrationId("delius-backed-apis")
-
-    return WebClientConfig(
-      WebClient.builder()
-        .baseUrl(communityApiBaseUrl)
-        .filter(oauth2Client)
-        .clientConnector(
-          ReactorClientHttpConnector(
-            HttpClient
-              .create()
-              .responseTimeout(Duration.ofMillis(upstreamTimeoutMs))
-              .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Duration.ofMillis(upstreamTimeoutMs).toMillis().toInt()),
-          ),
-        )
-        .exchangeStrategies(
-          ExchangeStrategies.builder().codecs {
-            it.defaultCodecs().maxInMemorySize(defaultMaxResponseInMemorySizeBytes)
-          }.build(),
-        )
-        .build(),
-    )
-  }
-
   @Bean(name = ["apDeliusContextApiWebClient"])
   fun apDeliusContextApiWebClient(
     clientRegistrations: ClientRegistrationRepository,
     authorizedClients: OAuth2AuthorizedClientRepository,
     authorizedClientManager: OAuth2AuthorizedClientManager,
-    @Value("\${services.ap-delius-context-api.base-url}") communityApiBaseUrl: String,
+    @Value("\${services.ap-delius-context-api.base-url}") apDeliusContextApiBaseUrl: String,
   ): WebClientConfig {
     val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
 
@@ -91,7 +59,7 @@ class WebClientConfiguration(
 
     return WebClientConfig(
       WebClient.builder()
-        .baseUrl(communityApiBaseUrl)
+        .baseUrl(apDeliusContextApiBaseUrl)
         .filter(oauth2Client)
         .clientConnector(
           ReactorClientHttpConnector(

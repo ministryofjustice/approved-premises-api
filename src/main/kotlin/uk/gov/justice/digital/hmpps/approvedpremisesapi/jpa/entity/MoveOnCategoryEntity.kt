@@ -24,7 +24,7 @@ interface MoveOnCategoryRepository : JpaRepository<MoveOnCategoryEntity, UUID> {
   @Query("SELECT m FROM MoveOnCategoryEntity m WHERE m.isActive = true")
   fun findActive(): List<MoveOnCategoryEntity>
 
-  fun findByNameAndServiceScope(name: String, serviceScope: String): MoveOnCategoryEntity?
+  fun findByLegacyDeliusCategoryCode(code: String): MoveOnCategoryEntity?
 }
 
 @Entity

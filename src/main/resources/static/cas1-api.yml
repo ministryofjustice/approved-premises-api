@@ -55,7 +55,7 @@ paths:
         content:
           'application/json':
             schema:
-              $ref: 'cas1-schemas.yml#/components/schemas/NewCas1SpaceBooking'
+              $ref: 'cas1-schemas.yml#/components/schemas/Cas1NewSpaceBooking'
         required: true
       responses:
         200:
@@ -130,6 +130,7 @@ paths:
       tags:
         - out-of-service beds
       summary: Posts an out-of-service bed to a specified approved premises
+      operationId: createOutOfServiceBed
       parameters:
         - name: premisesId
           in: path
@@ -143,7 +144,7 @@ paths:
         content:
           'application/json':
             schema:
-              $ref: '_shared.yml#/components/schemas/NewCas1OutOfServiceBed'
+              $ref: 'cas1-schemas.yml#/components/schemas/Cas1NewOutOfServiceBed'
         required: true
       responses:
         200:
@@ -151,7 +152,7 @@ paths:
           content:
             'application/json':
               schema:
-                $ref: '_shared.yml#/components/schemas/Cas1OutOfServiceBed'
+                $ref: 'cas1-schemas.yml#/components/schemas/Cas1OutOfServiceBed'
         400:
           description: invalid params
           content:
@@ -175,6 +176,7 @@ paths:
       tags:
         - out-of-service beds
       summary: Lists all Out-Of-Service Beds entries for the Premises
+      operationId: getOutOfServiceBedsForPremises
       parameters:
         - name: premisesId
           in: path
@@ -191,7 +193,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '_shared.yml#/components/schemas/Cas1OutOfServiceBed'
+                  $ref: 'cas1-schemas.yml#/components/schemas/Cas1OutOfServiceBed'
         401:
           $ref: '_shared.yml#/components/responses/401Response'
         403:
@@ -203,6 +205,7 @@ paths:
       tags:
         - out-of-service beds
       summary: Returns a specific out-of-service bed for a premises
+      operationId: getOutOfServiceBed
       parameters:
         - name: premisesId
           in: path
@@ -224,7 +227,7 @@ paths:
           content:
             'application/json':
               schema:
-                $ref: '_shared.yml#/components/schemas/Cas1OutOfServiceBed'
+                $ref: 'cas1-schemas.yml#/components/schemas/Cas1OutOfServiceBed'
         401:
           $ref: '_shared.yml#/components/responses/401Response'
         403:
@@ -241,6 +244,7 @@ paths:
       tags:
         - out-of-service beds
       summary: Updates an out-of-service bed for a premises
+      operationId: updateOutOfServiceBed
       parameters:
         - name: premisesId
           in: path
@@ -261,7 +265,7 @@ paths:
         content:
           'application/json':
             schema:
-              $ref: '_shared.yml#/components/schemas/UpdateCas1OutOfServiceBed'
+              $ref: 'cas1-schemas.yml#/components/schemas/UpdateCas1OutOfServiceBed'
         required: true
       responses:
         200:
@@ -269,7 +273,7 @@ paths:
           content:
             'application/json':
               schema:
-                $ref: '_shared.yml#/components/schemas/Cas1OutOfServiceBed'
+                $ref: 'cas1-schemas.yml#/components/schemas/Cas1OutOfServiceBed'
         400:
           description: invalid params
           content:
@@ -294,6 +298,7 @@ paths:
       tags:
         - out-of-service beds
       summary: Posts a cancellation to a specified out-of-service bed
+      operationId: cancelOutOfServiceBed
       parameters:
         - name: premisesId
           in: path
@@ -314,7 +319,7 @@ paths:
         content:
           'application/json':
             schema:
-              $ref: '_shared.yml#/components/schemas/NewCas1OutOfServiceBedCancellation'
+              $ref: 'cas1-schemas.yml#/components/schemas/Cas1NewOutOfServiceBedCancellation'
         required: true
       responses:
         200:
@@ -322,7 +327,7 @@ paths:
           content:
             'application/json':
               schema:
-                $ref: '_shared.yml#/components/schemas/Cas1OutOfServiceBedCancellation'
+                $ref: 'cas1-schemas.yml#/components/schemas/Cas1OutOfServiceBedCancellation'
         400:
           description: invalid params
           content:
@@ -404,6 +409,13 @@ paths:
           schema:
             type: string
             format: date
+        - name: excludeSpaceBookingId
+          in: query
+          description: ID of a booking to exclude from capacity calculations
+          required: false
+          schema:
+            type: string
+            format: uuid
       responses:
         200:
           description: successful operation
@@ -539,6 +551,40 @@ paths:
             'application/json':
               schema:
                 $ref: 'cas1-schemas.yml#/components/schemas/Cas1SpaceBooking'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+    patch:
+      tags:
+        - space bookings
+      operationId: "updateSpaceBooking"
+      parameters:
+        - name: premisesId
+          in: path
+          description: ID of the corresponding premises
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: bookingId
+          in: path
+          description: ID of the space booking
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: 'cas1-schemas.yml#/components/schemas/Cas1UpdateSpaceBooking'
+        required: true
+      responses:
+        200:
+          description: successful operation
         401:
           $ref: '_shared.yml#/components/responses/401Response'
         403:
@@ -757,7 +803,7 @@ paths:
         content:
           'application/json':
             schema:
-              $ref: 'cas1-schemas.yml#/components/schemas/NewCas1SpaceBookingCancellation'
+              $ref: 'cas1-schemas.yml#/components/schemas/Cas1NewSpaceBookingCancellation'
         required: true
       responses:
         200:
@@ -832,6 +878,69 @@ paths:
         500:
           $ref: '_shared.yml#/components/responses/500Response'
 
+  /premises/{premisesId}/day-summary/{date}:
+    get:
+      tags:
+        - premises
+      summary: Provides a summary of capacity, space bookings and out of service beds for a premise on a given day
+      operationId: getDaySummary
+      parameters:
+        - name: premisesId
+          in: path
+          description: ID of the premises
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: path
+          description: date the summary is required for
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: bookingsCriteriaFilter
+          in: query
+          required: false
+          description: If provided, will only show bookings with matching criteria
+          schema:
+            type: array
+            items:
+              $ref: 'cas1-schemas.yml#/components/schemas/Cas1SpaceBookingCharacteristic'
+        - name: bookingsSortDirection
+          in: query
+          required: false
+          description: The direction to sort the bookings by. If not defined, will sort in descending order
+          schema:
+            $ref: '_shared.yml#/components/schemas/SortDirection'
+        - name: bookingsSortBy
+          in: query
+          required: false
+          description: The field to sort the booking by. If not defined, will sort on person name
+          schema:
+            $ref: 'cas1-schemas.yml#/components/schemas/Cas1SpaceBookingDaySummarySortField'
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: 'cas1-schemas.yml#/components/schemas/Cas1PremiseDaySummary'
+          headers:
+            X-Pagination-CurrentPage:
+              $ref: '_shared.yml#/components/headers/X-Pagination-CurrentPage'
+            X-Pagination-TotalPages:
+              $ref: '_shared.yml#/components/headers/X-Pagination-TotalPages'
+            X-Pagination-TotalResults:
+              $ref: '_shared.yml#/components/headers/X-Pagination-TotalResults'
+            X-Pagination-PageSize:
+              $ref: '_shared.yml#/components/headers/X-Pagination-PageSize'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
 
   /reference-data/out-of-service-bed-reasons:
     get:
@@ -847,7 +956,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '_shared.yml#/components/schemas/Cas1OutOfServiceBedReason'
+                  $ref: 'cas1-schemas.yml#/components/schemas/Cas1OutOfServiceBedReason'
         401:
           $ref: '_shared.yml#/components/responses/401Response'
         403:
@@ -956,6 +1065,7 @@ paths:
       tags:
         - out-of-service beds
       summary: Lists all Out-Of-Service Beds entries
+      operationId: getOutOfServiceBeds
       parameters:
         - name: temporality
           in: query
@@ -985,7 +1095,7 @@ paths:
           in: query
           description: The field to sort the results by.
           schema:
-            $ref: '_shared.yml#/components/schemas/Cas1OutOfServiceBedSortField'
+            $ref: 'cas1-schemas.yml#/components/schemas/Cas1OutOfServiceBedSortField'
         - name: page
           in: query
           required: false
@@ -1005,7 +1115,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '_shared.yml#/components/schemas/Cas1OutOfServiceBed'
+                  $ref: 'cas1-schemas.yml#/components/schemas/Cas1OutOfServiceBed'
           headers:
             X-Pagination-CurrentPage:
               $ref: '_shared.yml#/components/headers/X-Pagination-CurrentPage'

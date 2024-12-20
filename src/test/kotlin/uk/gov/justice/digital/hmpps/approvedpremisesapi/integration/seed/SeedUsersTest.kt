@@ -9,7 +9,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SeedFileType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.StaffDetailFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAProbationRegion
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextAddStaffDetailResponse
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockNotFoundOffenderDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualification
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualificationAssignmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
@@ -23,8 +22,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringMultiCa
 class SeedUsersTest : SeedTestBase() {
   @Test
   fun `Attempting to seed a non existent user logs an error`() {
-    communityAPIMockNotFoundOffenderDetailsCall("INVALID-USER")
-
     withCsv(
       "invalid-user",
       userRoleAssignmentSeedCsvRowsToCsv(
@@ -59,7 +56,6 @@ class SeedUsersTest : SeedTestBase() {
     apDeliusContextAddStaffDetailResponse(
       StaffDetailFactory.staffDetail(
         deliusUsername = "UNKNOWN-USER",
-        staffIdentifier = 6789,
         probationArea = ProbationArea(
           code = probationRegionDeliusMapping.probationAreaDeliusCode,
           description = randomStringMultiCaseWithNumbers(10),
@@ -86,8 +82,7 @@ class SeedUsersTest : SeedTestBase() {
     val persistedUser = userRepository.findByDeliusUsername("UNKNOWN-USER")
 
     assertThat(persistedUser).isNotNull
-    assertThat(persistedUser!!.deliusStaffIdentifier).isEqualTo(6789)
-    assertThat(persistedUser.roles.map(UserRoleAssignmentEntity::role)).containsExactlyInAnyOrder(
+    assertThat(persistedUser!!.roles.map(UserRoleAssignmentEntity::role)).containsExactlyInAnyOrder(
       UserRole.CAS1_ASSESSOR,
       UserRole.CAS1_WORKFLOW_MANAGER,
     )
@@ -192,7 +187,7 @@ class SeedUsersTest : SeedTestBase() {
   }
 
   @Test
-  fun `Attempting to assign legacy roles to a user succeeds`() {
+  fun `Attempting to assign untyped roles to a user succeeds`() {
     userEntityFactory.produceAndPersist {
       withDeliusUsername("KNOWN-USER")
       withYieldedProbationRegion { givenAProbationRegion() }
@@ -204,7 +199,7 @@ class SeedUsersTest : SeedTestBase() {
         listOf(
           UserRoleAssignmentsSeedCsvRowFactory()
             .withDeliusUsername("KNOWN-USER")
-            .withUntypedRoles(listOf("APPLICANT", "ASSESSOR", "MANAGER", "MATCHER", "ROLE_ADMIN", "WORKFLOW_MANAGER"))
+            .withUntypedRoles(listOf("CAS1_APPLICANT", "CAS1_ASSESSOR", "CAS1_FUTURE_MANAGER", "CAS1_MATCHER", "CAS1_WORKFLOW_MANAGER"))
             .withTypedQualifications(listOf(UserQualification.PIPE))
             .produce(),
         ),
@@ -219,9 +214,8 @@ class SeedUsersTest : SeedTestBase() {
     assertThat(persistedUser!!.roles.map(UserRoleAssignmentEntity::role)).containsExactlyInAnyOrder(
       UserRole.CAS1_APPLICANT,
       UserRole.CAS1_ASSESSOR,
-      UserRole.CAS1_MANAGER,
+      UserRole.CAS1_FUTURE_MANAGER,
       UserRole.CAS1_MATCHER,
-      UserRole.CAS1_ADMIN,
       UserRole.CAS1_WORKFLOW_MANAGER,
     )
     assertThat(persistedUser.qualifications.map(UserQualificationAssignmentEntity::qualification)).containsExactlyInAnyOrder(
@@ -291,7 +285,7 @@ class SeedUsersTest : SeedTestBase() {
             description = randomStringMultiCaseWithNumbers(10),
           ),
         ),
-        expectedRoles = listOf(UserRole.CAS1_ADMIN, UserRole.CAS1_MANAGER, UserRole.CAS1_WORKFLOW_MANAGER, UserRole.CAS1_ASSESSOR, UserRole.CAS3_ASSESSOR, UserRole.CAS3_REFERRER),
+        expectedRoles = listOf(UserRole.CAS1_FUTURE_MANAGER, UserRole.CAS1_WORKFLOW_MANAGER, UserRole.CAS1_ASSESSOR, UserRole.CAS3_ASSESSOR, UserRole.CAS3_REFERRER),
         expectedQualifications = listOf(UserQualification.EMERGENCY, UserQualification.LAO),
       ),
       SeedInfo(
@@ -301,7 +295,7 @@ class SeedUsersTest : SeedTestBase() {
             description = randomStringMultiCaseWithNumbers(10),
           ),
         ),
-        expectedRoles = listOf(UserRole.CAS1_MANAGER),
+        expectedRoles = listOf(UserRole.CAS1_FUTURE_MANAGER),
         expectedQualifications = listOf(),
       ),
       SeedInfo(
@@ -379,7 +373,7 @@ class SeedUsersTest : SeedTestBase() {
             description = randomStringMultiCaseWithNumbers(10),
           ),
         ),
-        expectedRoles = listOf(UserRole.CAS1_ADMIN, UserRole.CAS1_MANAGER, UserRole.CAS1_WORKFLOW_MANAGER, UserRole.CAS1_ASSESSOR),
+        expectedRoles = listOf(UserRole.CAS1_FUTURE_MANAGER, UserRole.CAS1_WORKFLOW_MANAGER, UserRole.CAS1_ASSESSOR),
         expectedQualifications = listOf(UserQualification.EMERGENCY, UserQualification.LAO),
       ),
       SeedInfo(
@@ -389,7 +383,7 @@ class SeedUsersTest : SeedTestBase() {
             description = randomStringMultiCaseWithNumbers(10),
           ),
         ),
-        expectedRoles = listOf(UserRole.CAS1_MANAGER),
+        expectedRoles = listOf(UserRole.CAS1_FUTURE_MANAGER),
         expectedQualifications = listOf(),
       ),
       SeedInfo(

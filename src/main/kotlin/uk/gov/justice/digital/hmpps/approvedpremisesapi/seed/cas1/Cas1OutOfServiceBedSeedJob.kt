@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1
 
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedException
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedJob
@@ -11,11 +12,11 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromCa
 import java.time.LocalDate
 import java.util.UUID
 
+@Component
 class Cas1OutOfServiceBedSeedJob(
   private val cas1OutOfServiceBedService: Cas1OutOfServiceBedService,
   private val premisesService: PremisesService,
 ) : SeedJob<Cas1OutOfServiceBedSeedCsvRow>(
-  id = UUID.randomUUID(),
   requiredHeaders = setOf(
     "premisesId",
     "bedId",

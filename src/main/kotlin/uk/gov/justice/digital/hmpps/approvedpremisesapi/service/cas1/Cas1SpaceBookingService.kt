@@ -1,12 +1,10 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1
 
-import kotlinx.datetime.toKotlinDatePeriod
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model.StaffMember
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1AssignKeyWorker
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NewArrival
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NewDeparture
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NonArrival
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBookingResidency
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceBookingSummarySortField
@@ -26,7 +24,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.MoveOnCategor
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.NonArrivalReasonRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserPermission
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas1.Cas1SpaceSearchRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.serviceScopeMatches
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PaginationMetadata
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.validatedCasResult
@@ -34,13 +31,14 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.InternalServerEr
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.CasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.PlacementRequestService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.StaffMemberService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.PageCriteria
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromCasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.getMetadata
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.OffsetDateTime
-import java.time.ZoneId
 import java.util.UUID
 
 @Service
@@ -48,7 +46,6 @@ class Cas1SpaceBookingService(
   private val cas1PremisesService: Cas1PremisesService,
   private val placementRequestService: PlacementRequestService,
   private val cas1SpaceBookingRepository: Cas1SpaceBookingRepository,
-  private val cas1SpaceSearchRepository: Cas1SpaceSearchRepository,
   private val cas1BookingDomainEventService: Cas1BookingDomainEventService,
   private val cas1BookingEmailService: Cas1BookingEmailService,
   private val cas1SpaceBookingManagementDomainEventService: Cas1SpaceBookingManagementDomainEventService,
@@ -59,6 +56,7 @@ class Cas1SpaceBookingService(
   private val cancellationReasonRepository: CancellationReasonRepository,
   private val nonArrivalReasonRepository: NonArrivalReasonRepository,
   private val lockablePlacementRequestRepository: LockablePlacementRequestRepository,
+  private val userService: UserService,
 ) {
   @Transactional
   fun createNewBooking(
@@ -103,9 +101,6 @@ class Cas1SpaceBookingService(
       return placementRequestId hasConflictError "A Space Booking already exists for this placement request"
     }
 
-    val durationInDays = arrivalDate.until(departureDate).toKotlinDatePeriod().days
-    cas1SpaceSearchRepository.getSpaceAvailabilityForCandidatePremises(listOf(premisesId), arrivalDate, durationInDays)
-
     val application = placementRequest.application
 
     val spaceBooking = cas1SpaceBookingRepository.save(
@@ -119,8 +114,10 @@ class Cas1SpaceBookingService(
         createdAt = OffsetDateTime.now(),
         expectedArrivalDate = arrivalDate,
         expectedDepartureDate = departureDate,
-        actualArrivalDateTime = null,
-        actualDepartureDateTime = null,
+        actualArrivalDate = null,
+        actualArrivalTime = null,
+        actualDepartureDate = null,
+        actualDepartureTime = null,
         canonicalArrivalDate = arrivalDate,
         canonicalDepartureDate = departureDate,
         crn = placementRequest.application.crn,
@@ -134,12 +131,11 @@ class Cas1SpaceBookingService(
         departureMoveOnCategory = null,
         departureReason = null,
         departureNotes = null,
-        criteria = characteristics,
+        criteria = characteristics.toMutableList(),
         nonArrivalConfirmedAt = null,
         nonArrivalNotes = null,
         nonArrivalReason = null,
         deliusEventNumber = application.eventNumber,
-        migratedFromBooking = null,
         migratedManagementInfoFrom = null,
       ),
     )
@@ -162,7 +158,8 @@ class Cas1SpaceBookingService(
   fun recordArrivalForBooking(
     premisesId: UUID,
     bookingId: UUID,
-    cas1NewArrival: Cas1NewArrival,
+    arrivalDate: LocalDate,
+    arrivalTime: LocalTime,
   ): CasResult<Cas1SpaceBookingEntity> = validatedCasResult {
     val premises = cas1PremisesService.findPremiseById(premisesId)
     if (premises == null) {
@@ -179,25 +176,36 @@ class Cas1SpaceBookingService(
 
     existingCas1SpaceBooking!!
 
-    if (existingCas1SpaceBooking.actualArrivalDateTime != null) {
-      return if (cas1NewArrival.arrivalDateTime == existingCas1SpaceBooking.actualArrivalDateTime) {
+    if (existingCas1SpaceBooking.hasArrival()) {
+      return if (existingCas1SpaceBooking.hasSameActualArrivalDateTime(arrivalDate, arrivalTime)) {
         success(existingCas1SpaceBooking)
       } else {
         existingCas1SpaceBooking.id hasConflictError "An arrival is already recorded for this Space Booking"
       }
     }
 
-    existingCas1SpaceBooking.actualArrivalDateTime = cas1NewArrival.arrivalDateTime
-    existingCas1SpaceBooking.canonicalArrivalDate = LocalDate.ofInstant(cas1NewArrival.arrivalDateTime, ZoneId.systemDefault())
+    existingCas1SpaceBooking.canonicalArrivalDate = arrivalDate
+    existingCas1SpaceBooking.actualArrivalDate = arrivalDate
+    existingCas1SpaceBooking.actualArrivalTime = arrivalTime
 
     val result = cas1SpaceBookingRepository.save(existingCas1SpaceBooking)
 
     cas1SpaceBookingManagementDomainEventService.arrivalRecorded(
-      existingCas1SpaceBooking,
+      Cas1SpaceBookingManagementDomainEventService.ArrivalInfo(
+        existingCas1SpaceBooking,
+        actualArrivalDate = arrivalDate,
+        actualArrivalTime = arrivalTime,
+        recordedBy = userService.getUserForRequest(),
+      ),
     )
 
     success(result)
   }
+
+  private fun Cas1SpaceBookingEntity.hasSameActualArrivalDateTime(
+    date: LocalDate,
+    time: LocalTime,
+  ) = actualArrivalDate == date && actualArrivalTime == time
 
   @Transactional
   fun recordNonArrivalForBooking(
@@ -277,11 +285,16 @@ class Cas1SpaceBookingService(
       return "$.keyWorker.staffCode" hasSingleValidationError "notFound"
     }
     val assignedKeyWorker = extractEntityFromCasResult(staffMemberResponse)
-    val assignedKeyWorkerName = "${assignedKeyWorker.name.forename} ${assignedKeyWorker.name.surname}"
+    val assignedKeyWorkerAsStaffMember = StaffMember(
+      staffCode = assignedKeyWorker.code,
+      forenames = assignedKeyWorker.name.forenames(),
+      surname = assignedKeyWorker.name.surname,
+    )
+    val assignedKeyWorkerName = "${assignedKeyWorker.name.forenames()} ${assignedKeyWorker.name.surname}"
 
     existingCas1SpaceBooking!!
 
-    val previousKeyWorkerName = existingCas1SpaceBooking.keyWorkerName ?: null
+    val previousKeyWorkerName = existingCas1SpaceBooking.keyWorkerName
 
     existingCas1SpaceBooking.keyWorkerStaffCode = assignedKeyWorker.code
     existingCas1SpaceBooking.keyWorkerName = assignedKeyWorkerName
@@ -291,6 +304,7 @@ class Cas1SpaceBookingService(
 
     cas1SpaceBookingManagementDomainEventService.keyWorkerAssigned(
       existingCas1SpaceBooking,
+      assignedKeyWorkerAsStaffMember,
       assignedKeyWorkerName,
       previousKeyWorkerName,
     )
@@ -298,28 +312,36 @@ class Cas1SpaceBookingService(
     success(result)
   }
 
+  data class DepartureInfo(
+    val departureDate: LocalDate,
+    val departureTime: LocalTime,
+    val reasonId: UUID,
+    val moveOnCategoryId: UUID? = null,
+    val notes: String? = null,
+  )
+
   @Transactional
   fun recordDepartureForBooking(
     premisesId: UUID,
     bookingId: UUID,
-    cas1NewDeparture: Cas1NewDeparture,
+    departureInfo: DepartureInfo,
   ): CasResult<Cas1SpaceBookingEntity> = validatedCasResult {
     val premises = cas1PremisesService.findPremiseById(premisesId)
     if (premises == null) {
       "$.premisesId" hasValidationError "doesNotExist"
     }
 
-    val existingCas1SpaceBooking = cas1SpaceBookingRepository.findByIdOrNull(bookingId)
-    if (existingCas1SpaceBooking == null) {
+    val existingSpaceBooking = cas1SpaceBookingRepository.findByIdOrNull(bookingId)
+    if (existingSpaceBooking == null) {
       "$.bookingId" hasValidationError "doesNotExist"
     }
 
-    val departureReason = departureReasonRepository.findByIdOrNull(cas1NewDeparture.reasonId)
+    val departureReason = departureReasonRepository.findByIdOrNull(departureInfo.reasonId)
     if (departureReason == null || !departureReason.serviceScopeMatches("approved-premises")) {
       "$.cas1NewDeparture.reasonId" hasValidationError "doesNotExist"
     }
 
-    val moveOnCategory = moveOnCategoryRepository.findByIdOrNull(cas1NewDeparture.moveOnCategoryId ?: NOT_APPLICABLE_MOVE_ON_CATEGORY_ID)
+    val moveOnCategory = moveOnCategoryRepository.findByIdOrNull(departureInfo.moveOnCategoryId ?: NOT_APPLICABLE_MOVE_ON_CATEGORY_ID)
     if (moveOnCategory == null || !moveOnCategory.serviceScopeMatches("approved-premises")) {
       "$.cas1NewDeparture.moveOnCategoryId" hasValidationError "doesNotExist"
     }
@@ -328,48 +350,74 @@ class Cas1SpaceBookingService(
       return fieldValidationError
     }
 
-    existingCas1SpaceBooking!!
+    existingSpaceBooking!!
 
-    if (existingCas1SpaceBooking.actualArrivalDateTime == null) {
-      return existingCas1SpaceBooking.id hasConflictError "An arrival is not recorded for this Space Booking."
+    if (!existingSpaceBooking.hasArrival()) {
+      return existingSpaceBooking.id hasConflictError "An arrival is not recorded for this Space Booking."
     }
 
-    if (existingCas1SpaceBooking.actualArrivalDateTime!!.isAfter(cas1NewDeparture.departureDateTime)) {
-      return existingCas1SpaceBooking.id hasConflictError "The departure date is before the arrival date."
+    if (
+      existingSpaceBooking.dateTimeIsBeforeArrival(
+        departureInfo.departureDate,
+        departureInfo.departureTime,
+      )
+    ) {
+      return existingSpaceBooking.id hasConflictError "The departure date time is before the arrival date time."
     }
 
-    if (existingCas1SpaceBooking.actualDepartureDateTime != null) {
-      return if (hasExactDepartureDataAlreadyBeenRecorded(existingCas1SpaceBooking, cas1NewDeparture)) {
-        success(existingCas1SpaceBooking)
+    if (existingSpaceBooking.hasDeparted()) {
+      return if (hasExactDepartureDataAlreadyBeenRecorded(existingSpaceBooking, departureInfo)) {
+        success(existingSpaceBooking)
       } else {
-        existingCas1SpaceBooking.id hasConflictError "A departure is already recorded for this Space Booking."
+        existingSpaceBooking.id hasConflictError "A departure is already recorded for this Space Booking."
       }
     }
 
-    existingCas1SpaceBooking.actualDepartureDateTime = cas1NewDeparture.departureDateTime
-    existingCas1SpaceBooking.canonicalDepartureDate = LocalDate.ofInstant(cas1NewDeparture.departureDateTime, ZoneId.systemDefault())
-    existingCas1SpaceBooking.departureReason = departureReason
-    existingCas1SpaceBooking.departureMoveOnCategory = moveOnCategory
-    existingCas1SpaceBooking.departureNotes = cas1NewDeparture.notes
+    existingSpaceBooking.actualDepartureDate = departureInfo.departureDate
+    existingSpaceBooking.actualDepartureTime = departureInfo.departureTime
+    existingSpaceBooking.canonicalDepartureDate = departureInfo.departureDate
+    existingSpaceBooking.departureReason = departureReason
+    existingSpaceBooking.departureMoveOnCategory = moveOnCategory
+    existingSpaceBooking.departureNotes = departureInfo.notes
 
-    val result = cas1SpaceBookingRepository.save(existingCas1SpaceBooking)
+    val result = cas1SpaceBookingRepository.save(existingSpaceBooking)
 
     cas1SpaceBookingManagementDomainEventService.departureRecorded(
-      existingCas1SpaceBooking,
-      departureReason!!,
-      moveOnCategory!!,
+      Cas1SpaceBookingManagementDomainEventService.DepartureInfo(
+        existingSpaceBooking,
+        departureReason!!,
+        moveOnCategory!!,
+        departureInfo.departureDate,
+        departureInfo.departureTime,
+        recordedBy = userService.getUserForRequest(),
+      ),
     )
 
     success(result)
   }
 
+  private fun Cas1SpaceBookingEntity.dateTimeIsBeforeArrival(
+    date: LocalDate,
+    time: LocalTime,
+  ): Boolean {
+    val arrivalDate = actualArrivalDate
+    val arrivalTime = actualArrivalTime
+    return date.isBefore(arrivalDate) ||
+      (
+        arrivalDate == date &&
+          arrivalTime != null &&
+          arrivalTime.isAfter(time)
+        )
+  }
+
   private fun hasExactDepartureDataAlreadyBeenRecorded(
     existingCas1SpaceBooking: Cas1SpaceBookingEntity,
-    newDeparture: Cas1NewDeparture,
+    departureInfo: DepartureInfo,
   ): Boolean {
-    return newDeparture.departureDateTime == existingCas1SpaceBooking.actualDepartureDateTime &&
-      newDeparture.reasonId == existingCas1SpaceBooking.departureReason?.id &&
-      newDeparture.moveOnCategoryId == existingCas1SpaceBooking.departureMoveOnCategory?.id
+    return departureInfo.departureDate == existingCas1SpaceBooking.actualDepartureDate &&
+      departureInfo.departureTime == existingCas1SpaceBooking.actualDepartureTime &&
+      departureInfo.reasonId == existingCas1SpaceBooking.departureReason?.id &&
+      departureInfo.moveOnCategoryId == existingCas1SpaceBooking.departureMoveOnCategory?.id
   }
 
   fun search(

@@ -15,7 +15,12 @@ class ApplicationTimelineNoteService(
   fun getApplicationTimelineNotesByApplicationId(applicationId: UUID): List<ApplicationTimelineNoteEntity> =
     applicationTimelineNoteRepository.findApplicationTimelineNoteEntitiesByApplicationId(applicationId)
 
-  fun saveApplicationTimelineNote(applicationId: UUID, note: String, user: UserEntity?): ApplicationTimelineNoteEntity {
+  fun saveApplicationTimelineNote(
+    applicationId: UUID,
+    note: String,
+    user: UserEntity?,
+    cas1SpaceBookingId: UUID? = null,
+  ): ApplicationTimelineNoteEntity {
     return applicationTimelineNoteRepository.save(
       ApplicationTimelineNoteEntity(
         id = UUID.randomUUID(),
@@ -23,6 +28,7 @@ class ApplicationTimelineNoteService(
         createdBy = user,
         createdAt = OffsetDateTime.now(),
         body = note,
+        cas1SpaceBookingId = cas1SpaceBookingId,
       ),
     )
   }

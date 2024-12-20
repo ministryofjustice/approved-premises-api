@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.BedEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.BookingEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ProbationRegionEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TemporaryAccommodationApplicationEntity
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TemporaryAccommodationApplicationJsonSchemaEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.OffenderDetailSummary
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.Name
@@ -111,61 +112,109 @@ class BookingSearchTest : IntegrationTestBase() {
 
   @Test
   fun `Searching for Temporary Accommodation bookings correctly filtered multiple booking when name is used in crnOrName query parameter`() {
+    val firstname = "Someuniquename"
+    val surname = "Someotheruniqueuniquesurname"
     givenAUser { userEntity, jwt ->
       givenSomeOffenders { offenderSequence ->
+        givenAnOffender(
+          offenderDetailsConfigBlock = {
+            withFirstName(firstname)
+            withLastName(surname)
+          },
+        ) { offenderWithFixedName, _ ->
 
-        val applicationSchema = temporaryAccommodationApplicationJsonSchemaEntityFactory.produceAndPersist {
-          withPermissiveSchema()
-        }
-
-        val offendersDetailSummary = offenderSequence.take(10).map { (offenderDetailSummary, inmateDetail) -> offenderDetailSummary }.toList()
-        val allBookings = mutableListOf<BookingEntity>()
-        val temporaryAccommodationApplications = mutableListOf<TemporaryAccommodationApplicationEntity>()
-
-        offendersDetailSummary.forEach {
-          val offenderName = "${it.firstName} ${it.surname}"
-          val application = temporaryAccommodationApplicationEntityFactory.produceAndPersist {
-            withName(offenderName)
-            withCrn(it.otherIds.crn)
-            withProbationRegion(userEntity.probationRegion)
-            withCreatedByUser(userEntity)
-            withApplicationSchema(applicationSchema)
+          val applicationSchema = temporaryAccommodationApplicationJsonSchemaEntityFactory.produceAndPersist {
+            withPermissiveSchema()
           }
-          temporaryAccommodationApplications += application
 
-          val booking = createTestTemporaryAccommodationBookings(userEntity.probationRegion, 1, 1, it.otherIds.crn)
-          allBookings += booking
+          val offendersDetailSummary =
+            offenderSequence.take(10).map { (offenderDetailSummary, _) -> offenderDetailSummary }.toList()
+          val allBookings = mutableListOf<BookingEntity>()
+          val temporaryAccommodationApplications = mutableListOf<TemporaryAccommodationApplicationEntity>()
+
+          offendersDetailSummary.forEach {
+            setupApplicationData(it, userEntity, applicationSchema, temporaryAccommodationApplications, allBookings)
+          }
+
+          setupApplicationData(
+            offenderWithFixedName,
+            userEntity,
+            applicationSchema,
+            temporaryAccommodationApplications,
+            allBookings,
+          )
+
+          // full name match
+          var expectedOffender = offendersDetailSummary.drop(2).first()
+          var expectedBookings = allBookings.filter { b -> b.crn == expectedOffender.otherIds.crn }
+          var expectedResponse = getExpectedResponse(expectedBookings, expectedOffender)
+
+          callApiAndAssertResponse(
+            "/bookings/search?crnOrName=${expectedOffender.firstName} ${expectedOffender.surname}",
+            jwt,
+            expectedResponse,
+            true,
+          )
+
+          // first name match
+          expectedOffender = offendersDetailSummary.drop(4).first()
+          expectedBookings = allBookings.filter { b -> b.crn == expectedOffender.otherIds.crn }
+          expectedResponse = getExpectedResponse(expectedBookings, expectedOffender)
+
+          callApiAndAssertResponse(
+            "/bookings/search?crnOrName=${expectedOffender.firstName}",
+            jwt,
+            expectedResponse,
+            true,
+          )
+
+          // surname match
+          expectedOffender = offendersDetailSummary.drop(7).first()
+          expectedBookings = allBookings.filter { b -> b.crn == expectedOffender.otherIds.crn }
+          expectedResponse = getExpectedResponse(expectedBookings, expectedOffender)
+
+          callApiAndAssertResponse(
+            "/bookings/search?crnOrName=${expectedOffender.surname}",
+            jwt,
+            expectedResponse,
+            true,
+          )
+
+          // partial match
+          expectedOffender = offenderWithFixedName
+          expectedBookings = allBookings.filter { b -> b.crn == expectedOffender.otherIds.crn }
+          expectedResponse = getExpectedResponse(expectedBookings, expectedOffender)
+
+          callApiAndAssertResponse(
+            "/bookings/search?crnOrName=uniquename Someother",
+            jwt,
+            expectedResponse,
+            true,
+          )
         }
-
-        // full name match
-        var expectedOffender = offendersDetailSummary.drop(2).first()
-        var expectedBookings = allBookings.filter { b -> b.crn == expectedOffender.otherIds.crn }
-        var expectedResponse = getExpectedResponse(expectedBookings, expectedOffender)
-
-        callApiAndAssertResponse("/bookings/search?crnOrName=${expectedOffender.firstName} ${expectedOffender.surname}", jwt, expectedResponse, true)
-
-        // first name match
-        expectedOffender = offendersDetailSummary.drop(4).first()
-        expectedBookings = allBookings.filter { b -> b.crn == expectedOffender.otherIds.crn }
-        expectedResponse = getExpectedResponse(expectedBookings, expectedOffender)
-
-        callApiAndAssertResponse("/bookings/search?crnOrName=${expectedOffender.firstName}", jwt, expectedResponse, true)
-
-        // surname match
-        expectedOffender = offendersDetailSummary.drop(7).first()
-        expectedBookings = allBookings.filter { b -> b.crn == expectedOffender.otherIds.crn }
-        expectedResponse = getExpectedResponse(expectedBookings, expectedOffender)
-
-        callApiAndAssertResponse("/bookings/search?crnOrName=${expectedOffender.surname}", jwt, expectedResponse, true)
-
-        // partial match
-        expectedOffender = offendersDetailSummary.drop(9).first()
-        expectedBookings = allBookings.filter { b -> b.crn == expectedOffender.otherIds.crn }
-        expectedResponse = getExpectedResponse(expectedBookings, expectedOffender)
-
-        callApiAndAssertResponse("/bookings/search?crnOrName=${expectedOffender.firstName.last()} ${expectedOffender.surname.first()}", jwt, expectedResponse, true)
       }
     }
+  }
+
+  private fun setupApplicationData(
+    it: OffenderDetailSummary,
+    userEntity: UserEntity,
+    applicationSchema: TemporaryAccommodationApplicationJsonSchemaEntity,
+    temporaryAccommodationApplications: MutableList<TemporaryAccommodationApplicationEntity>,
+    allBookings: MutableList<BookingEntity>,
+  ) {
+    val offenderName = "${it.firstName} ${it.surname}"
+    val application = temporaryAccommodationApplicationEntityFactory.produceAndPersist {
+      withName(offenderName)
+      withCrn(it.otherIds.crn)
+      withProbationRegion(userEntity.probationRegion)
+      withCreatedByUser(userEntity)
+      withApplicationSchema(applicationSchema)
+    }
+    temporaryAccommodationApplications += application
+
+    val booking = createTestTemporaryAccommodationBookings(userEntity.probationRegion, 1, 1, it.otherIds.crn)
+    allBookings += booking
   }
 
   @Test

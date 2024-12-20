@@ -8,15 +8,15 @@ import java.util.stream.Stream
 
 data class TestCaseForSpaceBookingSummaryStatus(
   val expectedArrivalDate: LocalDate,
-  val actualArrivalDateTime: LocalDateTime?,
+  val actualArrivalDate: LocalDate?,
   val expectedDepartureDate: LocalDate,
-  val actualDepartureDateTime: LocalDateTime?,
+  val actualDepartureDate: LocalDate?,
   val nonArrivalConfirmedAtDateTime: LocalDateTime?,
 )
 
 class Cas1SpaceBookingSummaryStatusTestHelper {
-  private val nowDateTime: LocalDateTime = LocalDateTime.now()
-  private val dateWayInTheFuture: LocalDateTime = nowDateTime.plusDays(800)
+  private val nowDate: LocalDate = LocalDate.now()
+  private val dateWayInTheFuture: LocalDate = nowDate.plusDays(800)
 
   fun spaceBookingSummaryStatusCases(): Stream<Arguments> {
     return (
@@ -36,10 +36,10 @@ class Cas1SpaceBookingSummaryStatusTestHelper {
   private fun getArrivedCase() = listOf(
     Arguments.of(
       TestCaseForSpaceBookingSummaryStatus(
-        expectedArrivalDate = nowDateTime.toLocalDate(),
-        actualArrivalDateTime = nowDateTime,
-        expectedDepartureDate = dateWayInTheFuture.toLocalDate(),
-        actualDepartureDateTime = null,
+        expectedArrivalDate = nowDate,
+        actualArrivalDate = nowDate,
+        expectedDepartureDate = dateWayInTheFuture,
+        actualDepartureDate = null,
         nonArrivalConfirmedAtDateTime = null,
       ),
       Cas1SpaceBookingSummaryStatus.arrived,
@@ -49,11 +49,11 @@ class Cas1SpaceBookingSummaryStatusTestHelper {
   private fun getNotArrivedCase() = listOf(
     Arguments.of(
       TestCaseForSpaceBookingSummaryStatus(
-        expectedArrivalDate = nowDateTime.toLocalDate(),
-        actualArrivalDateTime = null,
-        expectedDepartureDate = dateWayInTheFuture.toLocalDate(),
-        actualDepartureDateTime = null,
-        nonArrivalConfirmedAtDateTime = nowDateTime,
+        expectedArrivalDate = nowDate,
+        actualArrivalDate = null,
+        expectedDepartureDate = dateWayInTheFuture,
+        actualDepartureDate = null,
+        nonArrivalConfirmedAtDateTime = LocalDateTime.now(),
       ),
       Cas1SpaceBookingSummaryStatus.notArrived,
     ),
@@ -62,10 +62,10 @@ class Cas1SpaceBookingSummaryStatusTestHelper {
   private fun getArrivalTodayCase() = listOf(
     Arguments.of(
       TestCaseForSpaceBookingSummaryStatus(
-        expectedArrivalDate = nowDateTime.toLocalDate(),
-        actualArrivalDateTime = null,
-        expectedDepartureDate = dateWayInTheFuture.toLocalDate(),
-        actualDepartureDateTime = null,
+        expectedArrivalDate = nowDate,
+        actualArrivalDate = null,
+        expectedDepartureDate = dateWayInTheFuture,
+        actualDepartureDate = null,
         nonArrivalConfirmedAtDateTime = null,
       ),
       Cas1SpaceBookingSummaryStatus.arrivingToday,
@@ -76,10 +76,10 @@ class Cas1SpaceBookingSummaryStatusTestHelper {
     .map {
       Arguments.of(
         TestCaseForSpaceBookingSummaryStatus(
-          expectedArrivalDate = nowDateTime.toLocalDate().minusDays(it),
-          actualArrivalDateTime = null,
-          expectedDepartureDate = dateWayInTheFuture.toLocalDate(),
-          actualDepartureDateTime = null,
+          expectedArrivalDate = nowDate.minusDays(it),
+          actualArrivalDate = null,
+          expectedDepartureDate = dateWayInTheFuture,
+          actualDepartureDate = null,
           nonArrivalConfirmedAtDateTime = null,
         ),
         Cas1SpaceBookingSummaryStatus.overdueArrival,
@@ -90,10 +90,10 @@ class Cas1SpaceBookingSummaryStatusTestHelper {
     .map {
       Arguments.of(
         TestCaseForSpaceBookingSummaryStatus(
-          expectedArrivalDate = nowDateTime.toLocalDate().plusDays(it),
-          actualArrivalDateTime = null,
-          expectedDepartureDate = dateWayInTheFuture.toLocalDate(),
-          actualDepartureDateTime = null,
+          expectedArrivalDate = nowDate.plusDays(it),
+          actualArrivalDate = null,
+          expectedDepartureDate = dateWayInTheFuture,
+          actualDepartureDate = null,
           nonArrivalConfirmedAtDateTime = null,
         ),
         Cas1SpaceBookingSummaryStatus.arrivingWithin2Weeks,
@@ -104,10 +104,10 @@ class Cas1SpaceBookingSummaryStatusTestHelper {
     .map {
       Arguments.of(
         TestCaseForSpaceBookingSummaryStatus(
-          expectedArrivalDate = nowDateTime.toLocalDate().plusDays(it),
-          actualArrivalDateTime = null,
-          expectedDepartureDate = dateWayInTheFuture.toLocalDate(),
-          actualDepartureDateTime = null,
+          expectedArrivalDate = nowDate.plusDays(it),
+          actualArrivalDate = null,
+          expectedDepartureDate = dateWayInTheFuture,
+          actualDepartureDate = null,
           nonArrivalConfirmedAtDateTime = null,
         ),
         Cas1SpaceBookingSummaryStatus.arrivingWithin6Weeks,
@@ -115,14 +115,14 @@ class Cas1SpaceBookingSummaryStatusTestHelper {
     }
 
   private fun getDepartingTodayCase(): List<Arguments> {
-    val date1dayAgo = nowDateTime.minusDays(1)
+    val date1dayAgo = nowDate.minusDays(1)
     return listOf(
       Arguments.of(
         TestCaseForSpaceBookingSummaryStatus(
-          expectedArrivalDate = date1dayAgo.toLocalDate(),
-          actualArrivalDateTime = date1dayAgo,
-          expectedDepartureDate = nowDateTime.toLocalDate(),
-          actualDepartureDateTime = null,
+          expectedArrivalDate = date1dayAgo,
+          actualArrivalDate = date1dayAgo,
+          expectedDepartureDate = nowDate,
+          actualDepartureDate = null,
           nonArrivalConfirmedAtDateTime = null,
         ),
         Cas1SpaceBookingSummaryStatus.departingToday,
@@ -131,14 +131,14 @@ class Cas1SpaceBookingSummaryStatusTestHelper {
   }
 
   private fun getDepartedCase(): List<Arguments> {
-    val date1dayAgo = nowDateTime.minusDays(1)
+    val date1dayAgo = nowDate.minusDays(1)
     return listOf(
       Arguments.of(
         TestCaseForSpaceBookingSummaryStatus(
-          expectedArrivalDate = date1dayAgo.toLocalDate(),
-          actualArrivalDateTime = date1dayAgo,
-          expectedDepartureDate = nowDateTime.toLocalDate(),
-          actualDepartureDateTime = nowDateTime,
+          expectedArrivalDate = date1dayAgo,
+          actualArrivalDate = date1dayAgo,
+          expectedDepartureDate = nowDate,
+          actualDepartureDate = nowDate,
           nonArrivalConfirmedAtDateTime = null,
         ),
         Cas1SpaceBookingSummaryStatus.departed,
@@ -150,10 +150,10 @@ class Cas1SpaceBookingSummaryStatusTestHelper {
     .map {
       Arguments.of(
         TestCaseForSpaceBookingSummaryStatus(
-          expectedArrivalDate = nowDateTime.minusDays(100).toLocalDate(),
-          actualArrivalDateTime = nowDateTime.minusDays(100),
-          expectedDepartureDate = nowDateTime.minusDays(it).toLocalDate(),
-          actualDepartureDateTime = null,
+          expectedArrivalDate = nowDate.minusDays(100),
+          actualArrivalDate = nowDate.minusDays(100),
+          expectedDepartureDate = nowDate.minusDays(it),
+          actualDepartureDate = null,
           nonArrivalConfirmedAtDateTime = null,
         ),
         Cas1SpaceBookingSummaryStatus.overdueDeparture,
@@ -164,10 +164,10 @@ class Cas1SpaceBookingSummaryStatusTestHelper {
     .map {
       Arguments.of(
         TestCaseForSpaceBookingSummaryStatus(
-          expectedArrivalDate = nowDateTime.minusDays(100).toLocalDate(),
-          actualArrivalDateTime = nowDateTime.minusDays(100),
-          expectedDepartureDate = nowDateTime.plusDays(it).toLocalDate(),
-          actualDepartureDateTime = null,
+          expectedArrivalDate = nowDate.minusDays(100),
+          actualArrivalDate = nowDate.minusDays(100),
+          expectedDepartureDate = nowDate.plusDays(it),
+          actualDepartureDate = null,
           nonArrivalConfirmedAtDateTime = null,
         ),
         Cas1SpaceBookingSummaryStatus.departingWithin2Weeks,

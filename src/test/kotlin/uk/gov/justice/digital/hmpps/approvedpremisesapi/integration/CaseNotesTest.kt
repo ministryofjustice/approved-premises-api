@@ -138,7 +138,7 @@ class CaseNotesTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `Getting case notes returns filtered results when call is for cas1 and cas1_only_list_specific_prison_note_types flag is set`() {
+  fun `Getting case notes returns filtered results when call is for cas1 so getCas1SpecificNoteTypes is true`() {
     givenAUser { userEntity, jwt ->
       givenAnOffender { offenderDetails, inmateDetails ->
 

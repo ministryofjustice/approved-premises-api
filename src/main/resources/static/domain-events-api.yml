@@ -647,10 +647,6 @@ components:
         staffCode:
           type: string
           example: N54A999
-        staffIdentifier:
-          type: integer
-          format: int64
-          example: 1501234567
         forenames:
           type: string
           example: John
@@ -1283,6 +1279,8 @@ components:
           $ref: '#/components/schemas/ApplicationUrl'
         bookingId:
           $ref: '#/components/schemas/BookingId'
+        keyWorker:
+          $ref: '#/components/schemas/StaffMember'
         personReference:
           $ref: '#/components/schemas/PersonReference'
         deliusEventNumber:
@@ -1305,6 +1303,7 @@ components:
         - applicationId
         - applicationUrl
         - bookingId
+        - keyWorker
         - personReference
         - deliusEventNumber
         - premises
@@ -1524,6 +1523,8 @@ components:
           $ref: '#/components/schemas/Premises'
         keyWorker:
           $ref: '#/components/schemas/StaffMember'
+        recordedBy:
+          $ref: '#/components/schemas/StaffMember'
         arrivedAt:
           type: string
           example: '2022-11-30T14:51:30'
@@ -1549,6 +1550,7 @@ components:
         - premises
         - arrivedAt
         - expectedDepartureOn
+        - recordedBy
     PersonNotArrivedEnvelope:
       type: object
       properties:
@@ -1641,6 +1643,8 @@ components:
           $ref: '#/components/schemas/BookingId'
         keyWorker:
           $ref: '#/components/schemas/StaffMember'
+        recordedBy:
+          $ref: '#/components/schemas/StaffMember'
         premises:
           $ref: '#/components/schemas/Premises'
         departedAt:
@@ -1671,6 +1675,7 @@ components:
         - applicationUrl
         - bookingId
         - keyWorker
+        - recordedBy
         - premises
         - departedAt
         - reason

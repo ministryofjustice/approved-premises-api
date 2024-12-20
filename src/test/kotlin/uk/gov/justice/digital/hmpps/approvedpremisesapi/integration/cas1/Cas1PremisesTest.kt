@@ -41,6 +41,7 @@ class Cas1PremisesTest : IntegrationTestBase() {
         withPostcode("the postcode")
         withYieldedProbationRegion { region }
         withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
+        withManagerDetails("manager details")
       }
     }
 
@@ -116,6 +117,7 @@ class Cas1PremisesTest : IntegrationTestBase() {
       assertThat(summary.outOfServiceBeds).isEqualTo(1)
       assertThat(summary.availableBeds).isEqualTo(4)
       assertThat(summary.apArea.name).isEqualTo("The ap area name")
+      assertThat(summary.managerDetails).isEqualTo("manager details")
     }
   }
 
@@ -396,6 +398,7 @@ class Cas1PremisesTest : IntegrationTestBase() {
         withPostcode("the postcode")
         withYieldedProbationRegion { region }
         withYieldedLocalAuthorityArea { localAuthorityEntityFactory.produceAndPersist() }
+        withManagerDetails("manager details")
       }
     }
 
@@ -425,6 +428,10 @@ class Cas1PremisesTest : IntegrationTestBase() {
 
       assertThat(result.premise.name).isEqualTo("the premises name")
       assertThat(result.capacity).hasSize(2)
+      assertThat(result.premise.managerDetails).isEqualTo("manager details")
+
+      assertThat(result.capacity[0].date).isEqualTo(LocalDate.of(2020, 1, 1))
+      assertThat(result.capacity[1].date).isEqualTo(LocalDate.of(2020, 1, 2))
     }
   }
 }

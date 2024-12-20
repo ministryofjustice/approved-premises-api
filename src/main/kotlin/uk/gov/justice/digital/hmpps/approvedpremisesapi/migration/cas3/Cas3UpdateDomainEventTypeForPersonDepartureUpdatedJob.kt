@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.migration.cas3
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas3.model.CAS3PersonDepartedEvent
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas3.model.EventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventRepository
@@ -9,6 +10,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventTy
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.migration.MigrationJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.migration.MigrationLogger
 
+@Component
 class Cas3UpdateDomainEventTypeForPersonDepartureUpdatedJob(
   private val domainEventRepository: DomainEventRepository,
   private val objectMapper: ObjectMapper,
@@ -17,7 +19,7 @@ class Cas3UpdateDomainEventTypeForPersonDepartureUpdatedJob(
   override val shouldRunInTransaction = true
 
   @SuppressWarnings("MagicNumber", "TooGenericExceptionCaught", "NestedBlockDepth")
-  override fun process() {
+  override fun process(pageSize: Int) {
     val domainEvents = domainEventRepository.findByType(DomainEventType.CAS3_PERSON_DEPARTURE_UPDATED)
     domainEvents.forEach {
       migrationLogger.info("Updating person departure updated domain event. Event id ${it.id}")

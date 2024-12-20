@@ -3,18 +3,18 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.controller.cas1
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.cas1.OutOfServiceBedsCas1Delegate
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NewOutOfServiceBed
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1NewOutOfServiceBedCancellation
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1OutOfServiceBed
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1OutOfServiceBedCancellation
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1OutOfServiceBedSortField
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewCas1OutOfServiceBed
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewCas1OutOfServiceBedCancellation
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SortDirection
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Temporality
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.UpdateCas1OutOfServiceBed
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas1OutOfServiceBedEntity
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserPermission
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ConflictProblem
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ForbiddenProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.NotFoundProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.PremisesService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserAccessService
@@ -34,7 +34,7 @@ class Cas1OutOfServiceBedsController(
   private val outOfServiceBedTransformer: Cas1OutOfServiceBedTransformer,
   private val outOfServiceBedCancellationTransformer: Cas1OutOfServiceBedCancellationTransformer,
 ) : OutOfServiceBedsCas1Delegate {
-  override fun outOfServiceBedsGet(
+  override fun getOutOfServiceBeds(
     temporality: List<Temporality>?,
     premisesId: UUID?,
     apAreaId: UUID?,
@@ -43,9 +43,7 @@ class Cas1OutOfServiceBedsController(
     page: Int?,
     perPage: Int?,
   ): ResponseEntity<List<Cas1OutOfServiceBed>> {
-    if (!userAccessService.currentUserCanViewOutOfServiceBeds()) {
-      throw ForbiddenProblem()
-    }
+    userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_VIEW_OUT_OF_SERVICE_BEDS)
 
     val (outOfServiceBeds, pageMetadata) = outOfServiceBedService.getOutOfServiceBeds(
       temporality?.toSet() ?: setOf(Temporality.current, Temporality.future),
@@ -65,33 +63,29 @@ class Cas1OutOfServiceBedsController(
       .body(outOfServiceBeds.map(outOfServiceBedTransformer::transformJpaToApi))
   }
 
-  override fun premisesPremisesIdOutOfServiceBedsGet(premisesId: UUID): ResponseEntity<List<Cas1OutOfServiceBed>> {
-    val premises = tryGetApprovedPremises(premisesId)
+  override fun getOutOfServiceBedsForPremises(premisesId: UUID): ResponseEntity<List<Cas1OutOfServiceBed>> {
+    userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_VIEW_OUT_OF_SERVICE_BEDS)
+
+    tryGetApprovedPremises(premisesId)
 
     val outOfServiceBeds = outOfServiceBedService.getActiveOutOfServiceBedsForPremisesId(premisesId)
-
-    if (!userAccessService.currentUserCanManagePremisesOutOfServiceBed(premises)) {
-      throw ForbiddenProblem()
-    }
 
     return ResponseEntity.ok(outOfServiceBeds.map(outOfServiceBedTransformer::transformJpaToApi))
   }
 
-  override fun premisesPremisesIdOutOfServiceBedsOutOfServiceBedIdCancellationsPost(
+  override fun cancelOutOfServiceBed(
     premisesId: UUID,
     outOfServiceBedId: UUID,
-    body: NewCas1OutOfServiceBedCancellation,
+    body: Cas1NewOutOfServiceBedCancellation,
   ): ResponseEntity<Cas1OutOfServiceBedCancellation> {
+    userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_OUT_OF_SERVICE_BED_CREATE)
+
     val premises = tryGetApprovedPremises(premisesId)
 
     val outOfServiceBed = premises
       .outOfServiceBeds
       .firstOrNull { it.id == outOfServiceBedId }
       ?: throw NotFoundProblem(outOfServiceBedId, "OutOfServiceBed")
-
-    if (!userAccessService.currentUserCanCancelOutOfServiceBed()) {
-      throw ForbiddenProblem()
-    }
 
     val cancelOutOfServiceBedResult = outOfServiceBedService.cancelOutOfServiceBed(
       outOfServiceBed = outOfServiceBed,
@@ -105,15 +99,13 @@ class Cas1OutOfServiceBedsController(
     )
   }
 
-  override fun premisesPremisesIdOutOfServiceBedsOutOfServiceBedIdGet(
+  override fun getOutOfServiceBed(
     premisesId: UUID,
     outOfServiceBedId: UUID,
   ): ResponseEntity<Cas1OutOfServiceBed> {
-    val premises = tryGetApprovedPremises(premisesId)
+    userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_VIEW_OUT_OF_SERVICE_BEDS)
 
-    if (!userAccessService.currentUserCanManagePremisesOutOfServiceBed(premises)) {
-      throw ForbiddenProblem()
-    }
+    val premises = tryGetApprovedPremises(premisesId)
 
     val outOfServiceBed = premises.outOfServiceBeds.firstOrNull { it.id == outOfServiceBedId }
       ?: throw NotFoundProblem(outOfServiceBedId, "OutOfServiceBed")
@@ -121,17 +113,15 @@ class Cas1OutOfServiceBedsController(
     return ResponseEntity.ok(outOfServiceBedTransformer.transformJpaToApi(outOfServiceBed))
   }
 
-  override fun premisesPremisesIdOutOfServiceBedsOutOfServiceBedIdPut(
+  override fun updateOutOfServiceBed(
     premisesId: UUID,
     outOfServiceBedId: UUID,
     body: UpdateCas1OutOfServiceBed,
   ): ResponseEntity<Cas1OutOfServiceBed> {
+    userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_OUT_OF_SERVICE_BED_CREATE)
+
     val premises = tryGetApprovedPremises(premisesId)
     val outOfServiceBed = premises.outOfServiceBeds.firstOrNull { it.id == outOfServiceBedId } ?: throw NotFoundProblem(outOfServiceBedId, "OutOfServiceBed")
-
-    if (!userAccessService.currentUserCanManagePremisesOutOfServiceBed(premises)) {
-      throw ForbiddenProblem()
-    }
 
     throwIfOutOfServiceBedDatesConflict(body.startDate, body.endDate, outOfServiceBedId, outOfServiceBed.bed.id)
 
@@ -151,15 +141,13 @@ class Cas1OutOfServiceBedsController(
     )
   }
 
-  override fun premisesPremisesIdOutOfServiceBedsPost(
+  override fun createOutOfServiceBed(
     premisesId: UUID,
-    body: NewCas1OutOfServiceBed,
+    body: Cas1NewOutOfServiceBed,
   ): ResponseEntity<Cas1OutOfServiceBed> {
-    val premises = tryGetApprovedPremises(premisesId)
+    userAccessService.ensureCurrentUserHasPermission(UserPermission.CAS1_OUT_OF_SERVICE_BED_CREATE)
 
-    if (!userAccessService.currentUserCanManagePremisesOutOfServiceBed(premises)) {
-      throw ForbiddenProblem()
-    }
+    val premises = tryGetApprovedPremises(premisesId)
 
     throwIfOutOfServiceBedDatesConflict(body.startDate, body.endDate, null, body.bedId)
 

@@ -27,7 +27,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ForbiddenProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.NotFoundProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationService
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.FeatureFlagService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.HttpAuthService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.OffenderService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
@@ -59,7 +58,6 @@ class PeopleController(
   private val userService: UserService,
   private val applicationService: ApplicationService,
   private val personalTimelineTransformer: PersonalTimelineTransformer,
-  private val featureFlagService: FeatureFlagService,
 ) : PeopleApiDelegate {
 
   override fun peopleSearchGet(crn: String): ResponseEntity<Person> {
@@ -98,13 +96,12 @@ class PeopleController(
       throw NotFoundProblem(crn, "Case Notes")
     }
 
-    val getCas1SpecificNoteTypes = (
-      xServiceName == ServiceName.approvedPremises &&
-        featureFlagService.getBooleanFlag("cas1-only-list-specific-prison-note-types")
-      )
     val nomsNumber = offenderDetails.otherIds.nomsNumber
 
-    val prisonCaseNotesResult = offenderService.getFilteredPrisonCaseNotesByNomsNumber(nomsNumber, getCas1SpecificNoteTypes)
+    val prisonCaseNotesResult = offenderService.getFilteredPrisonCaseNotesByNomsNumber(
+      nomsNumber,
+      getCas1SpecificNoteTypes = xServiceName == ServiceName.approvedPremises,
+    )
 
     return ResponseEntity.ok(extractEntityFromCasResult(prisonCaseNotesResult).map(prisonCaseNoteTransformer::transformModelToApi))
   }
@@ -125,12 +122,12 @@ class PeopleController(
       is AuthorisableActionResult.Success -> adjudicationsResult.entity
     }
 
-    val getLast12MonthsOnly = (
-      xServiceName == ServiceName.approvedPremises &&
-        featureFlagService.getBooleanFlag("cas1-only-list-adjudications-up-to-12-months")
-      )
-
-    return ResponseEntity.ok(adjudicationTransformer.transformToApi(adjudications, getLast12MonthsOnly))
+    return ResponseEntity.ok(
+      adjudicationTransformer.transformToApi(
+        adjudications,
+        getLast12MonthsOnly = xServiceName == ServiceName.approvedPremises,
+      ),
+    )
   }
 
   override fun peopleCrnAcctAlertsGet(crn: String): ResponseEntity<List<PersonAcctAlert>> {
@@ -248,58 +245,52 @@ class PeopleController(
   override fun peopleCrnOffencesGet(crn: String): ResponseEntity<List<ActiveOffence>> {
     ensureUserCanAccessOffenderInfo(crn)
 
-    val isOffencesFromAPDelius = featureFlagService.getBooleanFlag("get-offences-from-ap-delius")
-    return if (isOffencesFromAPDelius) {
-      val caseDetail = offenderService.getCaseDetail(crn)
-      ResponseEntity.ok(
-        offenceTransformer.transformToApi(extractEntityFromCasResult(caseDetail)),
-      )
-    } else {
-      val convictionsResult = offenderService.getConvictions(crn)
-      val activeConvictions = getSuccessEntityOrThrow(crn, convictionsResult).filter { it.active }
-      ResponseEntity.ok(
-        activeConvictions.flatMap(offenceTransformer::transformToApi),
-      )
-    }
+    val caseDetail = offenderService.getCaseDetail(crn)
+    return ResponseEntity.ok(
+      offenceTransformer.transformToApi(extractEntityFromCasResult(caseDetail)),
+    )
   }
 
   override fun peopleCrnTimelineGet(crn: String): ResponseEntity<PersonalTimeline> {
     val user = userService.getUserForRequest()
-
     val personInfo = offenderService.getPersonInfoResult(crn, user.deliusUsername, user.hasQualification(UserQualification.LAO))
+    return ResponseEntity.ok(transformPersonInfo(personInfo, crn))
+  }
 
-    val personalTimeline = when (personInfo) {
-      is PersonInfoResult.NotFound -> throw NotFoundProblem(crn, "Offender")
-      is PersonInfoResult.Unknown -> throw personInfo.throwable ?: RuntimeException("Could not retrieve person info for CRN: $crn")
-      is PersonInfoResult.Success -> {
-        val regularApplications = applicationService
-          .getApplicationsForCrn(crn, ServiceName.approvedPremises)
-          .map { BoxedApplication.of(it as ApprovedPremisesApplicationEntity) }
+  private fun transformPersonInfo(personInfoResult: PersonInfoResult, crn: String): PersonalTimeline = when (personInfoResult) {
+    is PersonInfoResult.NotFound -> throw NotFoundProblem(crn, "Offender")
+    is PersonInfoResult.Unknown -> throw personInfoResult.throwable ?: RuntimeException("Could not retrieve person info for CRN: $crn")
+    is PersonInfoResult.Success.Full -> buildPersonInfoWithTimeline(personInfoResult, crn)
+    is PersonInfoResult.Success.Restricted -> buildPersonInfoWithoutTimeline(personInfoResult)
+  }
 
-        val offlineApplications = applicationService
-          .getOfflineApplicationsForCrn(crn, ServiceName.approvedPremises)
-          .map { BoxedApplication.of(it) }
+  private fun buildPersonInfoWithoutTimeline(personInfo: PersonInfoResult.Success.Restricted): PersonalTimeline =
+    personalTimelineTransformer.transformApplicationTimelineModels(personInfo, emptyList())
 
-        val allApplications = regularApplications + offlineApplications
+  private fun buildPersonInfoWithTimeline(personInfo: PersonInfoResult.Success.Full, crn: String): PersonalTimeline {
+    val regularApplications = getRegularApplications(crn)
+    val offlineApplications = getOfflineApplications(crn)
+    val combinedApplications = regularApplications + offlineApplications
 
-        val applicationTimelineModels = allApplications
-          .map { application ->
-            val applicationId = application.map(
-              ApprovedPremisesApplicationEntity::id,
-              OfflineApplicationEntity::id,
-            )
-
-            val timelineEvents = applicationService.getApplicationTimeline(applicationId)
-
-            ApplicationTimelineModel(application, timelineEvents)
-          }
-
-        personalTimelineTransformer.transformApplicationTimelineModels(personInfo, applicationTimelineModels)
-      }
+    val applicationTimelineModels = combinedApplications.map { application ->
+      val applicationId = application.map(
+        ApprovedPremisesApplicationEntity::id,
+        OfflineApplicationEntity::id,
+      )
+      val timelineEvents = applicationService.getApplicationTimeline(applicationId)
+      ApplicationTimelineModel(application, timelineEvents)
     }
 
-    return ResponseEntity.ok(personalTimeline)
+    return personalTimelineTransformer.transformApplicationTimelineModels(personInfo, applicationTimelineModels)
   }
+
+  private fun getRegularApplications(crn: String) = applicationService
+    .getApplicationsForCrn(crn, ServiceName.approvedPremises)
+    .map { BoxedApplication.of(it as ApprovedPremisesApplicationEntity) }
+
+  private fun getOfflineApplications(crn: String) = applicationService
+    .getOfflineApplicationsForCrn(crn, ServiceName.approvedPremises)
+    .map { BoxedApplication.of(it) }
 
   private fun <T> getSuccessEntityOrThrow(crn: String, authorisableActionResult: AuthorisableActionResult<T>): T = when (authorisableActionResult) {
     is AuthorisableActionResult.NotFound -> throw NotFoundProblem(crn, "Person")

@@ -22,7 +22,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.UpdatePlacemen
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.WithdrawPlacementApplication
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.WithdrawPlacementRequestReason
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.CaseAccessFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.OffenderDetailsSummaryFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAPlacementApplication
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAProbationRegion
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenASubmittedApplication
@@ -30,8 +29,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.given
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnAssessmentForApprovedPremises
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnOffender
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextAddResponseToUserAccessCall
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockOffenderUserAccessCall
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockSuccessfulOffenderDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesAssessmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentDecision
@@ -92,10 +89,18 @@ class PlacementApplicationsTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `creating a placement application when the application does not belong to the user returns 401`() {
+    fun `creating a placement application when the application cannot be viewed by the user returns 401`() {
       givenAUser { _, jwt ->
         givenAUser { otherUser, _ ->
-          givenASubmittedApplication(createdByUser = otherUser) { application ->
+          val offender = givenAnOffender(
+            offenderDetailsConfigBlock = {
+              withCurrentRestriction(true)
+            },
+          ).first
+          givenASubmittedApplication(
+            createdByUser = otherUser,
+            crn = offender.otherIds.crn,
+          ) { application ->
             webTestClient.post()
               .uri("/placement-applications")
               .header("Authorization", "Bearer $jwt")
@@ -264,13 +269,6 @@ class PlacementApplicationsTest : IntegrationTestBase() {
               withPermissiveSchema()
             },
           ) { placementApplicationEntity ->
-            communityAPIMockOffenderUserAccessCall(
-              username = user.deliusUsername,
-              crn = offenderDetails.otherIds.crn,
-              inclusion = false,
-              exclusion = true,
-            )
-
             webTestClient.get()
               .uri("/placement-applications/${placementApplicationEntity.id}")
               .header("Authorization", "Bearer $jwt")
@@ -297,13 +295,6 @@ class PlacementApplicationsTest : IntegrationTestBase() {
               withPermissiveSchema()
             },
           ) { placementApplicationEntity ->
-            communityAPIMockOffenderUserAccessCall(
-              username = user.deliusUsername,
-              crn = offenderDetails.otherIds.crn,
-              inclusion = false,
-              exclusion = false,
-            )
-
             apDeliusContextAddResponseToUserAccessCall(
               listOf(
                 CaseAccessFactory()
@@ -351,13 +342,6 @@ class PlacementApplicationsTest : IntegrationTestBase() {
               withPermissiveSchema()
             },
           ) { placementApplicationEntity ->
-            communityAPIMockOffenderUserAccessCall(
-              username = user.deliusUsername,
-              crn = offenderDetails.otherIds.crn,
-              inclusion = false,
-              exclusion = true,
-            )
-
             val rawResult = webTestClient.get()
               .uri("/placement-applications/${placementApplicationEntity.id}")
               .header("Authorization", "Bearer $jwt")
@@ -1321,12 +1305,6 @@ class PlacementApplicationsTest : IntegrationTestBase() {
             withPermissiveSchema()
           },
         ) { placementApplicationEntity ->
-          communityAPIMockSuccessfulOffenderDetailsCall(
-            OffenderDetailsSummaryFactory()
-              .withCrn(placementApplicationEntity.application.crn)
-              .produce(),
-          )
-
           val rawResult = webTestClient.post()
             .uri("/placement-applications/${placementApplicationEntity.id}/withdraw")
             .header("Authorization", "Bearer $jwt")
@@ -1373,12 +1351,6 @@ class PlacementApplicationsTest : IntegrationTestBase() {
             submittedAt = OffsetDateTime.now(),
             allocatedToUser = assessor,
           ) { placementApplicationEntity ->
-
-            communityAPIMockSuccessfulOffenderDetailsCall(
-              OffenderDetailsSummaryFactory()
-                .withCrn(placementApplicationEntity.application.crn)
-                .produce(),
-            )
 
             val application = placementApplicationEntity.application
 
@@ -1440,12 +1412,6 @@ class PlacementApplicationsTest : IntegrationTestBase() {
               submittedAt = OffsetDateTime.now(),
               allocatedToUser = assessor,
             ) { placementApplicationEntity ->
-
-              communityAPIMockSuccessfulOffenderDetailsCall(
-                OffenderDetailsSummaryFactory()
-                  .withCrn(placementApplicationEntity.application.crn)
-                  .produce(),
-              )
 
               val application = placementApplicationEntity.application
 

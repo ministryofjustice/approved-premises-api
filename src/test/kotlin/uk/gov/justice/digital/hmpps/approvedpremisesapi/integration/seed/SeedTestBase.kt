@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.seed
 
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
+import org.jetbrains.kotlinx.dataframe.DataFrame
+import org.jetbrains.kotlinx.dataframe.io.writeExcel
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
 import org.slf4j.LoggerFactory
@@ -58,6 +60,16 @@ abstract class SeedTestBase : IntegrationTestBase() {
       contents,
       StandardOpenOption.CREATE,
       StandardOpenOption.TRUNCATE_EXISTING,
+    )
+  }
+
+  protected fun withXlsx(xlsxName: String, sheetName: String, dataFrame: DataFrame<*>) {
+    if (!Files.isDirectory(Path(seedFilePrefix))) {
+      Files.createDirectory(Path(seedFilePrefix))
+    }
+    dataFrame.writeExcel(
+      "$seedFilePrefix/$xlsxName.xlsx",
+      sheetName = sheetName,
     )
   }
 }

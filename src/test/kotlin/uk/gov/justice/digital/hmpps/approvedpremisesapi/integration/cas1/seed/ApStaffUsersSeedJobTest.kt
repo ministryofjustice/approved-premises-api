@@ -60,7 +60,6 @@ class ApStaffUsersSeedJobTest : SeedTestBase() {
     apDeliusContextAddStaffDetailResponse(
       StaffDetailFactory.staffDetail(
         deliusUsername = "UNKNOWN-USER",
-        staffIdentifier = 6789,
         probationArea = ProbationArea(
           code = probationRegionDeliusMapping.probationAreaDeliusCode,
           description = "description",
@@ -84,7 +83,6 @@ class ApStaffUsersSeedJobTest : SeedTestBase() {
     val persistedUser = userRepository.findByDeliusUsername("UNKNOWN-USER")
 
     assertThat(persistedUser).isNotNull
-    assertThat(persistedUser!!.deliusStaffIdentifier).isEqualTo(6789)
 
     assertThat(logEntries).anyMatch {
       it.level == "info" &&

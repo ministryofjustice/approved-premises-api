@@ -11,6 +11,7 @@ import java.util.UUID
 @Repository
 interface NonArrivalReasonRepository : JpaRepository<NonArrivalReasonEntity, UUID> {
   fun findByName(name: String): NonArrivalReasonEntity?
+  fun findByLegacyDeliusReasonCode(it: String): NonArrivalReasonEntity?
 }
 
 @Entity

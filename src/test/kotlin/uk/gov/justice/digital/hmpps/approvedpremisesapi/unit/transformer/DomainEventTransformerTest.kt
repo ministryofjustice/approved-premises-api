@@ -47,14 +47,12 @@ class DomainEventTransformerTest {
     val user = UserEntityFactory()
       .withUnitTestControlProbationRegion()
       .withDeliusStaffCode("theStaffCode")
-      .withDeliusStaffIdentifier(22L)
       .withName("theForenames theSurname")
       .withDeliusUsername("theUsername")
       .produce()
 
     val staffDetail = StaffDetailFactory.staffDetail(
       code = "theStaffCode",
-      staffIdentifier = 22L,
       name = PersonName("theForenames", "theSurname"),
       deliusUsername = "theUsername",
       probationArea = ProbationArea("theProbationCode", "theProbationDescription"),
@@ -68,7 +66,6 @@ class DomainEventTransformerTest {
     val result = domainEventTransformer.toStaffMember(user)
 
     assertThat(result.staffCode).isEqualTo("theStaffCode")
-    assertThat(result.staffIdentifier).isEqualTo(22L)
     assertThat(result.forenames).isEqualTo("theForenames")
     assertThat(result.surname).isEqualTo("theSurname")
     assertThat(result.username).isEqualTo("theUsername")
@@ -79,12 +76,11 @@ class DomainEventTransformerTest {
     val user = UserEntityFactory()
       .withUnitTestControlProbationRegion()
       .withDeliusStaffCode("theStaffCode")
-      .withDeliusStaffIdentifier(22L)
       .withName("theForenames theSurname")
       .withDeliusUsername("theUsername")
       .produce()
 
-    val response = ClientResult.Failure.StatusCode<StaffDetail>(
+    val response = Failure.StatusCode<StaffDetail>(
       HttpMethod.GET,
       "/",
       HttpStatus.BAD_REQUEST,
@@ -104,7 +100,6 @@ class DomainEventTransformerTest {
   fun `toWithdrawnBy from staff details success`() {
     val staffDetail = StaffDetailFactory.staffDetail(
       code = "theStaffCode",
-      staffIdentifier = 22L,
       name = PersonName("theForenames", "theSurname", "theMiddleName"),
       deliusUsername = "theUsername",
       probationArea = ProbationArea("theProbationCode", "theProbationDescription"),
@@ -114,7 +109,6 @@ class DomainEventTransformerTest {
 
     val staffMember = result.staffMember
     assertThat(staffMember.staffCode).isEqualTo("theStaffCode")
-    assertThat(staffMember.staffIdentifier).isEqualTo(22L)
     assertThat(staffMember.forenames).isEqualTo("theForenames theMiddleName")
     assertThat(staffMember.surname).isEqualTo("theSurname")
     assertThat(staffMember.username).isEqualTo("theUsername")
@@ -128,7 +122,6 @@ class DomainEventTransformerTest {
   fun `toWithdrawnBy from user success`() {
     val staffDetail = StaffDetailFactory.staffDetail(
       code = "theStaffCode",
-      staffIdentifier = 22L,
       name = PersonName("theForenames", "theSurname"),
       deliusUsername = "theUsername",
       probationArea = ProbationArea("theProbationCode", "theProbationDescription"),
@@ -144,7 +137,6 @@ class DomainEventTransformerTest {
 
     val staffMember = result.staffMember
     assertThat(staffMember.staffCode).isEqualTo("theStaffCode")
-    assertThat(staffMember.staffIdentifier).isEqualTo(22L)
     assertThat(staffMember.forenames).isEqualTo("theForenames")
     assertThat(staffMember.surname).isEqualTo("theSurname")
     assertThat(staffMember.username).isEqualTo("theUsername")

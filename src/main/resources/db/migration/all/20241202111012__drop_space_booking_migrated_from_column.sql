@@ -1,0 +1,2 @@
+ALTER TABLE cas1_space_bookings DROP CONSTRAINT cas1_space_bookings_migrated_from_booking_id_fkey;
+ALTER TABLE cas1_space_bookings DROP COLUMN migrated_from_booking_id;

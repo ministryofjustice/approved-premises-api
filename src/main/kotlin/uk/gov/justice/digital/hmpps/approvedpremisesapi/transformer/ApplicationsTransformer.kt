@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Application
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApplicationStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApprovedPremisesApplication
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.GenderForAp
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.OfflineApplication
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ReleaseTypeOption
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TemporaryAccommodationApplication
@@ -40,73 +39,75 @@ class ApplicationsTransformer(
   private val cas1ApplicationUserDetailsTransformer: Cas1ApplicationUserDetailsTransformer,
   private val cas1CruManagementAreaTransformer: Cas1CruManagementAreaTransformer,
 ) {
-  fun transformJpaToApi(jpa: ApplicationEntity, personInfo: PersonInfoResult): Application {
-    val latestAssessment = jpa.getLatestAssessment()
+  @SuppressWarnings("TooGenericExceptionThrown")
+  fun transformJpaToApi(applicationEntity: ApplicationEntity, personInfo: PersonInfoResult): Application {
+    val latestAssessment = applicationEntity.getLatestAssessment()
 
-    return when (jpa) {
+    return when (applicationEntity) {
       is ApprovedPremisesApplicationEntity -> ApprovedPremisesApplication(
-        id = jpa.id,
+        id = applicationEntity.id,
         person = personTransformer.transformModelToPersonApi(personInfo),
-        createdByUserId = jpa.createdByUser.id,
-        schemaVersion = jpa.schemaVersion.id,
-        outdatedSchema = !jpa.schemaUpToDate,
-        createdAt = jpa.createdAt.toInstant(),
-        submittedAt = jpa.submittedAt?.toInstant(),
-        isWomensApplication = jpa.isWomensApplication,
-        isPipeApplication = jpa.isPipeApplication,
-        arrivalDate = jpa.arrivalDate?.toInstant(),
-        data = if (jpa.data != null) objectMapper.readTree(jpa.data) else null,
-        document = if (jpa.document != null) objectMapper.readTree(jpa.document) else null,
-        risks = if (jpa.riskRatings != null) {
+        createdByUserId = applicationEntity.createdByUser.id,
+        schemaVersion = applicationEntity.schemaVersion.id,
+        outdatedSchema = !applicationEntity.schemaUpToDate,
+        createdAt = applicationEntity.createdAt.toInstant(),
+        submittedAt = applicationEntity.submittedAt?.toInstant(),
+        isWomensApplication = applicationEntity.isWomensApplication,
+        isPipeApplication = applicationEntity.isPipeApplication,
+        arrivalDate = applicationEntity.arrivalDate?.toInstant(),
+        data = if (applicationEntity.data != null) objectMapper.readTree(applicationEntity.data) else null,
+        document = if (applicationEntity.document != null) objectMapper.readTree(applicationEntity.document) else null,
+        risks = if (applicationEntity.riskRatings != null) {
           risksTransformer.transformDomainToApi(
-            jpa.riskRatings!!,
-            jpa.crn,
+            applicationEntity.riskRatings!!,
+            applicationEntity.crn,
           )
         } else {
           null
         },
-        status = jpa.status.apiValue,
+        status = applicationEntity.status.apiValue,
         assessmentDecision = transformJpaDecisionToApi(latestAssessment?.decision),
         assessmentId = latestAssessment?.id,
         assessmentDecisionDate = latestAssessment?.submittedAt?.toLocalDate(),
         personStatusOnSubmission = personTransformer.inmateStatusToPersonInfoApiStatus(
-          InmateStatus.entries.firstOrNull { it.name == jpa.inmateInOutStatusOnSubmission },
+          InmateStatus.entries.firstOrNull { it.name == applicationEntity.inmateInOutStatusOnSubmission },
         ),
         type = "CAS1",
-        apArea = jpa.apArea?.let { apAreaTransformer.transformJpaToApi(it) },
-        cruManagementArea = jpa.cruManagementArea?. let { cas1CruManagementAreaTransformer.transformJpaToApi(it) },
-        applicantUserDetails = jpa.applicantUserDetails?.let { cas1ApplicationUserDetailsTransformer.transformJpaToApi(it) },
-        caseManagerIsNotApplicant = jpa.caseManagerIsNotApplicant,
-        caseManagerUserDetails = jpa.caseManagerUserDetails?.let { cas1ApplicationUserDetailsTransformer.transformJpaToApi(it) },
-        apType = jpa.apType.asApiType(),
-        genderForAp = GenderForAp.male,
+        apArea = applicationEntity.apArea?.let { apAreaTransformer.transformJpaToApi(it) },
+        cruManagementArea = applicationEntity.cruManagementArea?. let { cas1CruManagementAreaTransformer.transformJpaToApi(it) },
+        applicantUserDetails = applicationEntity.applicantUserDetails?.let { cas1ApplicationUserDetailsTransformer.transformJpaToApi(it) },
+        caseManagerIsNotApplicant = applicationEntity.caseManagerIsNotApplicant,
+        caseManagerUserDetails = applicationEntity.caseManagerUserDetails?.let { cas1ApplicationUserDetailsTransformer.transformJpaToApi(it) },
+        apType = applicationEntity.apType.asApiType(),
+        licenceExpiryDate = applicationEntity.licenceExpiryDate,
       )
 
       is DomainTemporaryAccommodationApplicationEntity -> TemporaryAccommodationApplication(
-        id = jpa.id,
+        id = applicationEntity.id,
         person = personTransformer.transformModelToPersonApi(personInfo),
-        createdByUserId = jpa.createdByUser.id,
-        schemaVersion = jpa.schemaVersion.id,
-        outdatedSchema = !jpa.schemaUpToDate,
-        createdAt = jpa.createdAt.toInstant(),
-        submittedAt = jpa.submittedAt?.toInstant(),
-        arrivalDate = jpa.arrivalDate?.toInstant(),
-        data = if (jpa.data != null) objectMapper.readTree(jpa.data) else null,
-        document = if (jpa.document != null) objectMapper.readTree(jpa.document) else null,
-        risks = if (jpa.riskRatings != null) {
+        createdByUserId = applicationEntity.createdByUser.id,
+        schemaVersion = applicationEntity.schemaVersion.id,
+        outdatedSchema = !applicationEntity.schemaUpToDate,
+        createdAt = applicationEntity.createdAt.toInstant(),
+        submittedAt = applicationEntity.submittedAt?.toInstant(),
+        arrivalDate = applicationEntity.arrivalDate?.toInstant(),
+        data = if (applicationEntity.data != null) objectMapper.readTree(applicationEntity.data) else null,
+        document = if (applicationEntity.document != null) objectMapper.readTree(applicationEntity.document) else null,
+        risks = if (applicationEntity.riskRatings != null) {
           risksTransformer.transformDomainToApi(
-            jpa.riskRatings!!,
-            jpa.crn,
+            applicationEntity.riskRatings!!,
+            applicationEntity.crn,
           )
         } else {
           null
         },
-        status = getStatus(jpa, latestAssessment),
+        status = getStatus(applicationEntity, latestAssessment),
         type = "CAS3",
-        offenceId = jpa.offenceId,
+        offenceId = applicationEntity.offenceId,
+        assessmentId = latestAssessment?.id,
       )
 
-      else -> throw RuntimeException("Unrecognised application type when transforming: ${jpa::class.qualifiedName}")
+      else -> throw RuntimeException("Unrecognised application type when transforming: ${applicationEntity::class.qualifiedName}")
     }
   }
 

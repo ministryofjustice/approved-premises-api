@@ -82,10 +82,8 @@ class Cas1ReferenceDataTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Success when women's estate enabled`() {
+    fun `success`() {
       val jwt = jwtAuthHelper.createValidAuthorizationCodeJwt()
-
-      mockFeatureFlagService.setFlag("cas1-womens-estate-enabled", true)
 
       val result = webTestClient.get()
         .uri("/cas1/reference-data/cru-management-areas")
@@ -98,25 +96,6 @@ class Cas1ReferenceDataTest : IntegrationTestBase() {
       assertThat(result.any { it.id == area1.id && it.name == area1.name }).isTrue()
       assertThat(result.any { it.id == area2.id && it.name == area2.name }).isTrue()
       assertThat(result.any { it.id == womensEstateArea.id && it.name == womensEstateArea.name }).isTrue()
-    }
-
-    @Test
-    fun `Success when women's estate disabled`() {
-      val jwt = jwtAuthHelper.createValidAuthorizationCodeJwt()
-
-      mockFeatureFlagService.setFlag("cas1-womens-estate-enabled", false)
-
-      val result = webTestClient.get()
-        .uri("/cas1/reference-data/cru-management-areas")
-        .header("Authorization", "Bearer $jwt")
-        .exchange()
-        .expectStatus()
-        .isOk
-        .bodyAsListOfObjects<Cas1CruManagementArea>()
-
-      assertThat(result.any { it.id == area1.id && it.name == area1.name }).isTrue()
-      assertThat(result.any { it.id == area2.id && it.name == area2.name }).isTrue()
-      assertThat(result.any { it.id == womensEstateArea.id && it.name == womensEstateArea.name }).isFalse()
     }
   }
 }

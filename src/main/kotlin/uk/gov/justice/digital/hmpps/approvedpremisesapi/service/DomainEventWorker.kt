@@ -16,7 +16,7 @@ import uk.gov.justice.hmpps.sqs.MissingTopicException
 import java.util.UUID
 
 interface DomainEventWorkerInterface {
-  fun emitEvent(snsEvent: SnsEvent, domainEventId: UUID): Unit
+  fun emitEvent(snsEvent: SnsEvent, domainEventId: UUID)
 }
 
 @Component

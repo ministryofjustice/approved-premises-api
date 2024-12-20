@@ -1,8 +1,10 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.migration
 
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 
+@Component
 class UpdateUsersPduJob(
   private val userRepository: UserRepository,
   private val userService: UserService,
@@ -11,7 +13,7 @@ class UpdateUsersPduJob(
   override val shouldRunInTransaction = false
 
   @SuppressWarnings("MagicNumber", "TooGenericExceptionCaught")
-  override fun process() {
+  override fun process(pageSize: Int) {
     val activeUsers = userRepository.findActiveUsers()
     migrationLogger.info("Have ${activeUsers.size} users to update")
     activeUsers.forEach {

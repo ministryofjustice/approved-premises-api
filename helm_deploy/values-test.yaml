@@ -12,7 +12,6 @@ generic-service:
     SPRING_PROFILES_ACTIVE: dev
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.nonprod.json
     HMPPS_AUTH_URL: https://sign-in-dev.hmpps.service.justice.gov.uk/auth
-    SERVICES_COMMUNITY-API_BASE-URL: https://community-api-secure.test.delius.probation.hmpps.dsd.io
     SERVICES_AP-DELIUS-CONTEXT-API_BASE-URL: https://approved-premises-and-delius-dev.hmpps.service.justice.gov.uk
     SERVICES_HMPPS-TIER_BASE-URL: https://hmpps-tier-dev.hmpps.service.justice.gov.uk
     SERVICES_PRISONS-API_BASE-URL: https://prison-api-dev.prison.service.justice.gov.uk
@@ -44,7 +43,7 @@ generic-service:
     URL-TEMPLATES_FRONTEND_APPLICATION-TIMELINE: https://approved-premises-test.hmpps.service.justice.gov.uk/applications/#applicationId?tab=timeline
     URL-TEMPLATES_FRONTEND_ASSESSMENT: https://approved-premises-test.hmpps.service.justice.gov.uk/assessments/#id
     URL-TEMPLATES_FRONTEND_BOOKING: https://approved-premises-test.hmpps.service.justice.gov.uk/premises/#premisesId/bookings/#bookingId
-    URL-TEMPLATES_FRONTEND_CAS1_APPLICATION: https://approved-premises-test.hmpps.service.justice.gov.uk/manage/premises/#premisesId/bookings/#bookingId
+    URL-TEMPLATES_FRONTEND_CAS1_SPACE-BOOKING: https://approved-premises-test.hmpps.service.justice.gov.uk/manage/premises/#premisesId/placements/#bookingId
     URL-TEMPLATES_FRONTEND_CAS2_APPLICATION: https://community-accommodation-tier-2-test.hmpps.service.justice.gov.uk/applications/#id
     URL-TEMPLATES_FRONTEND_CAS2_APPLICATION-OVERVIEW: https://community-accommodation-tier-2-test.hmpps.service.justice.gov.uk/applications/#id/overview
     URL-TEMPLATES_FRONTEND_CAS2_SUBMITTED-APPLICATION-OVERVIEW: https://community-accommodation-tier-2-test.hmpps.service.justice.gov.uk/assess/applications/#applicationId/overview
@@ -86,14 +85,6 @@ generic-service:
 
     NOTIFY_MODE: TEST_AND_GUEST_LIST
     CAS3-REPORT_END-DATE-OVERRIDE: 3
-
-    FEATURE-FLAGS_CAS1-ONLY-LIST-ADJUDICATIONS-UP-TO-12-MONTHS: true
-    FEATURE-FLAGS_CAS1-ONLY-LIST-SPECIFIC-PRISON-NOTE-TYPES: true
-    FEATURE-FLAGS_CAS1-WOMENS-ESTATE-ENABLED: true
-    FEATURE-FLAGS_CAS1-EXPIRED-APPLICATIONS-ENABLED: true
-    FEATURE-FLAGS_INCLUDE-ASSESSMENT-UPDATED-DOMAIN-EVENTS: true
-    FEATURE-FLAGS_GET-DOCUMENTS-FROM-AP-DELIUS: true
-    FEATURE-FLAGS_GET-OFFENCES-FROM-AP-DELIUS: true
 
   namespace_secrets:
     hmpps-approved-premises-api:

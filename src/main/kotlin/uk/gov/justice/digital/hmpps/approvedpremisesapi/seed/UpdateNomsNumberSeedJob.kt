@@ -1,17 +1,18 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed
 
 import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApplicationRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.BookingRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationTimelineNoteService
 import java.util.UUID
 
+@Component
 class Cas1UpdateNomsNumberSeedJob(
   private val applicationRepository: ApplicationRepository,
   private val applicationTimelineNoteService: ApplicationTimelineNoteService,
   private val bookingRepository: BookingRepository,
 ) : SeedJob<UpdateNomsNumberSeedRow>(
-  id = UUID.randomUUID(),
   requiredHeaders = setOf(
     "crn",
     "oldNomsNumber",

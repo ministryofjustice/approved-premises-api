@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN delius_staff_identifier TEXT DEFAULT -1;

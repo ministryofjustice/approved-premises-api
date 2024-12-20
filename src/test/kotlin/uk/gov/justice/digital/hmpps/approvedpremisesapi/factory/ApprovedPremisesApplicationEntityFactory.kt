@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomDateTimeBefor
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomInt
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringMultiCaseWithNumbers
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringUpperCase
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -47,7 +48,7 @@ class ApprovedPremisesApplicationEntityFactory : Factory<ApprovedPremisesApplica
   private var eventNumber: Yielded<String> = { randomInt(1, 9).toString() }
   private var offenceId: Yielded<String> = { randomStringMultiCaseWithNumbers(5) }
   private var riskRatings: Yielded<PersonRisks> = { PersonRisksFactory().produce() }
-  private var assessments: Yielded<MutableList<AssessmentEntity>> = { mutableListOf<AssessmentEntity>() }
+  private var assessments: Yielded<MutableList<AssessmentEntity>> = { mutableListOf() }
   private var teamCodes: Yielded<MutableList<ApplicationTeamCodeEntity>> = { mutableListOf() }
   private var placementRequests: Yielded<MutableList<PlacementRequestEntity>> = { mutableListOf() }
   private var releaseType: Yielded<String?> = { null }
@@ -69,6 +70,7 @@ class ApprovedPremisesApplicationEntityFactory : Factory<ApprovedPremisesApplica
   private var caseManagerIsNotApplicant: Yielded<Boolean?> = { null }
   private var caseManagerUserDetails: Yielded<Cas1ApplicationUserDetailsEntity?> = { null }
   private var noticeType: Yielded<Cas1ApplicationTimelinessCategory?> = { null }
+  private var licenseExpiryDate: Yielded<LocalDate?> = { null }
 
   fun withDefaults() = apply {
     withCreatedByUser(UserEntityFactory().withDefaults().produce())
@@ -114,7 +116,7 @@ class ApprovedPremisesApplicationEntityFactory : Factory<ApprovedPremisesApplica
     this.submittedAt = { submittedAt }
   }
 
-  fun withIsWomensApplication(isWomensApplication: Boolean) = apply {
+  fun withIsWomensApplication(isWomensApplication: Boolean?) = apply {
     this.isWomensApplication = { isWomensApplication }
   }
 
@@ -230,6 +232,10 @@ class ApprovedPremisesApplicationEntityFactory : Factory<ApprovedPremisesApplica
     this.noticeType = { noticeType }
   }
 
+  fun withLicenseExpiredDate(licenseExpiredDate: LocalDate?) = apply {
+    this.licenseExpiryDate = { licenseExpiredDate }
+  }
+
   override fun produce(): ApprovedPremisesApplicationEntity = ApprovedPremisesApplicationEntity(
     id = this.id(),
     crn = this.crn(),
@@ -270,5 +276,6 @@ class ApprovedPremisesApplicationEntityFactory : Factory<ApprovedPremisesApplica
     caseManagerIsNotApplicant = this.caseManagerIsNotApplicant(),
     caseManagerUserDetails = this.caseManagerUserDetails(),
     noticeType = this.noticeType(),
+    licenceExpiryDate = this.licenseExpiryDate(),
   )
 }

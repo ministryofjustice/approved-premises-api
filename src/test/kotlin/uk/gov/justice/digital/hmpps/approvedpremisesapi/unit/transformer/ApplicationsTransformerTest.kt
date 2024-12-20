@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApprovedPremis
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApprovedPremisesApplicationSummary
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1ApplicationUserDetails
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1CruManagementArea
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.GenderForAp
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Person
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PersonStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ReleaseTypeOption
@@ -35,6 +34,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.Cas1ApplicationU
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PersonRisksFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ProbationRegionEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.TemporaryAccommodationApplicationEntityFactory
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.TemporaryAccommodationAssessmentEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.UserEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.cas1.Cas1CruManagementAreaEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.ApprovedPremisesApplicationStatus
@@ -49,6 +49,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.cas1.Cas1App
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.cas1.Cas1CruManagementAreaTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringMultiCaseWithNumbers
 import java.time.Instant
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApprovedPremisesApplicationStatus as ApiApprovedPremisesApplicationStatus
@@ -134,6 +135,7 @@ class ApplicationsTransformerTest {
       .withApplicantUserDetails(applicantUserDetails)
       .withCaseManagerIsNotApplicant(true)
       .withCaseManagerUserDetails(caseManagerUserDetails)
+      .withLicenseExpiredDate(LocalDate.of(2026, 5, 5))
       .produce()
 
     every { mockCas1ApplicationUserDetailsTransformer.transformJpaToApi(applicantUserDetails) } returns Cas1ApplicationUserDetails("applicant", "", "")
@@ -148,7 +150,7 @@ class ApplicationsTransformerTest {
     assertThat(result.applicantUserDetails!!.name).isEqualTo("applicant")
     assertThat(result.caseManagerIsNotApplicant).isTrue()
     assertThat(result.caseManagerUserDetails!!.name).isEqualTo("caseManager")
-    assertThat(result.genderForAp).isEqualTo(GenderForAp.male)
+    assertThat(result.licenceExpiryDate).isEqualTo(LocalDate.of(2026, 5, 5))
   }
 
   @Test
@@ -222,6 +224,17 @@ class ApplicationsTransformerTest {
     assertThat(result.risks).isNotNull
     assertThat(result.arrivalDate).isNull()
     assertThat(result.offenceId).isEqualTo(application.offenceId)
+    assertThat(result.assessmentId).isNull()
+  }
+
+  @Test
+  fun `transformJpaToApi populates assessmentId`() {
+    val application = temporaryAccommodationApplicationEntityFactory.withDefaults().produce()
+    val assessment = TemporaryAccommodationAssessmentEntityFactory().withApplication(application).produce()
+    application.assessments = mutableListOf(assessment)
+    val result = applicationsTransformer.transformJpaToApi(application, mockk()) as TemporaryAccommodationApplication
+
+    assertThat(result.assessmentId).isEqualTo(assessment.id)
   }
 
   @Test

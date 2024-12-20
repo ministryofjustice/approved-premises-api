@@ -42,7 +42,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.jsonForObject
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.util.UUID
 
@@ -1855,7 +1854,8 @@ class WithdrawalTest : IntegrationTestBase() {
       withCrn(application.crn)
       withExpectedArrivalDate(startDate)
       withExpectedDepartureDate(endDate)
-      withActualArrivalDateTime(arrivalDate?.toInstant(ZoneOffset.UTC))
+      withActualArrivalDate(arrivalDate?.toLocalDate())
+      withActualArrivalTime(arrivalDate?.toLocalTime())
     }
 
     return spaceBooking

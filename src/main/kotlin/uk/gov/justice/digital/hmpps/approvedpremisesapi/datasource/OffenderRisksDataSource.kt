@@ -125,7 +125,14 @@ class OffenderRisksDataSource(
   }
 
   private fun <T> recordAndReturnError(targetInfo: String, cause: Throwable, value: T? = null): RiskWithStatus<T> {
-    sentryService.captureException(RuntimeException("Error occurred obtaining Risks for $targetInfo", cause))
+    sentryService.captureException(
+      CannotDetermineRiskException(
+        message = "An error occurred obtaining Risks for $targetInfo. Returning RiskWithStatus(status=Error). This does not necessarily block processing",
+        cause = cause,
+      ),
+    )
     return RiskWithStatus(status = RiskStatus.Error, value)
   }
+
+  private class CannotDetermineRiskException(message: String, cause: Throwable) : RuntimeException(message, cause)
 }

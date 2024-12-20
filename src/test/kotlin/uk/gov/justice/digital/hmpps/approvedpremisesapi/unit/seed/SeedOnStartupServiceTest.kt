@@ -27,8 +27,8 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedLogger
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedOnStartupService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.ApprovedPremisesRoomsSeedJob
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.ApprovedPremisesSeedJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.Cas1AutoScript
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.Cas1SeedPremisesFromCsvJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas2.Cas2AutoScript
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.EnvironmentService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.SentryService
@@ -165,7 +165,7 @@ class SeedOnStartupServiceTest {
     }
 
     val approvedPremisesFilename = approvedPremisesLambda.captured.invoke(
-      ApprovedPremisesSeedJob(
+      Cas1SeedPremisesFromCsvJob(
         mockApplicationContext.getBean(PremisesRepository::class.java),
         mockApplicationContext.getBean(ProbationRegionRepository::class.java),
         mockApplicationContext.getBean(LocalAuthorityAreaRepository::class.java),

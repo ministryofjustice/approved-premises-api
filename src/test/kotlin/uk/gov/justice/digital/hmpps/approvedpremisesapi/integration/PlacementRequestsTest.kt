@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.given
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnApplication
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnOffender
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextAddResponseToUserAccessCall
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.communityAPIMockOffenderUserAccessCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApAreaEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentDecision
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas1CruManagementAreaEntity
@@ -181,7 +180,7 @@ class PlacementRequestsTest : IntegrationTestBase() {
     }
 
     @ParameterizedTest
-    @EnumSource(value = UserRole::class, names = ["CAS1_WORKFLOW_MANAGER", "CAS1_CRU_MEMBER", "CAS1_JANITOR"], mode = EnumSource.Mode.EXCLUDE)
+    @EnumSource(value = UserRole::class, names = ["CAS1_WORKFLOW_MANAGER", "CAS1_CRU_MEMBER", "CAS1_CRU_MEMBER_FIND_AND_BOOK_BETA", "CAS1_JANITOR"], mode = EnumSource.Mode.EXCLUDE)
     fun `Get dashboard without CAS1_VIEW_CRU_DASHBOARD permission returns 401`(role: UserRole) {
       givenAUser(roles = listOf(role)) { _, jwt ->
         webTestClient.get()
@@ -1160,13 +1159,13 @@ class PlacementRequestsTest : IntegrationTestBase() {
   }
 
   @Nested
-  inner class SinglePlacementRequest {
+  inner class GetPlacementRequest {
 
     @Autowired
     lateinit var placementRequestDetailTransformer: PlacementRequestDetailTransformer
 
     @Test
-    fun `Get single Placement Request without a JWT returns 401`() {
+    fun `Without a JWT returns 401`() {
       webTestClient.get()
         .uri("/placement-requests/62faf6f4-1dac-4139-9a18-09c1b2852a0f")
         .exchange()
@@ -1175,10 +1174,10 @@ class PlacementRequestsTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Get single Placement Request that is not allocated to calling User and without WORKFLOW_MANAGER role returns 403`() {
-      givenAUser { user, jwt ->
+    fun `Not allocated to calling User without WORKFLOW_MANAGER role returns 403`() {
+      givenAUser { _, jwt ->
         givenAUser { otherUser, _ ->
-          givenAnOffender { offenderDetails, inmateDetails ->
+          givenAnOffender { offenderDetails, _ ->
             givenAnApplication(createdByUser = otherUser) {
               givenAPlacementRequest(
                 placementRequestAllocatedTo = otherUser,
@@ -1200,7 +1199,7 @@ class PlacementRequestsTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Get single Placement Request that is allocated to calling User returns 200`() {
+    fun `Allocated to calling User, offender not LAO, returns 200`() {
       givenAUser { user, jwt ->
         givenAUser { otherUser, _ ->
           givenAnOffender { offenderDetails, inmateDetails ->
@@ -1233,36 +1232,26 @@ class PlacementRequestsTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Get single Placement Request that is allocated to calling User where Offender is LAO but user does not pass LAO check, does not have LAO qualification returns 200 with restricted person info`() {
+    fun `Allocated to calling User, offender is LAO, user doesn't have LAO access or LAO qualification, returns 403`() {
       givenAUser { user, jwt ->
         givenAUser { otherUser, _ ->
           givenAnOffender(
             offenderDetailsConfigBlock = {
               withCurrentExclusion(true)
             },
-          ) { offenderDetails, inmateDetails ->
+          ) { offenderDetails, _ ->
             givenAPlacementRequest(
               placementRequestAllocatedTo = user,
               assessmentAllocatedTo = otherUser,
               createdByUser = otherUser,
               crn = offenderDetails.otherIds.crn,
             ) { placementRequest, _ ->
-              communityAPIMockOffenderUserAccessCall(
-                username = user.deliusUsername,
-                crn = offenderDetails.otherIds.crn,
-                inclusion = false,
-                exclusion = true,
-              )
-
               webTestClient.get()
                 .uri("/placement-requests/${placementRequest.id}")
                 .header("Authorization", "Bearer $jwt")
                 .exchange()
                 .expectStatus()
-                .isOk
-                .expectBody()
-                .jsonPath("$.person.type").isEqualTo("RestrictedPerson")
-                .jsonPath("$.person.crn").isEqualTo(placementRequest.application.crn)
+                .isForbidden
             }
           }
         }
@@ -1270,7 +1259,7 @@ class PlacementRequestsTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Get single Placement Request that is allocated to calling User where Offender is LAO, user does not have LAO qualification but does pass LAO check returns 200`() {
+    fun `Allocated to calling User, offender is LAO, user has LAO access, returns 200`() {
       givenAUser { user, jwt ->
         givenAUser { otherUser, _ ->
           givenAnOffender(
@@ -1284,13 +1273,6 @@ class PlacementRequestsTest : IntegrationTestBase() {
               createdByUser = otherUser,
               crn = offenderDetails.otherIds.crn,
             ) { placementRequest, _ ->
-              communityAPIMockOffenderUserAccessCall(
-                username = user.deliusUsername,
-                crn = offenderDetails.otherIds.crn,
-                inclusion = false,
-                exclusion = false,
-              )
-
               apDeliusContextAddResponseToUserAccessCall(
                 listOf(
                   CaseAccessFactory()
@@ -1323,7 +1305,7 @@ class PlacementRequestsTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Get single Placement Request that is allocated to calling User where Offender is LAO, user does not pass LAO check but does have LAO qualification returns 200`() {
+    fun `Allocated to calling User, offender is LAO, user doesn't have LAO access but has LAO qualification, returns 200`() {
       givenAUser(qualifications = listOf(UserQualification.LAO)) { user, jwt ->
         givenAUser { otherUser, _ ->
           givenAnOffender(
@@ -1337,13 +1319,6 @@ class PlacementRequestsTest : IntegrationTestBase() {
               createdByUser = otherUser,
               crn = offenderDetails.otherIds.crn,
             ) { placementRequest, _ ->
-              communityAPIMockOffenderUserAccessCall(
-                username = user.deliusUsername,
-                crn = offenderDetails.otherIds.crn,
-                inclusion = false,
-                exclusion = true,
-              )
-
               webTestClient.get()
                 .uri("/placement-requests/${placementRequest.id}")
                 .header("Authorization", "Bearer $jwt")
@@ -1370,7 +1345,7 @@ class PlacementRequestsTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Get single Placement Request that is allocated to calling User returns 200 with cancellations when they exist`() {
+    fun `Allocated to calling User, offender not LAO, returns 200 with cancellations when they exist`() {
       givenAUser { user, jwt ->
         givenAUser { otherUser, _ ->
           givenAnOffender { offenderDetails, inmateDetails ->

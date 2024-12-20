@@ -27,7 +27,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualifica
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonInfoResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.BadRequestProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.AssessmentService
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.FeatureFlagService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.OffenderService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas3.Cas3AssessmentService
@@ -51,7 +50,6 @@ class AssessmentController(
   private val assessmentReferralHistoryNoteTransformer: AssessmentReferralHistoryNoteTransformer,
   private val cas3AssessmentService: Cas3AssessmentService,
   private val domainEventService: DomainEventService,
-  private val featureFlagService: FeatureFlagService,
 ) : AssessmentsApiDelegate {
 
   override fun assessmentsGet(
@@ -118,12 +116,7 @@ class AssessmentController(
 
     val personInfo = offenderService.getPersonInfoResult(assessment.application.crn, user.deliusUsername, ignoreLaoRestrictions)
 
-    val assessmentUpdatedDomainEvents =
-      if (featureFlagService.getBooleanFlag("include-assessment-updated-domain-events")) {
-        domainEventService.getAssessmentUpdatedEvents(assessmentId = assessment.id)
-      } else {
-        emptyList()
-      }
+    val assessmentUpdatedDomainEvents = domainEventService.getAssessmentUpdatedEvents(assessmentId = assessment.id)
 
     val transformedResponse = assessmentTransformer.transformJpaToApi(assessment, personInfo, assessmentUpdatedDomainEvents)
 

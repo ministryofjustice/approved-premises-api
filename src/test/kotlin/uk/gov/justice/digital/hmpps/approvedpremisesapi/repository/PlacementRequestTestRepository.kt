@@ -11,7 +11,6 @@ import java.util.UUID
 @Repository
 interface PlacementRequestTestRepository : JpaRepository<PlacementRequestEntity, UUID> {
   fun findByApplication(application: ApplicationEntity): PlacementRequestEntity?
-  fun findByPlacementApplicationId(placementApplicationId: UUID): PlacementRequestEntity?
   fun findAllByApplication(application: ApplicationEntity): List<PlacementRequestEntity>
 
   fun findAllByIsParoleAndReallocatedAtNullAndIsWithdrawnFalse(

@@ -6,13 +6,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.BedEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas1OutOfServiceBedEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas1SpaceBookingEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicEntity
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository.Constants.CAS1_PROPERTY_NAME_ARSON_SUITABLE
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository.Constants.CAS1_PROPERTY_NAME_ENSUITE
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository.Constants.CAS1_PROPERTY_NAME_SINGLE_ROOM
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository.Constants.CAS1_PROPERTY_NAME_STEP_FREE_DESIGNATED
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository.Constants.CAS1_PROPERTY_NAME_SUITED_FOR_SEX_OFFENDERS
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository.Constants.CAS1_PROPERTY_NAME_WHEELCHAIR_DESIGNATED
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.planning.SpacePlanningModelsFactory.Constants.CHARACTERISTIC_ALLOW_LIST
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.planning.SpacePlanningModelsFactory.Constants.DEFAULT_CHARACTERISTIC_WEIGHT
 import java.time.LocalDate
 
@@ -20,17 +14,7 @@ import java.time.LocalDate
 class SpacePlanningModelsFactory {
   object Constants {
     const val DEFAULT_CHARACTERISTIC_WEIGHT = 100
-    val CHARACTERISTIC_ALLOW_LIST = listOf(
-      CAS1_PROPERTY_NAME_ARSON_SUITABLE,
-      CAS1_PROPERTY_NAME_ENSUITE,
-      CAS1_PROPERTY_NAME_SINGLE_ROOM,
-      CAS1_PROPERTY_NAME_STEP_FREE_DESIGNATED,
-      CAS1_PROPERTY_NAME_SUITED_FOR_SEX_OFFENDERS,
-      CAS1_PROPERTY_NAME_WHEELCHAIR_DESIGNATED,
-    )
   }
-
-  fun characteristicsPropertyNamesOfInterest() = CHARACTERISTIC_ALLOW_LIST
 
   fun allBeds(
     premises: ApprovedPremisesEntity,
@@ -93,7 +77,7 @@ class SpacePlanningModelsFactory {
     .asSequence()
     .filter { it.isActive }
     .filter { it.isModelScopeRoom() }
-    .filter { CHARACTERISTIC_ALLOW_LIST.contains(it.propertyName) }
+    .filter { Cas1SpaceBookingEntity.Constants.CRITERIA_CHARACTERISTIC_PROPERTY_NAMES_OF_INTEREST.contains(it.propertyName) }
     .map { toCharacteristic(it) }
     .toSet()
 

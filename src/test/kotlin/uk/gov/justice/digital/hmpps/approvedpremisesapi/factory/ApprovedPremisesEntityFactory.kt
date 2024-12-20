@@ -42,6 +42,7 @@ class ApprovedPremisesEntityFactory : Factory<ApprovedPremisesEntity> {
   private var gender: Yielded<ApprovedPremisesGender> = { ApprovedPremisesGender.MAN }
   private var rooms: Yielded<MutableList<RoomEntity>> = { mutableListOf() }
   private var supportsSpaceBookings: Yielded<Boolean> = { false }
+  private var managerDetails: Yielded<String> = { randomStringUpperCase(10) }
 
   fun withDefaults() = apply {
     withDefaultProbationRegion()
@@ -172,6 +173,10 @@ class ApprovedPremisesEntityFactory : Factory<ApprovedPremisesEntity> {
     this.supportsSpaceBookings = { supportsSpaceBookings }
   }
 
+  fun withManagerDetails(managerDetails: String) = apply {
+    this.managerDetails = { managerDetails }
+  }
+
   override fun produce(): ApprovedPremisesEntity = ApprovedPremisesEntity(
     id = this.id(),
     name = this.name(),
@@ -196,5 +201,6 @@ class ApprovedPremisesEntityFactory : Factory<ApprovedPremisesEntity> {
       .createPoint(Coordinate(this.latitude(), this.longitude())),
     gender = this.gender(),
     supportsSpaceBookings = this.supportsSpaceBookings(),
+    managerDetails = this.managerDetails(),
   )
 }

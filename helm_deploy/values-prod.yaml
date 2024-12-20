@@ -20,7 +20,6 @@ generic-service:
     SPRING_PROFILES_ACTIVE: prod
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
     HMPPS_AUTH_URL: https://sign-in.hmpps.service.justice.gov.uk/auth
-    SERVICES_COMMUNITY-API_BASE-URL: https://community-api-secure.probation.service.justice.gov.uk
     SERVICES_AP-DELIUS-CONTEXT-API_BASE-URL: https://approved-premises-and-delius.hmpps.service.justice.gov.uk
     SERVICES_ASSESS-RISKS-AND-NEEDS-API_BASE-URL: https://assess-risks-and-needs.hmpps.service.justice.gov.uk
     SERVICES_HMPPS-TIER_BASE-URL: https://hmpps-tier.hmpps.service.justice.gov.uk
@@ -50,7 +49,7 @@ generic-service:
     URL-TEMPLATES_FRONTEND_APPLICATION-TIMELINE: https://approved-premises.hmpps.service.justice.gov.uk/applications/#applicationId?tab=timeline
     URL-TEMPLATES_FRONTEND_ASSESSMENT: https://approved-premises.hmpps.service.justice.gov.uk/assessments/#id
     URL-TEMPLATES_FRONTEND_BOOKING: https://approved-premises.hmpps.service.justice.gov.uk/premises/#premisesId/bookings/#bookingId
-    URL-TEMPLATES_FRONTEND_CAS1_APPLICATION: https://approved-premises.hmpps.service.justice.gov.uk/manage/premises/#premisesId/bookings/#bookingId
+    URL-TEMPLATES_FRONTEND_CAS1_SPACE-BOOKING: https://approved-premises.hmpps.service.justice.gov.uk/manage/premises/#premisesId/placements/#bookingId
     URL-TEMPLATES_FRONTEND_CAS2_APPLICATION: https://short-term-accommodation-cas-2.hmpps.service.justice.gov.uk/applications/#id
     URL-TEMPLATES_FRONTEND_CAS2_APPLICATION-OVERVIEW: https://short-term-accommodation-cas-2.hmpps.service.justice.gov.uk/applications/#id/overview
     URL-TEMPLATES_FRONTEND_CAS2_SUBMITTED-APPLICATION-OVERVIEW: https://short-term-accommodation-cas-2.hmpps.service.justice.gov.uk/assess/applications/#applicationId/overview
@@ -90,14 +89,6 @@ generic-service:
     URL-TEMPLATES_API_CAS3_BOOKING-CANCELLED-UPDATED-EVENT-DETAIL: https://approved-premises-api.hmpps.service.justice.gov.uk/events/cas3/booking-cancelled-updated/#eventId
 
     USER-ALLOCATIONS_RULES_ESAP-ASSESSMENTS_ALLOCATE-TO-USER: KATHRYNHALL1NPS
-
-    FEATURE-FLAGS_CAS1-ONLY-LIST-ADJUDICATIONS-UP-TO-12-MONTHS: true
-    FEATURE-FLAGS_CAS1-ONLY-LIST-SPECIFIC-PRISON-NOTE-TYPES: true
-    FEATURE-FLAGS_CAS1-WOMENS-ESTATE-ENABLED: true
-    FEATURE-FLAGS_CAS1-EXPIRED-APPLICATIONS-ENABLED: true
-    FEATURE-FLAGS_INCLUDE-ASSESSMENT-UPDATED-DOMAIN-EVENTS: true
-    FEATURE-FLAGS_GET-DOCUMENTS-FROM-AP-DELIUS: true
-    FEATURE-FLAGS_GET-OFFENCES-FROM-AP-DELIUS: true
 
   namespace_secrets:
     hmpps-domain-events-topic:

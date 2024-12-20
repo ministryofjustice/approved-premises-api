@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.unit.transformer
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.FullPerson
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.FullPersonSummary
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PersonStatus
@@ -40,6 +42,7 @@ class PersonTransformerTest {
   @Nested
   inner class PersonSummaryInfoToPersonSummary {
 
+    @Test
     fun `map full person`() {
       val result = personTransformer.personSummaryInfoToPersonSummary(
         PersonSummaryInfoResult.Success.Full(
@@ -54,6 +57,30 @@ class PersonTransformerTest {
       assertThat(result.personType).isEqualTo(PersonSummaryDiscriminator.fullPersonSummary)
       assertThat(result).isInstanceOf(FullPersonSummary::class.java)
       assertThat((result as FullPersonSummary).name).isEqualTo("max power")
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+      "false, false, false",
+      "true, false, true",
+      "false, true, true",
+    )
+    fun `map full person is restricted`(
+      hasExclusion: Boolean,
+      hasRestriction: Boolean,
+      expectedIsRestricted: Boolean,
+    ) {
+      val result = personTransformer.personSummaryInfoToPersonSummary(
+        PersonSummaryInfoResult.Success.Full(
+          crn = "the crn",
+          summary = CaseSummaryFactory()
+            .withCurrentExclusion(hasExclusion)
+            .withCurrentRestriction(hasRestriction)
+            .produce(),
+        ),
+      )
+
+      assertThat((result as FullPersonSummary).isRestricted).isEqualTo(expectedIsRestricted)
     }
 
     @Test

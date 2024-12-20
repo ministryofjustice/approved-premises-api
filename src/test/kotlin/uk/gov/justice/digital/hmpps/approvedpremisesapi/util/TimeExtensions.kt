@@ -5,10 +5,6 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 
-fun OffsetDateTime?.toTimestampOrNull(): Timestamp? {
-  return this?.toTimestamp()
-}
-
 fun OffsetDateTime.toTimestamp(): Timestamp {
   return Timestamp.from(this.toInstant())
 }

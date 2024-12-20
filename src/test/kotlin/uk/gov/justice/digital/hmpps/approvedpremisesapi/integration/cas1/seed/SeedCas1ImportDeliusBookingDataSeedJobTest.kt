@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.seed.SeedTes
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas1.Cas1DeliusBookingImportRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.CsvBuilder
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
@@ -109,7 +109,7 @@ class SeedCas1ImportDeliusBookingDataSeedJobTest : SeedTestBase() {
     assertThat(bookingImport.expectedDepartureDate).isEqualTo(LocalDate.of(2025, 9, 13))
     assertThat(bookingImport.departureDate).isEqualTo(LocalDate.of(2025, 9, 12))
     assertThat(bookingImport.nonArrivalDate).isEqualTo(LocalDate.of(2021, 1, 1))
-    assertThat(bookingImport.nonArrivalContactDatetime).isEqualTo(LocalDateTime.of(2023, 7, 17, 11, 36, 2, 0))
+    assertThat(bookingImport.nonArrivalContactDatetime).isEqualTo(OffsetDateTime.parse("2023-07-17T11:36:02+01:00"))
     assertThat(bookingImport.nonArrivalReasonCode).isEqualTo("non arrival reason code")
     assertThat(bookingImport.nonArrivalReasonDescription).isEqualTo("non arrival reason description")
     assertThat(bookingImport.nonArrivalNotes).isEqualTo("non arrival notes")

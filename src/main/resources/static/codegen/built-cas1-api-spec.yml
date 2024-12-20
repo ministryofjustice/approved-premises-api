@@ -57,7 +57,7 @@ paths:
         content:
           'application/json':
             schema:
-              $ref: '#/components/schemas/NewCas1SpaceBooking'
+              $ref: '#/components/schemas/Cas1NewSpaceBooking'
         required: true
       responses:
         200:
@@ -132,6 +132,7 @@ paths:
       tags:
         - out-of-service beds
       summary: Posts an out-of-service bed to a specified approved premises
+      operationId: createOutOfServiceBed
       parameters:
         - name: premisesId
           in: path
@@ -145,7 +146,7 @@ paths:
         content:
           'application/json':
             schema:
-              $ref: '#/components/schemas/NewCas1OutOfServiceBed'
+              $ref: '#/components/schemas/Cas1NewOutOfServiceBed'
         required: true
       responses:
         200:
@@ -177,6 +178,7 @@ paths:
       tags:
         - out-of-service beds
       summary: Lists all Out-Of-Service Beds entries for the Premises
+      operationId: getOutOfServiceBedsForPremises
       parameters:
         - name: premisesId
           in: path
@@ -205,6 +207,7 @@ paths:
       tags:
         - out-of-service beds
       summary: Returns a specific out-of-service bed for a premises
+      operationId: getOutOfServiceBed
       parameters:
         - name: premisesId
           in: path
@@ -243,6 +246,7 @@ paths:
       tags:
         - out-of-service beds
       summary: Updates an out-of-service bed for a premises
+      operationId: updateOutOfServiceBed
       parameters:
         - name: premisesId
           in: path
@@ -296,6 +300,7 @@ paths:
       tags:
         - out-of-service beds
       summary: Posts a cancellation to a specified out-of-service bed
+      operationId: cancelOutOfServiceBed
       parameters:
         - name: premisesId
           in: path
@@ -316,7 +321,7 @@ paths:
         content:
           'application/json':
             schema:
-              $ref: '#/components/schemas/NewCas1OutOfServiceBedCancellation'
+              $ref: '#/components/schemas/Cas1NewOutOfServiceBedCancellation'
         required: true
       responses:
         200:
@@ -406,6 +411,13 @@ paths:
           schema:
             type: string
             format: date
+        - name: excludeSpaceBookingId
+          in: query
+          description: ID of a booking to exclude from capacity calculations
+          required: false
+          schema:
+            type: string
+            format: uuid
       responses:
         200:
           description: successful operation
@@ -541,6 +553,40 @@ paths:
             'application/json':
               schema:
                 $ref: '#/components/schemas/Cas1SpaceBooking'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        500:
+          $ref: '#/components/responses/500Response'
+    patch:
+      tags:
+        - space bookings
+      operationId: "updateSpaceBooking"
+      parameters:
+        - name: premisesId
+          in: path
+          description: ID of the corresponding premises
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: bookingId
+          in: path
+          description: ID of the space booking
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/Cas1UpdateSpaceBooking'
+        required: true
+      responses:
+        200:
+          description: successful operation
         401:
           $ref: '#/components/responses/401Response'
         403:
@@ -759,7 +805,7 @@ paths:
         content:
           'application/json':
             schema:
-              $ref: '#/components/schemas/NewCas1SpaceBookingCancellation'
+              $ref: '#/components/schemas/Cas1NewSpaceBookingCancellation'
         required: true
       responses:
         200:
@@ -834,6 +880,69 @@ paths:
         500:
           $ref: '#/components/responses/500Response'
 
+  /premises/{premisesId}/day-summary/{date}:
+    get:
+      tags:
+        - premises
+      summary: Provides a summary of capacity, space bookings and out of service beds for a premise on a given day
+      operationId: getDaySummary
+      parameters:
+        - name: premisesId
+          in: path
+          description: ID of the premises
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: path
+          description: date the summary is required for
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: bookingsCriteriaFilter
+          in: query
+          required: false
+          description: If provided, will only show bookings with matching criteria
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Cas1SpaceBookingCharacteristic'
+        - name: bookingsSortDirection
+          in: query
+          required: false
+          description: The direction to sort the bookings by. If not defined, will sort in descending order
+          schema:
+            $ref: '#/components/schemas/SortDirection'
+        - name: bookingsSortBy
+          in: query
+          required: false
+          description: The field to sort the booking by. If not defined, will sort on person name
+          schema:
+            $ref: '#/components/schemas/Cas1SpaceBookingDaySummarySortField'
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Cas1PremiseDaySummary'
+          headers:
+            X-Pagination-CurrentPage:
+              $ref: '#/components/headers/X-Pagination-CurrentPage'
+            X-Pagination-TotalPages:
+              $ref: '#/components/headers/X-Pagination-TotalPages'
+            X-Pagination-TotalResults:
+              $ref: '#/components/headers/X-Pagination-TotalResults'
+            X-Pagination-PageSize:
+              $ref: '#/components/headers/X-Pagination-PageSize'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        500:
+          $ref: '#/components/responses/500Response'
 
   /reference-data/out-of-service-bed-reasons:
     get:
@@ -958,6 +1067,7 @@ paths:
       tags:
         - out-of-service beds
       summary: Lists all Out-Of-Service Beds entries
+      operationId: getOutOfServiceBeds
       parameters:
         - name: temporality
           in: query
@@ -2812,8 +2922,9 @@ components:
               type: boolean
             caseManagerUserDetails:
               $ref: '#/components/schemas/Cas1ApplicationUserDetails'
-            genderForAp:
-              $ref: '#/components/schemas/GenderForAp'
+            licenceExpiryDate:
+              type: string
+              format: date
           required:
             - createdByUserId
             - schemaVersion
@@ -2924,6 +3035,9 @@ components:
               format: date-time
             offenceId:
               type: string
+            assessmentId:
+              type: string
+              format: uuid
           required:
             - createdByUserId
             - schemaVersion
@@ -3304,6 +3418,9 @@ components:
     AnyValue:
       description: Any object that conforms to the current JSON schema for an application
       type: object
+    Unit:
+      description: Any object
+      type: object
     ApplicationTimelineNote:
       type: object
       properties:
@@ -3479,6 +3596,9 @@ components:
               type: string
             reasonForShortNoticeOther:
               type: string
+            licenseExpiryDate:
+              type: string
+              format: date
           required:
             - targetLocation
             - releaseType
@@ -4303,14 +4423,12 @@ components:
       enum:
         - assessor
         - matcher
-        - manager
-        - legacy_manager
         - future_manager
         - workflow_manager
         - cru_member
         - cru_member_find_and_book_beta
+        - cru_member_enable_out_of_service_beds
         - applicant
-        - role_admin
         - report_viewer
         - excluded_from_assess_allocation
         - excluded_from_match_allocation
@@ -4347,8 +4465,8 @@ components:
         - cas1_space_booking_record_keyworker
         - cas1_space_booking_view
         - cas1_space_booking_withdraw
-        - cas1_premises_view_capacity
-        - cas1_premises_view_summary
+        - cas1_premises_view
+        - cas1_premises_manage
         - cas1_reports_view
     TemporaryAccommodationUserRole:
       type: string
@@ -4534,144 +4652,6 @@ components:
       required:
         - label
         - questionNumber
-    ArrayOfOASysOffenceDetailsQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Offence analysis"
-            questionNumber: "2.1"
-            answer: "Mr Smith admits he went to Mr Jones's address on 23rd March 2010..."
-          - label: "Victim - perpetrator relationship"
-            questionNumber: "2.4.1"
-            answer: "Mr Smith told me that he did not know the victim, prior to the incident..."
-    ArrayOfOASysRiskContributorsQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Accommodation issues contributing to risks of offending and harm"
-            questionNumber: "3.9"
-            answer: "Mr Smith told me that he was renting a room in a shared house, prior to his current remand..."
-          - label: "Education, training and employability issues contributing to risks of offending and harm"
-            questionNumber: "4.9"
-            answer: "Mr Smith told me that his formal school education was regularly interrupted as he and his family travelled a lot whilst he was growing up..."
-    ArrayOfOASysRiskManagementQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Current situation"
-            questionNumber: "RM28.1"
-            answer: "Currently on remand at HMP Wandsworth - Management of case under MAPPA - level not yet set."
-          - label: "Supervision"
-            questionNumber: "RM30"
-            answer: "Probation Officer, Education training and employment Officer, Prison Offender Supervisor"
-          - label: "Monitoring and control"
-            questionNumber: "RM31"
-            answer: "State they will have secure accommodation for Mr Smith and partner on release, although ..."
-    ArrayOfOASysRiskOfSeriousHarmSummaryQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Who is at risk?"
-            questionNumber: "R10.1"
-            answer: "Males whom Mr Smith believes have wronged him, or strangers with whom he gets...."
-          - label: "What is the nature of the risk?"
-            questionNumber: "R10.2"
-            answer: "Violence, Threats, Physical harm"
-          - label: "When is the risk likely to be greatest?"
-            questionNumber: "R10.3"
-            answer: "Not imminent ? lengthy gap between convictions for violent offences..."
-          - label: "What circumstances are likely to increase the risk?"
-            questionNumber: "R10.4"
-            answer: "As above ? drug use, need to obtain money for drugs at all costs..."
-          - label: "What factors are likely to reduce the risk?"
-            questionNumber: "R10.5"
-            answer: "Mr Smith thinking about consequences of his actions and not acting impulsively..."
-    ArrayOfOASysRisksToTheIndividualQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Current concerns about self-harm or suicide"
-            questionNumber: "R8.1.1"
-            answers: "There have been numerous ACCTs opened since 2013 and every subsequent year he has been in custody..."
-          - label: "Previous concerns about self-harm or suicide"
-            questionNumber: "R8.1.4"
-            answer: "During Mr Smith's psr report, he denied having any history of self-harm, however... "
-          - label: "Current concerns about Coping in Custody or Hostel."
-            questionNumber: "R8.2.1"
-            answer: "Has told prison staff that he swallowed batteries on one occasion due to wanting..."
-          - label: "Previous concerns about Coping in Custody or Hostel."
-            questionNumber: "R8.2.2"
-            answer: "Reported in 2021 that he will keep himself to himself because he gets discomfiture..."
-    ArrayOfOASysRisksToOthersQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Current offence details"
-            questionNumber: "R6.1 FA1"
-            answer: "Mr Smith was released on licence from custody on 12/7/2018.  Between then and 1/8/2018 Mr Smith approached..."
-          - label: "Current where and when"
-            questionNumber: "R6.1 FA2"
-            answer: "Between 12/7/2018 - 31/7/2018, initially victim in the street putting bins out... "
-          - label: "Previous offence details"
-            questionNumber: "R6.2 FA8"
-            answer: "Mr Smith is assessed to have committed a number of offences that are considered to have crossed the Threshold of serious harm..."
-          - label: "Previous where and when"
-            questionNumber: "R6.2 FA9"
-            answer: "Bolton and Bury Districts."
-    ArrayOfOASysSupportingInformationQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysSupportingInformationQuestion'
-        example:
-          - label: "Accommodation issues contributing to risks of offending and harm?"
-            questionNumber: "3.9"
-            sectionNumber: 3
-            linkedToHarm: false
-            linkedToReOffending: true
-            answer: "Mr Smith told me that he was renting a room in a shared house, prior to his current remand. He said that this accomodation..."
-          - label: "Education, training and employability issues contributing to risks of offending and harm"
-            questionNumber: "4.9"
-            sectionNumber: 4
-            linkedToHarm: false
-            linkedToReOffending: true
-            answer: "He said that he has since learnt to read and write during periods of custody and..."
-    ArrayOfOASysRiskToSelfQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Current concerns about self-harm or suicide"
-            questionNumber: "R8.1.1"
-            answer: "There have been numerous ACCTs opened since 2013 and every subsequent year he has been in custody....."
-          - label: "Current concerns about Coping in Custody or Hostel."
-            questionNumber: "R8.2.1"
-            answer: "Has told prison staff that he swallowed batteries on one occasion due to wanting..."
-    ArrayOfOASysRiskManagementPlanQuestions:
-      type: array
-      items:
-        type: object
-        $ref: '#/components/schemas/OASysQuestion'
-        example:
-          - label: "Key information about current situation"
-            questionNumber: "RM28.1"
-            answer: "Currently on remand - Management of case under MAPPA - level not yet set......"
-          - label: "Further considerations about current situation"
-            questionNumber: "RM28"
-            answer: "Mr Manette is currently on remand awaiting sentence"
     OASysSections:
       type: object
       properties:
@@ -4686,15 +4666,25 @@ components:
           type: string
           format: date-time
         offenceDetails:
-          $ref: '#/components/schemas/ArrayOfOASysOffenceDetailsQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysQuestion'
         roshSummary:
-          $ref: '#/components/schemas/ArrayOfOASysRiskOfSeriousHarmSummaryQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysQuestion'
         supportingInformation:
-          $ref: '#/components/schemas/ArrayOfOASysSupportingInformationQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysSupportingInformationQuestion'
         riskToSelf:
-          $ref: '#/components/schemas/ArrayOfOASysRiskToSelfQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysQuestion'
         riskManagementPlan:
-          $ref: '#/components/schemas/ArrayOfOASysRiskManagementPlanQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysQuestion'
       required:
         - assessmentId
         - assessmentState
@@ -4718,7 +4708,9 @@ components:
           type: string
           format: date-time
         riskToSelf:
-          $ref: '#/components/schemas/ArrayOfOASysRiskToSelfQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysQuestion'
       required:
         - assessmentId
         - assessmentState
@@ -4738,7 +4730,9 @@ components:
           type: string
           format: date-time
         rosh:
-          $ref: '#/components/schemas/ArrayOfOASysRiskOfSeriousHarmSummaryQuestions'
+          type: array
+          items:
+            $ref: '#/components/schemas/OASysQuestion'
       required:
         - assessmentId
         - assessmentState
@@ -4958,6 +4952,20 @@ components:
       required:
         - seedType
         - fileName
+    SeedFromExcelRequest:
+      type: object
+      properties:
+        seedType:
+          $ref: '#/components/schemas/SeedFromExcelFileType'
+        premisesId:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+      required:
+        - seedType
+        - premisesId
+        - fileName
     SeedFileType:
       type: string
       enum:
@@ -4988,6 +4996,13 @@ components:
         - approved_premises_cru_management_areas
         - approved_premises_space_planning_dry_run
         - approved_premises_import_delius_booking_management_data
+        - approved_premises_update_space_booking
+        - temporary_accommodation_referral_rejection
+    SeedFromExcelFileType:
+      type: string
+      enum:
+        - approved_premises_room
+        - cas1_import_site_survey_premise
     MigrationJobRequest:
       type: object
       properties:
@@ -5011,6 +5026,7 @@ components:
         - update_cas1_backfill_user_ap_area
         - update_cas3_application_offender_name
         - update_cas3_domain_event_type_for_person_departed_updated
+        - update_cas1_applications_licence_expiry_date
     PlacementDates:
       type: object
       properties:
@@ -5818,78 +5834,6 @@ components:
         - teamsManagingCase
         - ukBankHolidays
         - inmateDetails
-    BedOccupancyRange:
-      type: object
-      properties:
-        bedId:
-          type: string
-          format: uuid
-        bedName:
-          type: string
-        schedule:
-          type: array
-          items:
-            $ref: '#/components/schemas/BedOccupancyEntry'
-      required:
-        - bedId
-        - bedName
-        - schedule
-    BedOccupancyEntryType:
-      type: string
-      enum:
-        - booking
-        - lost_bed
-        - open
-    BedOccupancyEntry:
-      type: object
-      properties:
-        type:
-          $ref: '#/components/schemas/BedOccupancyEntryType'
-        length:
-          type: integer
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-      required:
-        - type
-        - length
-        - startDate
-        - endDate
-      discriminator:
-        propertyName: type
-        mapping:
-          booking: '#/components/schemas/BedOccupancyBookingEntry'
-          lost_bed: '#/components/schemas/BedOccupancyLostBedEntry'
-          open: '#/components/schemas/BedOccupancyOpenEntry'
-    BedOccupancyBookingEntry:
-      allOf:
-        - $ref: '#/components/schemas/BedOccupancyEntry'
-        - type: object
-          properties:
-            bookingId:
-              type: string
-              format: uuid
-            personName:
-              type: string
-          required:
-            - bookingId
-            - personName
-    BedOccupancyLostBedEntry:
-      allOf:
-        - $ref: '#/components/schemas/BedOccupancyEntry'
-        - type: object
-          properties:
-            lostBedId:
-              type: string
-              format: uuid
-          required:
-            - lostBedId
-    BedOccupancyOpenEntry:
-      allOf:
-        - $ref: '#/components/schemas/BedOccupancyEntry'
     PersonType:
       type: string
       enum:
@@ -5903,8 +5847,11 @@ components:
           properties:
             name:
               type: string
+            isRestricted:
+              type: boolean
           required:
             - name
+            - isRestricted
     RestrictedPersonSummary:
       allOf:
         - $ref: '#/components/schemas/PersonSummary'
@@ -6118,6 +6065,843 @@ components:
         - submitted-applications
         - application-status-updates
         - unsubmitted-applications
+    NamedId:
+      type: object
+      description: A generic stub for an object with a name and an ID.
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+        - id
+        - name
+    Temporality:
+      type: string
+      enum:
+        - past
+        - current
+        - future
+    BedSearchAttributes:
+      type: string
+      enum:
+        - isSharedProperty
+        - isSingleOccupancy
+        - isWheelchairAccessible
+      x-enum-varnames:
+        - SHARED_PROPERTY
+        - SINGLE_OCCUPANCY
+        - WHEELCHAIR_ACCESSIBLE
+    Cas1PremisesBasicSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Hope House
+        apCode:
+          type: string
+          example: NEHOPE1
+        apArea:
+          $ref: '#/components/schemas/NamedId'
+        bedCount:
+          type: integer
+          example: 22
+        supportsSpaceBookings:
+          type: boolean
+      required:
+        - id
+        - name
+        - apArea
+        - bedCount
+        - supportsSpaceBookings
+    Cas1PremisesSearchResultSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        apType:
+          $ref: '#/components/schemas/ApType'
+        name:
+          type: string
+          example: Hope House
+        addressLine1:
+          type: string
+          example: 1 The Street
+        addressLine2:
+          type: string
+          example: Blackmore End
+        town:
+          type: string
+          example: Braintree
+        postcode:
+          type: string
+          example: LS1 3AD
+        apArea:
+          $ref: '#/components/schemas/NamedId'
+        premisesCharacteristics:
+          type: array
+          items:
+            $ref: '#/components/schemas/CharacteristicPair'
+    Cas1PremisesSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Hope House
+        apCode:
+          type: string
+          example: NEHOPE1
+        postcode:
+          type: string
+          example: LS1 3AD
+        apArea:
+          $ref: '#/components/schemas/ApArea'
+        bedCount:
+          type: integer
+          description: The total number of beds in this premises
+          example: 22
+        availableBeds:
+          type: integer
+          description: The total number of beds available at this moment in time
+          example: 20
+        outOfServiceBeds:
+          type: integer
+          description: The total number of out of service beds at this moment in time
+          example: 2
+        supportsSpaceBookings:
+          type: boolean
+        managerDetails:
+          type: string
+        overbookingSummary:
+          description: over-bookings for the next 12 weeks
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1OverbookingRange'
+      required:
+        - id
+        - name
+        - apCode
+        - postcode
+        - apArea
+        - bedCount
+        - availableBeds
+        - outOfServiceBeds
+        - supportsSpaceBookings
+        - overbookingSummary
+    Cas1OverbookingRange:
+      type: object
+      properties:
+        startInclusive:
+          type: string
+          format: date
+          example: 2022-07-28
+        endInclusive:
+          description: This can be the same as the start date if overbooked for one night
+          type: string
+          format: date
+          example: 2022-07-29
+      required:
+        - startInclusive
+        - endInclusive
+    Cas1SpaceCharacteristic:
+      type: string
+      description: All of the characteristics of both premises and rooms
+      enum:
+        - acceptsChildSexOffenders
+        - acceptsHateCrimeOffenders
+        - acceptsNonSexualChildOffenders
+        - acceptsSexOffenders
+        - hasArsonInsuranceConditions
+        - hasBrailleSignage
+        - hasCallForAssistance
+        - hasCrib7Bedding
+        - hasEnSuite
+        - hasFixedMobilityAids
+        - hasHearingLoop
+        - hasLift
+        - hasNearbySprinkler
+        - hasSmokeDetector
+        - hasStepFreeAccess
+        - hasStepFreeAccessToCommunalAreas
+        - hasTactileFlooring
+        - hasTurningSpace
+        - hasWheelChairAccessibleBathrooms
+        - hasWideAccessToCommunalAreas
+        - hasWideDoor
+        - hasWideStepFreeAccess
+        - isArsonDesignated
+        - isArsonSuitable
+        - isCatered
+        - isFullyFm
+        - isGroundFloor
+        - isGroundFloorNrOffice
+        - isIAP
+        - isSingle
+        - isStepFreeDesignated
+        - isSuitableForVulnerable
+        - isSuitedForSexOffenders
+        - isTopFloorVulnerable
+        - isWheelchairAccessible
+        - isWheelchairDesignated
+    Cas1SpaceBookingCharacteristic:
+      type: string
+      description: All of the characteristics applicable to a space booking
+      enum:
+        - hasEnSuite
+        - isArsonSuitable
+        - isSingle
+        - isStepFreeDesignated
+        - isSuitedForSexOffenders
+        - isWheelchairDesignated
+      x-enum-varnames:
+        - HAS_EN_SUITE
+        - IS_ARSON_SUITABLE
+        - IS_SINGLE
+        - IS_STEP_FREE_DESIGNATED
+        - IS_SUITED_FOR_SEX_OFFENDERS
+        - IS_WHEELCHAIR_DESIGNATED
+    Cas1NewSpaceBooking:
+      type: object
+      properties:
+        arrivalDate:
+          type: string
+          format: date
+          example: 2022-07-28
+        departureDate:
+          type: string
+          format: date
+          example: 2022-09-30
+        premisesId:
+          type: string
+          format: uuid
+          example: 290fa58c-77b2-47e2-b729-4cd6b2ed1a78
+        requirements:
+          $ref: '#/components/schemas/Cas1SpaceBookingRequirements'
+      required:
+        - arrivalDate
+        - departureDate
+        - premisesId
+        - requirements
+    Cas1SpaceBookingRequirements:
+      type: object
+      properties:
+        essentialCharacteristics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
+      required:
+        - essentialCharacteristics
+    Cas1UpdateSpaceBooking:
+      type: object
+      description: Only provide values when a change is required
+      properties:
+        arrivalDate:
+          type: string
+          format: date
+          example: 2022-07-28
+        departureDate:
+          type: string
+          format: date
+          example: 2022-09-30
+        characteristics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1SpaceBookingCharacteristic'
+    Cas1SpaceSearchRequirements:
+      type: object
+      properties:
+        apTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApType'
+        spaceCharacteristics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
+        genders:
+          description: gender is obtained from application's associated gender
+          deprecated: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Gender'
+      required:
+        - apType
+        - gender
+    Cas1SpaceSearchParameters:
+      type: object
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+          description: The id of the application the space search is for
+        startDate:
+          type: string
+          format: date
+          description: The date the space is required from
+        durationInDays:
+          type: integer
+          example: 84
+          description: The number of days the space is needed, from the start date
+        targetPostcodeDistrict:
+          type: string
+          description: The 'target' location, in the form of a postcode district
+          example: SE5
+        requirements:
+          $ref: '#/components/schemas/Cas1SpaceSearchRequirements'
+      required:
+        - applicationId
+        - startDate
+        - durationInDays
+        - targetPostcodeDistrict
+        - requirements
+    Cas1SpaceSearchResults:
+      type: object
+      properties:
+        searchCriteria:
+          $ref: '#/components/schemas/Cas1SpaceSearchParameters'
+        resultsCount:
+          type: integer
+          example: 4
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1SpaceSearchResult'
+      required:
+        - resultsCount
+        - results
+    Cas1SpaceSearchResult:
+      type: object
+      properties:
+        premises:
+          $ref: '#/components/schemas/Cas1PremisesSearchResultSummary'
+        distanceInMiles:
+          type: number
+          example: 2.1
+        spacesAvailable:
+          type: array
+          deprecated: true
+          description: "This is not populated and will be removed in the future"
+          items:
+            $ref: '#/components/schemas/Cas1SpaceAvailability'
+    Cas1SpaceAvailability:
+      type: object
+      deprecated: true
+      properties:
+        spaceCharacteristics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
+        durationInDays:
+          type: integer
+          example: 77
+    Cas1SpaceCategory:
+      type: string
+      example: arson
+      description: Spaces are categorised by these traits - 'standard' plus selected physcial and risk characteristics
+      enum:
+        - standard
+        - arson
+        - wheelchair
+        - sexOffender
+        - enSuite
+        - single
+    Cas1SpaceBooking:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        applicationId:
+          type: string
+          format: uuid
+        assessmentId:
+          type: string
+          format: uuid
+        person:
+          $ref: '#/components/schemas/Person'
+        tier:
+          type: string
+        requirements:
+          $ref: '#/components/schemas/Cas1SpaceBookingRequirements'
+        premises:
+          $ref: '#/components/schemas/NamedId'
+        apArea:
+          $ref: '#/components/schemas/NamedId'
+        bookedBy:
+          $ref: '#/components/schemas/User'
+        requestForPlacementId:
+          type: string
+          format: uuid
+        expectedArrivalDate:
+          type: string
+          format: date
+        expectedDepartureDate:
+          type: string
+          format: date
+        actualArrivalDate:
+          description: Use actualArrivalDateOnly and actualArrivalTime
+          deprecated: true
+          type: string
+          format: date-time
+        actualArrivalDateOnly:
+          type: string
+          format: date
+        actualArrivalTime:
+          description: This value may not be defined even if an arrival date is
+          type: string
+          pattern: '^([01][0-9]|2[0-3]):([0-5][0-9])$'
+          example: '23:15'
+        actualDepartureDate:
+          description: Use actualDepartureDateOnly and actualDepartureTime
+          deprecated: true
+          type: string
+          format: date-time
+        actualDepartureDateOnly:
+          type: string
+          format: date
+        actualDepartureTime:
+          description: This value may not be defined even if a departure date is
+          type: string
+          pattern: '^([01][0-9]|2[0-3]):([0-5][0-9])$'
+          example: '23:15'
+        canonicalArrivalDate:
+          description: actual arrival date or, if not known, the expected arrival date
+          type: string
+          format: date
+        canonicalDepartureDate:
+          description: actual departure date or, if not known, the expected departure date
+          type: string
+          format: date
+        departure:
+          $ref: '#/components/schemas/Cas1SpaceBookingDeparture'
+        createdAt:
+          type: string
+          format: date-time
+        keyWorkerAllocation:
+          $ref: '#/components/schemas/Cas1KeyWorkerAllocation'
+        otherBookingsInPremisesForCrn:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1SpaceBookingDates'
+        cancellation:
+          $ref: '#/components/schemas/Cas1SpaceBookingCancellation'
+        nonArrival:
+          $ref: '#/components/schemas/Cas1SpaceBookingNonArrival'
+        deliusEventNumber:
+          type: string
+        status:
+          $ref: '#/components/schemas/Cas1SpaceBookingSummaryStatus'
+      required:
+        - id
+        - applicationId
+        - person
+        - requirements
+        - premises
+        - apArea
+        - expectedArrivalDate
+        - expectedDepartureDate
+        - canonicalArrivalDate
+        - canonicalDepartureDate
+        - createdAt
+        - otherBookingsInPremisesForCrn
+    Cas1SpaceBookingDates:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        canonicalArrivalDate:
+          description: actual arrival date or, if not known, the expected arrival date
+          type: string
+          format: date
+        canonicalDepartureDate:
+          description: actual departure date or, if not known, the expected departure date
+          type: string
+          format: date
+      required:
+        - id
+        - canonicalArrivalDate
+        - canonicalDepartureDate
+    Cas1SpaceBookingSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        person:
+          $ref: "#/components/schemas/PersonSummary"
+        canonicalArrivalDate:
+          description: actual arrival date or, if not known, the expected arrival date
+          type: string
+          format: date
+        canonicalDepartureDate:
+          description: actual departure date or, if not known, the expected departure date
+          type: string
+          format: date
+        tier:
+          description: Risk rating tier level of corresponding application
+          type: string
+        keyWorkerAllocation:
+          $ref: '#/components/schemas/Cas1KeyWorkerAllocation'
+        status:
+          $ref: '#/components/schemas/Cas1SpaceBookingSummaryStatus'
+      required:
+        - id
+        - person
+        - canonicalArrivalDate
+        - canonicalDepartureDate
+    Cas1SpaceBookingSummarySortField:
+      type: string
+      enum:
+        - personName
+        - canonicalArrivalDate
+        - canonicalDepartureDate
+        - keyWorkerName
+        - tier
+    Cas1SpaceBookingDaySummarySortField:
+      type: string
+      enum:
+        - personName
+        - tier
+        - canonicalArrivalDate
+        - canonicalDepartureDate
+        - releaseType
+        - spaceType
+      x-enum-varnames:
+        - PERSON_NAME
+        - TIER
+        - CANONICAL_ARRIVAL_DATE
+        - CANONICAL_DEPARTURE_DATE
+        - RELEASE_TYPE
+        - SPACE_TYPE
+    Cas1PremiseDaySummary:
+      type: object
+      properties:
+        forDate:
+          type: string
+          format: date
+        previousDate:
+          type: string
+          format: date
+        nextDate:
+          type: string
+          format: date
+        capacity:
+          $ref: '#/components/schemas/Cas1PremiseCapacityForDay'
+        spaceBookings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1SpaceBookingDaySummary'
+        outOfServiceBeds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1OutOfServiceBedSummary'
+      required:
+        - forDate
+        - previousDate
+        - nextDate
+        - capacity
+        - spaceBookings
+        - outOfServiceBeds
+    Cas1SpaceBookingDaySummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        person:
+          $ref: "#/components/schemas/PersonSummary"
+        canonicalArrivalDate:
+          description: actual arrival date or, if not known, the expected arrival date
+          type: string
+          format: date
+        canonicalDepartureDate:
+          description: actual departure date or, if not known, the expected departure date
+          type: string
+          format: date
+        tier:
+          description: Risk rating tier level of corresponding application
+          type: string
+        releaseType:
+          type: string
+        essentialCharacteristics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1SpaceBookingCharacteristic'
+      required:
+        - id
+        - person
+        - canonicalArrivalDate
+        - canonicalDepartureDate
+        - tier
+        - spaceType
+        - releaseType
+        - essentialCharacteristics
+    Cas1SpaceBookingSummaryStatus:
+      type: string
+      enum:
+        - arrivingWithin6Weeks
+        - arrivingWithin2Weeks
+        - arrivingToday
+        - overdueArrival
+        - arrived
+        - notArrived
+        - departingWithin2Weeks
+        - departingToday
+        - overdueDeparture
+        - departed
+    Cas1SpaceBookingResidency:
+      type: string
+      enum:
+        - upcoming
+        - current
+        - historic
+    Cas1KeyWorkerAllocation:
+      type: object
+      properties:
+        keyWorker:
+          $ref: '#/components/schemas/StaffMember'
+        allocatedAt:
+          type: string
+          format: date
+      required:
+        - keyWorker
+    Cas1SpaceBookingDeparture:
+      type: object
+      properties:
+        reason:
+          $ref: '#/components/schemas/NamedId'
+        parentReason:
+          $ref: '#/components/schemas/NamedId'
+        moveOnCategory:
+          $ref: '#/components/schemas/NamedId'
+        notes:
+          type: string
+      required:
+        - reason
+    Cas1SpaceBookingCancellation:
+      type: object
+      properties:
+        occurredAt:
+          type: string
+          format: date
+        recordedAt:
+          type: string
+          format: date-time
+        reason:
+          $ref: '#/components/schemas/CancellationReason'
+        reason_notes:
+          type: string
+      required:
+        - occurredAt
+        - recordedAt
+        - reason
+    Cas1SpaceBookingNonArrival:
+      type: object
+      properties:
+        confirmedAt:
+          type: string
+          format: date-time
+        reason:
+          $ref: '#/components/schemas/NamedId'
+        notes:
+          type: string
+    Cas1NewArrival:
+      type: object
+      properties:
+        arrivalDateTime:
+          description: This is deprecated. Instead use arrivalDate and arrivalTime
+          deprecated: true
+          type: string
+          format: date-time
+        arrivalDate:
+          type: string
+          format: date
+        arrivalTime:
+          type: string
+          pattern: '^([01][0-9]|2[0-3]):([0-5][0-9])$'
+          example: '23:15'
+    Cas1NonArrival:
+      type: object
+      properties:
+        reason:
+          type: string
+          format: uuid
+        notes:
+          type: string
+      required:
+        - reason
+    Cas1NewDeparture:
+      type: object
+      properties:
+        departureDateTime:
+          type: string
+          format: date-time
+        departureDate:
+          type: string
+          format: date
+        departureTime:
+          type: string
+          pattern: '^([01][0-9]|2[0-3]):([0-5][0-9])$'
+          example: '23:15'
+        reasonId:
+          type: string
+          format: uuid
+        moveOnCategoryId:
+          type: string
+          format: uuid
+        notes:
+          type: string
+      required:
+        - reasonId
+    Cas1AssignKeyWorker:
+      type: object
+      properties:
+        staffCode:
+          type: string
+      required:
+        - staffCode
+    Cas1ApprovedPremisesGender:
+      type: string
+      enum:
+        - man
+        - woman
+    Cas1UpdateUser:
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApprovedPremisesUserRole'
+        qualifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserQualification'
+        cruManagementAreaOverrideId:
+          type: string
+          format: uuid
+      required:
+        - roles
+        - qualifications
+    Cas1NewSpaceBookingCancellation:
+      type: object
+      properties:
+        occurredAt:
+          type: string
+          format: date
+        reasonId:
+          type: string
+          format: uuid
+        reasonNotes:
+          type: string
+      required:
+        - occurredAt
+        - reasonId
+    Cas1PremiseCapacity:
+      type: object
+      properties:
+        premise:
+          $ref: '#/components/schemas/Cas1PremisesSummary'
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        capacity:
+          description: Capacity for each day, returning chronologically (oldest first)
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1PremiseCapacityForDay'
+      required:
+        - premise
+        - startDate
+        - endDate
+        - capacity
+    Cas1PremiseCapacityForDay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        totalBedCount:
+          description: total bed count including temporarily unavailable beds (e.g. out of service beds). this does not consider bookings.
+          type: integer
+        availableBedCount:
+          description: total bed count excluding temporarily unavailable beds (e.g. out of service beds). this does not consider bookings.
+          type: integer
+        bookingCount:
+          description: total number of bookings in the premise on that day
+          type: integer
+        characteristicAvailability:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1PremiseCharacteristicAvailability'
+      required:
+        - date
+        - totalBedCount
+        - availableBedCount
+        - bookingCount
+        - characteristicAvailability
+    Cas1PremiseCharacteristicAvailability:
+      type: object
+      properties:
+        characteristic:
+          $ref: '#/components/schemas/Cas1SpaceBookingCharacteristic'
+        availableBedsCount:
+          description: the number of available beds with this characteristic
+          type: integer
+        bookingsCount:
+          description: the number of bookings requiring this characteristic
+          type: integer
+      required:
+        - characteristic
+        - availableBedsCount
+        - bookingsCount
+    Cas1ReportName:
+      type: string
+      enum:
+        - applications
+        - applicationsV2
+        - dailyMetrics
+        - lostBeds
+        - outOfServiceBeds
+        - placementApplications
+        - placementMatchingOutcomes
+        - placementMatchingOutcomesV2
+        - requestsForPlacement
+    Cas1OutOfServiceBedSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        reason:
+          $ref: '#/components/schemas/Cas1OutOfServiceBedReason'
+        characteristics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
+      required:
+        - id
+        - startDate
+        - endDate
+        - reason
+        - characteristics
     Cas1OutOfServiceBed:
       type: object
       properties:
@@ -6175,7 +6959,7 @@ components:
         - temporality
         - status
         - revisionHistory
-    NewCas1OutOfServiceBed:
+    Cas1NewOutOfServiceBed:
       type: object
       properties:
         startDate:
@@ -6233,7 +7017,7 @@ components:
       required:
         - id
         - createdAt
-    NewCas1OutOfServiceBedCancellation:
+    Cas1NewOutOfServiceBedCancellation:
       type: object
       properties:
         notes:
@@ -6308,644 +7092,3 @@ components:
         - updatedReferenceNumber
         - updatedReason
         - updatedNotes
-    NamedId:
-      type: object
-      description: A generic stub for an object with a name and an ID.
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-      required:
-        - id
-        - name
-    Temporality:
-      type: string
-      enum:
-        - past
-        - current
-        - future
-    GenderForAp:
-      type: string
-      enum:
-        - male
-        - female
-    BedSearchAttributes:
-      type: string
-      enum:
-        - sharedProperty
-        - singleOccupancy
-        - wheelchairAccessible
-    Cas1PremisesBasicSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-          example: Hope House
-        apCode:
-          type: string
-          example: NEHOPE1
-        apArea:
-          $ref: '#/components/schemas/NamedId'
-        bedCount:
-          type: integer
-          example: 22
-        supportsSpaceBookings:
-          type: boolean
-      required:
-        - id
-        - name
-        - apArea
-        - bedCount
-        - supportsSpaceBookings
-    Cas1PremisesSearchResultSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        apCode:
-          type: string
-          example: NEHOPE1
-        deliusQCode:
-          type: string
-          example: Q005
-        apType:
-          $ref: '#/components/schemas/ApType'
-        name:
-          type: string
-          example: Hope House
-        addressLine1:
-          type: string
-          example: 1 The Street
-        addressLine2:
-          type: string
-          example: Blackmore End
-        town:
-          type: string
-          example: Braintree
-        postcode:
-          type: string
-          example: LS1 3AD
-        apArea:
-          $ref: '#/components/schemas/NamedId'
-        totalSpaceCount:
-          type: integer
-          description: The total number of spaces in this premises
-          example: 22
-        premisesCharacteristics:
-          type: array
-          items:
-            $ref: '#/components/schemas/CharacteristicPair'
-    Cas1PremisesSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-          example: Hope House
-        apCode:
-          type: string
-          example: NEHOPE1
-        postcode:
-          type: string
-          example: LS1 3AD
-        apArea:
-          $ref: '#/components/schemas/ApArea'
-        bedCount:
-          type: integer
-          description: The total number of beds in this premises
-          example: 22
-        availableBeds:
-          type: integer
-          description: The total number of beds available at this moment in time
-          example: 20
-        outOfServiceBeds:
-          type: integer
-          description: The total number of out of service beds at this moment in time
-          example: 2
-        supportsSpaceBookings:
-          type: boolean
-      required:
-        - id
-        - name
-        - apCode
-        - postcode
-        - apArea
-        - bedCount
-        - availableBeds
-        - outOfServiceBeds
-        - supportsSpaceBookings
-    Cas1SpaceCharacteristic:
-      type: string
-      description: All of the characteristics of both premises and rooms
-      enum:
-        - acceptsChildSexOffenders
-        - acceptsHateCrimeOffenders
-        - acceptsNonSexualChildOffenders
-        - acceptsSexOffenders
-        - hasArsonInsuranceConditions
-        - hasBrailleSignage
-        - hasCallForAssistance
-        - hasCrib7Bedding
-        - hasEnSuite
-        - hasFixedMobilityAids
-        - hasHearingLoop
-        - hasLift
-        - hasNearbySprinkler
-        - hasSmokeDetector
-        - hasStepFreeAccess
-        - hasStepFreeAccessToCommunalAreas
-        - hasTactileFlooring
-        - hasTurningSpace
-        - hasWheelChairAccessibleBathrooms
-        - hasWideAccessToCommunalAreas
-        - hasWideDoor
-        - hasWideStepFreeAccess
-        - isArsonDesignated
-        - isArsonSuitable
-        - isCatered
-        - isFullyFm
-        - isGroundFloor
-        - isGroundFloorNrOffice
-        - isIAP
-        - isSingle
-        - isStepFreeDesignated
-        - isSuitableForVulnerable
-        - isSuitedForSexOffenders
-        - isTopFloorVulnerable
-        - isWheelchairAccessible
-        - isWheelchairDesignated
-    NewCas1SpaceBooking:
-      type: object
-      properties:
-        arrivalDate:
-          type: string
-          format: date
-          example: 2022-07-28
-        departureDate:
-          type: string
-          format: date
-          example: 2022-09-30
-        premisesId:
-          type: string
-          format: uuid
-          example: 290fa58c-77b2-47e2-b729-4cd6b2ed1a78
-        requirements:
-          type: object
-          $ref: '#/components/schemas/Cas1SpaceBookingRequirements'
-      required:
-        - arrivalDate
-        - departureDate
-        - premisesId
-        - requirements
-    Cas1SpaceBookingRequirements:
-      type: object
-      properties:
-        essentialCharacteristics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
-      required:
-        - essentialCharacteristics
-    Cas1SpaceSearchRequirements:
-      type: object
-      properties:
-        apTypes:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApType'
-        spaceCharacteristics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
-        genders:
-          type: array
-          items:
-            $ref: '#/components/schemas/Gender'
-      required:
-        - apType
-        - gender
-    Cas1SpaceSearchParameters:
-      type: object
-      properties:
-        startDate:
-          type: string
-          format: date
-          description: The date the space is required from
-        durationInDays:
-          type: integer
-          example: 84
-          description: The number of days the space is needed, from the start date
-        targetPostcodeDistrict:
-          type: string
-          description: The 'target' location, in the form of a postcode district
-          example: SE5
-        requirements:
-          $ref: '#/components/schemas/Cas1SpaceSearchRequirements'
-      required:
-        - startDate
-        - durationInDays
-        - targetPostcodeDistrict
-        - requirements
-    Cas1SpaceSearchResults:
-      type: object
-      properties:
-        searchCriteria:
-          $ref: '#/components/schemas/Cas1SpaceSearchParameters'
-        resultsCount:
-          type: integer
-          example: 4
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceSearchResult'
-      required:
-        - resultsCount
-        - results
-    Cas1SpaceSearchResult:
-      type: object
-      properties:
-        premises:
-          $ref: '#/components/schemas/Cas1PremisesSearchResultSummary'
-        distanceInMiles:
-          type: number
-          example: 2.1
-        spacesAvailable:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceAvailability'
-    Cas1SpaceAvailability:
-      type: object
-      properties:
-        spaceCharacteristics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
-        durationInDays:
-          type: integer
-          example: 77
-    Cas1SpaceCategory:
-      type: string
-      example: arson
-      description: Spaces are categorised by these traits - 'standard' plus selected physcial and risk characteristics
-      enum:
-        - standard
-        - arson
-        - wheelchair
-        - sexOffender
-        - enSuite
-        - single
-    Cas1SpaceBooking:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        applicationId:
-          type: string
-          format: uuid
-        assessmentId:
-          type: string
-          format: uuid
-        person:
-          $ref: '#/components/schemas/Person'
-        tier:
-          type: string
-        requirements:
-          $ref: '#/components/schemas/Cas1SpaceBookingRequirements'
-        premises:
-          $ref: '#/components/schemas/NamedId'
-        apArea:
-          $ref: '#/components/schemas/NamedId'
-        bookedBy:
-          $ref: '#/components/schemas/User'
-        requestForPlacementId:
-          type: string
-          format: uuid
-        expectedArrivalDate:
-          type: string
-          format: date
-        expectedDepartureDate:
-          type: string
-          format: date
-        actualArrivalDate:
-          type: string
-          format: date-time
-        actualDepartureDate:
-          type: string
-          format: date-time
-        canonicalArrivalDate:
-          description: actual arrival date or, if not known, the expected arrival date
-          type: string
-          format: date
-        canonicalDepartureDate:
-          description: actual departure date or, if not known, the expected departure date
-          type: string
-          format: date
-        departure:
-          $ref: '#/components/schemas/Cas1SpaceBookingDeparture'
-        createdAt:
-          type: string
-          format: date-time
-        keyWorkerAllocation:
-          $ref: '#/components/schemas/Cas1KeyWorkerAllocation'
-        otherBookingsInPremisesForCrn:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceBookingDates'
-        cancellation:
-          $ref: '#/components/schemas/Cas1SpaceBookingCancellation'
-        nonArrival:
-          $ref: '#/components/schemas/Cas1SpaceBookingNonArrival'
-        deliusEventNumber:
-          type: string
-      required:
-        - id
-        - applicationId
-        - person
-        - requirements
-        - premises
-        - apArea
-        - expectedArrivalDate
-        - expectedDepartureDate
-        - canonicalArrivalDate
-        - canonicalDepartureDate
-        - createdAt
-        - otherBookingsInPremisesForCrn
-    Cas1SpaceBookingDates:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        canonicalArrivalDate:
-          description: actual arrival date or, if not known, the expected arrival date
-          type: string
-          format: date
-        canonicalDepartureDate:
-          description: actual departure date or, if not known, the expected departure date
-          type: string
-          format: date
-      required:
-        - id
-        - canonicalArrivalDate
-        - canonicalDepartureDate
-    Cas1SpaceBookingSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        person:
-          $ref: "#/components/schemas/PersonSummary"
-        canonicalArrivalDate:
-          description: actual arrival date or, if not known, the expected arrival date
-          type: string
-          format: date
-        canonicalDepartureDate:
-          description: actual departure date or, if not known, the expected departure date
-          type: string
-          format: date
-        tier:
-          description: Risk rating tier level of corresponding application
-          type: string
-        keyWorkerAllocation:
-          $ref: '#/components/schemas/Cas1KeyWorkerAllocation'
-        status:
-          $ref: '#/components/schemas/Cas1SpaceBookingSummaryStatus'
-      required:
-        - id
-        - person
-        - canonicalArrivalDate
-        - canonicalDepartureDate
-    Cas1SpaceBookingSummarySortField:
-      type: string
-      enum:
-        - personName
-        - canonicalArrivalDate
-        - canonicalDepartureDate
-        - keyWorkerName
-        - tier
-    Cas1SpaceBookingSummaryStatus:
-      type: string
-      enum:
-        - arrivingWithin6Weeks
-        - arrivingWithin2Weeks
-        - arrivingToday
-        - overdueArrival
-        - arrived
-        - notArrived
-        - departingWithin2Weeks
-        - departingToday
-        - overdueDeparture
-        - departed
-    Cas1SpaceBookingResidency:
-      type: string
-      enum:
-        - upcoming
-        - current
-        - historic
-    Cas1KeyWorkerAllocation:
-      type: object
-      properties:
-        keyWorker:
-          $ref: '#/components/schemas/StaffMember'
-        allocatedAt:
-          type: string
-          format: date
-      required:
-        - keyWorker
-        - allocatedAt
-    Cas1SpaceBookingDeparture:
-      type: object
-      properties:
-        reason:
-          $ref: '#/components/schemas/NamedId'
-        parentReason:
-          $ref: '#/components/schemas/NamedId'
-        moveOnCategory:
-          $ref: '#/components/schemas/NamedId'
-        notes:
-          type: string
-      required:
-        - reason
-    Cas1SpaceBookingCancellation:
-      type: object
-      properties:
-        occurredAt:
-          type: string
-          format: date
-        recordedAt:
-          type: string
-          format: date-time
-        reason:
-          $ref: '#/components/schemas/CancellationReason'
-        reason_notes:
-          type: string
-      required:
-        - occurredAt
-        - recordedAt
-        - reason
-    Cas1SpaceBookingNonArrival:
-      type: object
-      properties:
-        confirmedAt:
-          type: string
-          format: date-time
-        reason:
-          $ref: '#/components/schemas/NamedId'
-        notes:
-          type: string
-    Cas1NewArrival:
-      type: object
-      properties:
-        arrivalDateTime:
-          type: string
-          format: date-time
-      required:
-        - arrivalDateTime
-    Cas1NonArrival:
-      type: object
-      properties:
-        reason:
-          type: string
-          format: uuid
-        notes:
-          type: string
-      required:
-        - reason
-    Cas1NewDeparture:
-      type: object
-      properties:
-        departureDateTime:
-          type: string
-          format: date-time
-        reasonId:
-          type: string
-          format: uuid
-        moveOnCategoryId:
-          type: string
-          format: uuid
-        notes:
-          type: string
-      required:
-        - departureDateTime
-        - reasonId
-    Cas1AssignKeyWorker:
-      type: object
-      properties:
-        staffCode:
-          type: string
-      required:
-        - staffCode
-    Cas1ApprovedPremisesGender:
-      type: string
-      enum:
-        - man
-        - woman
-    Cas1UpdateUser:
-      type: object
-      properties:
-        roles:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApprovedPremisesUserRole'
-        qualifications:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserQualification'
-        cruManagementAreaOverrideId:
-          type: string
-          format: uuid
-      required:
-        - roles
-        - qualifications
-    NewCas1SpaceBookingCancellation:
-      type: object
-      properties:
-        occurredAt:
-          type: string
-          format: date
-        reasonId:
-          type: string
-          format: uuid
-        reasonNotes:
-          type: string
-      required:
-        - occurredAt
-        - reasonId
-    Cas1PremiseCapacity:
-      type: object
-      properties:
-        premise:
-          $ref: '#/components/schemas/Cas1PremisesSummary'
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-        capacity:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1PremiseCapacityForDay'
-      required:
-        - premise
-        - startDate
-        - endDate
-        - capacity
-    Cas1PremiseCapacityForDay:
-      type: object
-      properties:
-        totalBedCount:
-          description: total bed count including temporarily unavailable beds (e.g. out of service beds)
-          type: integer
-        availableBedCount:
-          description: total bed count excluding temporarily unavailable beds (e.g. out of service beds)
-          type: integer
-        bookingCount:
-          type: integer
-        characteristicAvailability:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1PremiseCharacteristicAvailability'
-      required:
-        - totalBedCount
-        - availableBedCount
-        - bookingCount
-        - characteristicAvailability
-    Cas1PremiseCharacteristicAvailability:
-      type: object
-      description:  "Will only ever be returned for the following characteristics: 'isArsonSuitable', 'hasEnSuite', 'isSingle', 'isStepFreeDesignated', 'isSuitedForSexOffenders' or 'isWheelchairDesignated'"
-      properties:
-        characteristic:
-          $ref: '#/components/schemas/Cas1SpaceCharacteristic'
-        availableBedsCount:
-          description: the number of available beds with this characteristic
-          type: integer
-        bookingsCount:
-          description: the number of bookings requiring this characteristic
-          type: integer
-      required:
-        - characteristic
-        - availableBedsCount
-        - bookingsCount
-    Cas1ReportName:
-      type: string
-      enum:
-        - applications
-        - applicationsV2
-        - dailyMetrics
-        - lostBeds
-        - outOfServiceBeds
-        - placementApplications
-        - placementMatchingOutcomes
-        - placementMatchingOutcomesV2
-        - requestsForPlacement

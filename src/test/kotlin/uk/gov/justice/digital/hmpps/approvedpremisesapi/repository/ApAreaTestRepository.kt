@@ -6,6 +6,4 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApAreaEntity
 import java.util.UUID
 
 @Repository
-interface ApAreaTestRepository : JpaRepository<ApAreaEntity, UUID> {
-  fun findByIdentifier(identifier: String): ApAreaEntity?
-}
+interface ApAreaTestRepository : JpaRepository<ApAreaEntity, UUID>

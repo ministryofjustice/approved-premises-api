@@ -44,7 +44,7 @@ class UserAllocatorTest {
   @BeforeEach
   fun beforeEach() {
     every { mockUserRepository.findActiveUsersWithQualification(UserQualification.EMERGENCY) } returns listOf(user1)
-    every { mockUserRepository.findActiveUsersWithRole(UserRole.CAS1_ADMIN) } returns listOf(user2)
+    every { mockUserRepository.findActiveUsersWithRole(UserRole.CAS1_CRU_MEMBER) } returns listOf(user2)
 
     every { mockUserRepository.findUserWithLeastAssessmentsPendingOrCompletedInLastWeek(listOf(user1.id)) } returns user1
     every { mockUserRepository.findUserWithLeastAssessmentsPendingOrCompletedInLastWeek(listOf(user2.id)) } returns user2
@@ -287,7 +287,7 @@ class UserAllocatorTest {
       .withDeliusUsername("USER-2")
       .withProbationRegion(probationRegion)
       .produce()
-      .addRoleForUnitTest(UserRole.CAS1_ADMIN)
+      .addRoleForUnitTest(UserRole.CAS1_CRU_MEMBER)
 
     private val application = ApprovedPremisesApplicationEntityFactory()
       .withCreatedByUser(createdByUser)
@@ -367,10 +367,10 @@ class UserAllocatorTest {
           user1,
         ),
 
-        // Outcome is `AllocateByRole(CAS1_ADMIN)`.
+        // Outcome is `AllocateByRole(CAS1_CRU_MEMBER)`.
         Arguments.of(
           listOf(
-            TestRule.allocateByRole(ruleType, UserRole.CAS1_ADMIN),
+            TestRule.allocateByRole(ruleType, UserRole.CAS1_CRU_MEMBER),
           ),
           user2,
         ),

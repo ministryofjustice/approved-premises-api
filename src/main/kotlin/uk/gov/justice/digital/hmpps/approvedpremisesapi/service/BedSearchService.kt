@@ -13,13 +13,12 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonSummaryInfoResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.forCrn
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.validated
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.validatedCasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.ApprovedPremisesBedSearchResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.BedSearchRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.TemporaryAccommodationBedSearchResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.TemporaryAccommodationBedSearchResultOverlap
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActionResult
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.ValidatableActionResult
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.CasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.BedSearchService.Constants.MAX_NUMBER_PDUS
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.countOverlappingDays
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.getNameFromPersonSummaryInfoResult
@@ -48,61 +47,68 @@ class BedSearchService(
     startDate: LocalDate,
     durationInDays: Int,
     requiredCharacteristics: List<PlacementCriteria>,
-  ): AuthorisableActionResult<ValidatableActionResult<List<ApprovedPremisesBedSearchResult>>> {
+  ): CasResult<List<ApprovedPremisesBedSearchResult>> {
     if (!user.hasRole(UserRole.CAS1_MATCHER)) {
-      return AuthorisableActionResult.Unauthorised()
+      return CasResult.Unauthorised()
     }
 
-    return AuthorisableActionResult.Success(
-      validated {
-        val characteristicErrors = mutableListOf<String>()
-        val premisesCharacteristicIds = mutableListOf<UUID>()
-        val roomCharacteristicIds = mutableListOf<UUID>()
-        val requiredPropertyNames = requiredCharacteristics.map { it.toString() }
+    return validatedCasResult {
+      val characteristicErrors = mutableListOf<String>()
+      val premisesCharacteristicIds = mutableListOf<UUID>()
+      val roomCharacteristicIds = mutableListOf<UUID>()
+      val requiredPropertyNames = requiredCharacteristics.map { it.toString() }
 
-        val characteristics = characteristicService.getCharacteristicsByPropertyNames(requiredPropertyNames, ServiceName.approvedPremises)
+      val characteristics =
+        characteristicService.getCharacteristicsByPropertyNames(requiredPropertyNames, ServiceName.approvedPremises)
 
-        requiredPropertyNames.forEach { propertyName ->
-          val characteristic = characteristics.firstOrNull { it.propertyName == propertyName }
-          when {
-            characteristic == null -> characteristicErrors += "$propertyName doesNotExist"
-            characteristic.matches(ServiceName.approvedPremises.value, "premises") -> premisesCharacteristicIds += characteristic.id
-            characteristic.matches(ServiceName.approvedPremises.value, "room") -> roomCharacteristicIds += characteristic.id
-            else -> characteristicErrors += "$propertyName scopeInvalid"
-          }
+      requiredPropertyNames.forEach { propertyName ->
+        val characteristic = characteristics.firstOrNull { it.propertyName == propertyName }
+        when {
+          characteristic == null -> characteristicErrors += "$propertyName doesNotExist"
+          characteristic.matches(
+            ServiceName.approvedPremises.value,
+            "premises",
+          ) -> premisesCharacteristicIds += characteristic.id
+
+          characteristic.matches(
+            ServiceName.approvedPremises.value,
+            "room",
+          ) -> roomCharacteristicIds += characteristic.id
+
+          else -> characteristicErrors += "$propertyName scopeInvalid"
         }
+      }
 
-        if (characteristicErrors.any()) {
-          "$.requiredCharacteristics" hasValidationError characteristicErrors.joinToString(", ")
-        }
+      if (characteristicErrors.any()) {
+        "$.requiredCharacteristics" hasValidationError characteristicErrors.joinToString(", ")
+      }
 
-        postcodeDistrictRepository.findByOutcode(postcodeDistrictOutcode)
-          ?: ("$.postcodeDistrictOutcode" hasValidationError "doesNotExist")
+      postcodeDistrictRepository.findByOutcode(postcodeDistrictOutcode)
+        ?: ("$.postcodeDistrictOutcode" hasValidationError "doesNotExist")
 
-        if (durationInDays < 1) {
-          "$.durationDays" hasValidationError "mustBeAtLeast1"
-        }
+      if (durationInDays < 1) {
+        "$.durationDays" hasValidationError "mustBeAtLeast1"
+      }
 
-        if (maxDistanceMiles < 1) {
-          "$.maxDistanceMiles" hasValidationError "mustBeAtLeast1"
-        }
+      if (maxDistanceMiles < 1) {
+        "$.maxDistanceMiles" hasValidationError "mustBeAtLeast1"
+      }
 
-        if (validationErrors.any()) {
-          return@validated fieldValidationError
-        }
+      if (validationErrors.any()) {
+        return fieldValidationError
+      }
 
-        return@validated success(
-          bedSearchRepository.findApprovedPremisesBeds(
-            postcodeDistrictOutcode = postcodeDistrictOutcode,
-            maxDistanceMiles = maxDistanceMiles,
-            startDate = startDate,
-            durationInDays = durationInDays,
-            requiredPremisesCharacteristics = premisesCharacteristicIds,
-            requiredRoomCharacteristics = roomCharacteristicIds,
-          ),
-        )
-      },
-    )
+      return success(
+        bedSearchRepository.findApprovedPremisesBeds(
+          postcodeDistrictOutcode = postcodeDistrictOutcode,
+          maxDistanceMiles = maxDistanceMiles,
+          startDate = startDate,
+          durationInDays = durationInDays,
+          requiredPremisesCharacteristics = premisesCharacteristicIds,
+          requiredRoomCharacteristics = roomCharacteristicIds,
+        ),
+      )
+    }
   }
 
   @Suppress("detekt:CyclomaticComplexMethod")
@@ -112,91 +118,87 @@ class BedSearchService(
     startDate: LocalDate,
     durationInDays: Int,
     propertyBedAttributes: List<BedSearchAttributes>?,
-  ): AuthorisableActionResult<ValidatableActionResult<List<TemporaryAccommodationBedSearchResult>>> {
-    return AuthorisableActionResult.Success(
-      validated {
-        val probationDeliveryUnitIds = mutableListOf<UUID>()
+  ): CasResult<List<TemporaryAccommodationBedSearchResult>> = validatedCasResult {
+    val probationDeliveryUnitIds = mutableListOf<UUID>()
 
-        if (durationInDays < 1) {
-          "$.durationDays" hasValidationError "mustBeAtLeast1"
-        }
+    if (durationInDays < 1) {
+      "$.durationDays" hasValidationError "mustBeAtLeast1"
+    }
 
-        if (probationDeliveryUnits.isEmpty()) {
-          "$.probationDeliveryUnits" hasValidationError "empty"
-        } else if (probationDeliveryUnits.size > MAX_NUMBER_PDUS) {
-          "$.probationDeliveryUnits" hasValidationError "maxNumberProbationDeliveryUnits"
+    if (probationDeliveryUnits.isEmpty()) {
+      "$.probationDeliveryUnits" hasValidationError "empty"
+    } else if (probationDeliveryUnits.size > MAX_NUMBER_PDUS) {
+      "$.probationDeliveryUnits" hasValidationError "maxNumberProbationDeliveryUnits"
+    } else {
+      probationDeliveryUnits.mapIndexed { index, id ->
+        val probationDeliveryUnitEntityExist = probationDeliveryUnitRepository.existsById(id)
+        if (!probationDeliveryUnitEntityExist) {
+          "$.probationDeliveryUnits[$index]" hasValidationError "doesNotExist"
         } else {
-          probationDeliveryUnits.mapIndexed { index, id ->
-            val probationDeliveryUnitEntityExist = probationDeliveryUnitRepository.existsById(id)
-            if (!probationDeliveryUnitEntityExist) {
-              "$.probationDeliveryUnits[$index]" hasValidationError "doesNotExist"
-            } else {
-              probationDeliveryUnitIds.add(id)
-            }
-          }
+          probationDeliveryUnitIds.add(id)
         }
+      }
+    }
 
-        if (validationErrors.any()) {
-          return@validated fieldValidationError
-        }
+    if (validationErrors.any()) {
+      return fieldValidationError
+    }
 
-        val premisesCharacteristicsPropertyNames = propertyBedAttributes?.map {
-          when (it) {
-            BedSearchAttributes.singleOccupancy -> "isSingleOccupancy"
-            BedSearchAttributes.sharedProperty -> "isSharedProperty"
-            BedSearchAttributes.wheelchairAccessible -> ""
-          }
-        }
+    val premisesCharacteristicsPropertyNames = propertyBedAttributes?.map {
+      when (it) {
+        BedSearchAttributes.SINGLE_OCCUPANCY -> BedSearchAttributes.SINGLE_OCCUPANCY.value
+        BedSearchAttributes.SHARED_PROPERTY -> BedSearchAttributes.SHARED_PROPERTY.value
+        else -> ""
+      }
+    }
 
-        val premisesCharacteristicIds = getTemporaryAccommodationCharacteristicsIds(premisesCharacteristicsPropertyNames, "premises")
+    val premisesCharacteristicIds = getTemporaryAccommodationCharacteristicsIds(premisesCharacteristicsPropertyNames, "premises")
 
-        val roomCharacteristicsPropertyNames = when {
-          propertyBedAttributes?.contains(BedSearchAttributes.wheelchairAccessible) == true -> listOf("isWheelchairAccessible")
-          else -> null
-        }
+    val roomCharacteristicsPropertyNames = propertyBedAttributes?.map {
+      when (it) {
+        BedSearchAttributes.WHEELCHAIR_ACCESSIBLE -> BedSearchAttributes.WHEELCHAIR_ACCESSIBLE.value
+        else -> ""
+      }
+    }
 
-        val roomCharacteristicIds = getTemporaryAccommodationCharacteristicsIds(roomCharacteristicsPropertyNames, "room")
+    val roomCharacteristicIds = getTemporaryAccommodationCharacteristicsIds(roomCharacteristicsPropertyNames, "room")
 
-        val endDate = startDate.plusDays(durationInDays.toLong() - 1)
+    val endDate = startDate.plusDays(durationInDays.toLong() - 1)
 
-        val candidateResults = bedSearchRepository.findTemporaryAccommodationBeds(
-          probationDeliveryUnits = probationDeliveryUnitIds,
-          startDate = startDate,
-          endDate = endDate,
-          probationRegionId = user.probationRegion.id,
-          premisesCharacteristicIds,
-          roomCharacteristicIds,
-        )
-
-        val bedIds = candidateResults.map { it.bedId }
-        val bedsWithABookingInTurnaround = bookingRepository.findClosestBookingBeforeDateForBeds(startDate, bedIds)
-          .filter { workingDayService.addWorkingDays(it.departureDate, it.turnaround?.workingDayCount ?: 0) >= startDate }
-          .map { it.bed!!.id }
-
-        val results = candidateResults.filter { !bedsWithABookingInTurnaround.contains(it.bedId) }
-
-        val distinctIds = results.map { it.premisesId }.distinct()
-        val overlappedBookings = bookingRepository.findAllNotCancelledByPremisesIdsAndOverlappingDate(distinctIds, startDate, endDate)
-        val crns = overlappedBookings.map { it.crn }.distinct().toSet()
-        val offenderSummaries = offenderService.getPersonSummaryInfoResults(
-          crns = crns.toSet(),
-          limitedAccessStrategy = user.cas3LimitedAccessStrategy(),
-        )
-
-        val groupedOverlappedBookings = overlappedBookings
-          .map { transformBookingToOverlap(it, startDate, endDate, offenderSummaries.forCrn(it.crn)) }
-          .groupBy { it.premisesId }
-
-        results.forEach {
-          val overlappingBookings = groupedOverlappedBookings[it.premisesId]?.toList() ?: listOf()
-          it.overlaps.addAll(overlappingBookings)
-        }
-
-        return@validated success(
-          results,
-        )
-      },
+    val candidateResults = bedSearchRepository.findTemporaryAccommodationBeds(
+      probationDeliveryUnits = probationDeliveryUnitIds,
+      startDate = startDate,
+      endDate = endDate,
+      probationRegionId = user.probationRegion.id,
+      premisesCharacteristicIds,
+      roomCharacteristicIds,
     )
+
+    val bedIds = candidateResults.map { it.bedId }
+    val bedsWithABookingInTurnaround = bookingRepository.findClosestBookingBeforeDateForBeds(startDate, bedIds)
+      .filter { workingDayService.addWorkingDays(it.departureDate, it.turnaround?.workingDayCount ?: 0) >= startDate }
+      .map { it.bed!!.id }
+
+    val results = candidateResults.filter { !bedsWithABookingInTurnaround.contains(it.bedId) }
+
+    val distinctIds = results.map { it.premisesId }.distinct()
+    val overlappedBookings = bookingRepository.findAllNotCancelledByPremisesIdsAndOverlappingDate(distinctIds, startDate, endDate)
+    val crns = overlappedBookings.map { it.crn }.distinct().toSet()
+    val offenderSummaries = offenderService.getPersonSummaryInfoResults(
+      crns = crns.toSet(),
+      limitedAccessStrategy = user.cas3LimitedAccessStrategy(),
+    )
+
+    val groupedOverlappedBookings = overlappedBookings
+      .map { transformBookingToOverlap(it, startDate, endDate, offenderSummaries.forCrn(it.crn)) }
+      .groupBy { it.premisesId }
+
+    results.forEach {
+      val overlappingBookings = groupedOverlappedBookings[it.premisesId]?.toList() ?: listOf()
+      it.overlaps.addAll(overlappingBookings)
+    }
+
+    return success(results)
   }
 
   fun transformBookingToOverlap(
@@ -222,12 +224,13 @@ class BedSearchService(
   }
 
   private fun getTemporaryAccommodationCharacteristicsIds(characteristicsPropertyNames: List<String>?, modelScope: String): List<UUID> {
-    return characteristicsPropertyNames?.let {
+    if (characteristicsPropertyNames.isNullOrEmpty()) return emptyList()
+    return characteristicsPropertyNames.let {
       val characteristics = characteristicService.getCharacteristicsByPropertyNames(characteristicsPropertyNames, ServiceName.temporaryAccommodation)
       characteristics.filter {
         it.isActive && it.matches(ServiceName.temporaryAccommodation.value, modelScope)
       }.map { it.id }.toList()
-    } ?: emptyList()
+    }
   }
 
   private fun getPersonType(

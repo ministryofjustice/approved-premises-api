@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.community.Offender
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.InmateDetail
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.probationoffendersearchapi.ProbationOffenderDetail
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ForbiddenProblem
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.InternalServerErrorProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.NotFoundProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActionResult
 import java.util.stream.Collectors
@@ -181,13 +180,6 @@ class OffenderService(
       offenderDetailSummary = offender,
       inmateDetail = inmateDetails,
     )
-  }
-
-  fun getInfoForPersonOrThrowInternalServerError(crn: String): PersonInfoResult.Success {
-    val personInfo = getInfoForPerson(crn)
-    if (personInfo is PersonInfoResult.NotFound) throw InternalServerErrorProblem("Unable to get Person via crn: $crn")
-
-    return personInfo as PersonInfoResult.Success
   }
 
   fun getFullInfoForPersonOrThrow(crn: String): PersonInfoResult.Success.Full {

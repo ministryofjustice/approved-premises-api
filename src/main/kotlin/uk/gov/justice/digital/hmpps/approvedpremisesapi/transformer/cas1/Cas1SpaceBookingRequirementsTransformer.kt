@@ -13,5 +13,5 @@ class Cas1SpaceBookingRequirementsTransformer {
   )
 
   private fun CharacteristicEntity.asCas1SpaceCharacteristic() =
-    Cas1SpaceCharacteristic.valueOf(this.propertyName!!)
+    Cas1SpaceCharacteristic.entries.first { it.value == this.propertyName }
 }
