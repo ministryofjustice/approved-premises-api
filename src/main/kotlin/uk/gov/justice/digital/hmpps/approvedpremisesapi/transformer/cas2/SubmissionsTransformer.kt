@@ -64,7 +64,6 @@ fun getApplicationOrigin(origin: String?): ApplicationOrigin? {
   return when (origin) {
     "courtBail" -> ApplicationOrigin.courtBail
     "prisonBail" -> ApplicationOrigin.prisonBail
-    "homeDetentionCurfew" -> ApplicationOrigin.homeDetentionCurfew
-    else -> null
+    else -> ApplicationOrigin.homeDetentionCurfew
   }
 }

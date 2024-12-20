@@ -6,10 +6,20 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.mockk.every
 import io.mockk.mockk
+import java.time.Instant
+import java.time.LocalDate
+import java.time.OffsetDateTime
+import java.util.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2Assessment
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2StatusUpdate
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2SubmittedApplicationSummary
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2TimelineEvent
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NomisUser
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Person
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.Cas2ApplicationEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.Cas2AssessmentEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.NomisUserEntityFactory
@@ -19,10 +29,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.PersonTransf
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.cas2.AssessmentsTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.cas2.SubmissionsTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.cas2.TimelineEventsTransformer
-import java.time.Instant
-import java.time.LocalDate
-import java.time.OffsetDateTime
-import java.util.*
 
 class SubmissionsTransformerTest {
   private val mockPersonTransformer = mockk<PersonTransformer>()
@@ -136,7 +142,6 @@ class SubmissionsTransformerTest {
         createdAt = Instant.parse("2023-04-19T13:25:00+01:00"),
         submittedAt = Instant.parse("2023-04-19T13:25:30+01:00"),
         personName = "Example Offender",
-        applicationOrigin = ApplicationOrigin.homeDetentionCurfew,
       )
 
       val transformation = applicationTransformer.transformJpaSummaryToApiRepresentation(
