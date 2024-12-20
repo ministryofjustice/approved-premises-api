@@ -1410,7 +1410,7 @@ class ApplicationServiceTest {
       val validatableActionResult = result.entity as ValidatableActionResult.Success
       val persistedApplication = validatableActionResult.entity
 
-      assertThat(persistedApplication.applicationOrigin).isNull()
+      assertThat(persistedApplication.applicationOrigin).isEqualTo("homeDetentionCurfew")
       // TODO when we implement application origin into domain events
       // and send email we'll need similar verify functions to the method above.
     }

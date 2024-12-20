@@ -332,6 +332,7 @@ class ApplicationService(
             applicationId = application.id,
             applicationUrl = applicationUrlTemplate
               .replace("#id", application.id.toString()),
+            applicationOrigin = application.applicationOrigin,
             submittedAt = eventOccurredAt.toInstant(),
             personReference = PersonReference(
               noms = application.nomsNumber ?: "Unknown NOMS Number",
