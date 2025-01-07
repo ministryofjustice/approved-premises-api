@@ -1265,7 +1265,7 @@ class Cas2v2ApplicationTest : IntegrationTestBase() {
             }
 
             val rawResponseBody = webTestClient.get()
-              .uri("/cas2/applications/${applicationEntity.id}")
+              .uri("/cas2v2/applications/${applicationEntity.id}")
               .header("Authorization", "Bearer $jwt")
               .exchange()
               .expectStatus()
@@ -1496,7 +1496,7 @@ class Cas2v2ApplicationTest : IntegrationTestBase() {
     @Nested
     inner class LicenceCaseAdminUsers {
       @Test
-      fun `Create new cas2v2 application for CAS-2 returns 201 with correct body and Location header`() {
+      fun `Create new cas2v2 application for Cas2v2 returns 201 with correct body and Location header`() {
         givenACas2LicenceCaseAdminUser { _, jwt ->
           givenAnOffender { offenderDetails, _ ->
             val applicationSchema =
@@ -1520,7 +1520,7 @@ class Cas2v2ApplicationTest : IntegrationTestBase() {
               .returnResult(Cas2Application::class.java)
 
             Assertions.assertThat(result.responseHeaders["Location"]).anyMatch {
-              it.matches(Regex("/cas2/applications/.+"))
+              it.matches(Regex("/cas2v2/applications/.+"))
             }
 
             Assertions.assertThat(result.responseBody.blockFirst()).matches {

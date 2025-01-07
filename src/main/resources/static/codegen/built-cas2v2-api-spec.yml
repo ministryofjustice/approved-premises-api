@@ -73,7 +73,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Cas2ApplicationSummary'
+                  $ref: '#/components/schemas/Cas2v2ApplicationSummary'
           headers:
             X-Pagination-CurrentPage:
               $ref: '#/components/headers/X-Pagination-CurrentPage'

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApplicationStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2Application
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2ApplicationSummary
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2v2ApplicationSummary
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas2v2.Cas2v2ApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas2v2.Cas2v2ApplicationSummaryEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonInfoResult
@@ -43,9 +45,8 @@ class Cas2v2ApplicationsTransformer(
   fun transformJpaSummaryToSummary(
     jpaSummary: Cas2v2ApplicationSummaryEntity,
     personName: String,
-  ): uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2ApplicationSummary {
-    return uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model
-      .Cas2ApplicationSummary(
+  ): Cas2v2ApplicationSummary {
+    return Cas2v2ApplicationSummary(
         id = jpaSummary.id,
         createdByUserId = UUID.fromString(jpaSummary.userId),
         createdByUserName = jpaSummary.userName,

@@ -71,7 +71,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '_shared.yml#/components/schemas/Cas2ApplicationSummary'
+                  $ref: '_shared.yml#/components/schemas/Cas2v2ApplicationSummary'
           headers:
             X-Pagination-CurrentPage:
               $ref: '_shared.yml#/components/headers/X-Pagination-CurrentPage'

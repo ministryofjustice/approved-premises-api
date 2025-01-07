@@ -24,7 +24,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.cas2v2.Cas2v
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.PageCriteria
 import java.net.URI
 import java.util.UUID
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2ApplicationSummary as ModelCas2ApplicationSummary
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2v2ApplicationSummary as ModelCas2v2ApplicationSummary
 
 @Service(
   "Cas2v2ApplicationController",
@@ -41,7 +41,7 @@ class Cas2v2ApplicationController(
     isSubmitted: Boolean?,
     page: Int?,
     prisonCode: String?,
-  ): ResponseEntity<List<ModelCas2ApplicationSummary>> {
+  ): ResponseEntity<List<ModelCas2v2ApplicationSummary>> {
     /*This gets a NomisUser. Toby and Gareth discussed creating a third user service
      * The third user service will return a Cas2v2User. That user will have two nullable fields/properties
      * 1. DeliusUser
@@ -104,7 +104,7 @@ class Cas2v2ApplicationController(
     }
 
     return ResponseEntity
-      .created(URI.create("/cas2/applications/${application.id}"))
+      .created(URI.create("/cas2v2/applications/${application.id}"))
       .body(cas2v2ApplicationsTransformer.transformJpaToApi(application, personInfo))
   }
 
@@ -162,7 +162,7 @@ class Cas2v2ApplicationController(
 
   private fun getPersonNamesAndTransformToSummaries(
     applicationSummaries: List<Cas2v2ApplicationSummaryEntity>,
-  ): List<ModelCas2ApplicationSummary> {
+  ): List<ModelCas2v2ApplicationSummary> {
     val crns = applicationSummaries.map { it.crn }
 
     val personNamesMap = offenderService.getMapOfPersonNamesAndCrns(crns)
