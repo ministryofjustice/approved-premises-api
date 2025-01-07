@@ -1,0 +1,589 @@
+openapi: 3.0.1
+info:
+  title: 'Community Accommodation Services: Tier 2 (CAS2 version 2)'
+  version: 1.0.0
+servers:
+  - url: /cas2v2
+paths:
+  /applications:
+    post:
+      tags:
+        - Operations on CAS2 version 2 applications
+      summary: Creates a CAS2 version 2 application
+      requestBody:
+        description: Information to create a blank application with
+        content:
+          'application/json':
+            schema:
+              $ref: '_shared.yml#/components/schemas/NewApplication'
+        required: true
+      responses:
+        201:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Application'
+        400:
+          description: invalid params
+          content:
+            'application/problem+json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/ValidationError'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        404:
+          description: invalid CRN
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Problem'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+      x-codegen-request-body-name: body
+    get:
+      tags:
+        - Operations on CAS2 version 2 applications
+      summary: List summaries of all CAS2 version 2 applications authorised for the logged in user
+      parameters:
+        - name: isSubmitted
+          in: query
+          description: Returns submitted applications if true, un submitted applications if false, and all applications if absent
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          description: Page number of results to return.  If blank, returns all results
+          schema:
+            type: integer
+        - name: prisonCode
+          in: query
+          description: Prison code of applications to return.  If blank, returns all results.
+          schema:
+            type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '_shared.yml#/components/schemas/Cas2ApplicationSummary'
+          headers:
+            X-Pagination-CurrentPage:
+              $ref: '_shared.yml#/components/headers/X-Pagination-CurrentPage'
+            X-Pagination-TotalPages:
+              $ref: '_shared.yml#/components/headers/X-Pagination-TotalPages'
+            X-Pagination-TotalResults:
+              $ref: '_shared.yml#/components/headers/X-Pagination-TotalResults'
+            X-Pagination-PageSize:
+              $ref: '_shared.yml#/components/headers/X-Pagination-TotalResults'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+
+  /applications/{applicationId}:
+    put:
+      tags:
+        - Operations on CAS2 version 2 applications
+      summary: Updates a CAS2 version 2 application
+      parameters:
+        - name: applicationId
+          in: path
+          description: ID of the application
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Information to update the application with
+        content:
+          'application/json':
+            schema:
+              $ref: '_shared.yml#/components/schemas/UpdateApplication'
+        required: true
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Application'
+        400:
+          description: invalid params
+          content:
+            'application/problem+json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/ValidationError'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+      x-codegen-request-body-name: body
+    get:
+      tags:
+        - Operations on CAS2 version 2 applications
+      summary: Gets a single CAS2 version 2 application by its ID
+      parameters:
+        - name: applicationId
+          in: path
+          description: ID of the application
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Application'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+  /applications/{applicationId}/abandon:
+    put:
+      tags:
+        - Operations on CAS2 version 2 applications
+      summary: Abandons an in progress CAS2 version 2 application
+      parameters:
+        - name: applicationId
+          in: path
+          description: ID of the application
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: successful operation
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        409:
+          description: The application has been submitted
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Problem'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+  /assessments/{assessmentId}:
+    put:
+      tags:
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: Updates a single CAS2 version 2 assessment by its ID
+      parameters:
+        - name: assessmentId
+          in: path
+          description: ID of the assessment
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Information to update the assessment with
+        content:
+          'application/json':
+            schema:
+              $ref: '_shared.yml#/components/schemas/UpdateCas2Assessment'
+        required: true
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Cas2Assessment'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        404:
+          description: invalid assessmentId
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Problem'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+    get:
+      tags:
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: Gets a single CAS2 version 2 assessment by its ID
+      parameters:
+        - name: assessmentId
+          in: path
+          description: ID of the assessment
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Cas2Assessment'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        404:
+          description: invalid assessmentId
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Problem'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+  /assessments/{assessmentId}/status-updates:
+    post:
+      tags:
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: Creates a status update on an assessment
+      parameters:
+        - name: assessmentId
+          in: path
+          description: ID of the assessment whose status is to be updated
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Information on the new status to be applied
+        content:
+          'application/json':
+            schema:
+              $ref: '_shared.yml#/components/schemas/Cas2AssessmentStatusUpdate'
+        required: true
+      responses:
+        200:
+          description: successfully created the status update
+        400:
+          description: status update has already been submitted
+          content:
+            'application/problem+json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/ValidationError'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+  /assessments/{assessmentId}/notes:
+    post:
+      tags:
+        - Operations on CAS2 version 2 assessments
+      summary: Add a note to an assessment
+      parameters:
+        - name: assessmentId
+          in: path
+          description: ID of the assessment
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: the note to add
+        content:
+          'application/json':
+            schema:
+              $ref: '_shared.yml#/components/schemas/NewCas2ApplicationNote'
+        required: true
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Cas2ApplicationNote'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        404:
+          description: invalid assessmentId
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Problem'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+      x-codegen-request-body-name: body
+  /submissions:
+    get:
+      tags:
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: List summaries of all submitted CAS2 version 2 applications
+      parameters:
+        - name: page
+          in: query
+          description: Page number of results to return. If blank, returns all results
+          schema:
+            type: integer
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '_shared.yml#/components/schemas/Cas2SubmittedApplicationSummary'
+          headers:
+            X-Pagination-CurrentPage:
+              $ref: '_shared.yml#/components/headers/X-Pagination-CurrentPage'
+            X-Pagination-TotalPages:
+              $ref: '_shared.yml#/components/headers/X-Pagination-TotalPages'
+            X-Pagination-TotalResults:
+              $ref: '_shared.yml#/components/headers/X-Pagination-TotalResults'
+            X-Pagination-PageSize:
+              $ref: '_shared.yml#/components/headers/X-Pagination-TotalResults'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+    post:
+      tags:
+        - Operations on CAS2 version 2 applications
+      summary: Submits a CAS2 version 2 Application (creates a SubmittedApplication)
+      requestBody:
+        description: Information needed to submit an application
+        content:
+          'application/json':
+            schema:
+              $ref: '_shared.yml#/components/schemas/SubmitCas2Application'
+        required: true
+      responses:
+        200:
+          description: successfully submitted the application
+        400:
+          description: application has already been submitted
+          content:
+            'application/problem+json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/ValidationError'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+  /submissions/{applicationId}:
+    get:
+      tags:
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: Gets a single submitted CAS2 version 2 application by its ID
+      parameters:
+        - name: applicationId
+          in: path
+          description: ID of the application
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Cas2SubmittedApplication'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+  /people/search:
+    get:
+      tags:
+        - People operations
+      summary: Searches for a Person by their Prison Number (NOMIS ID)
+      parameters:
+        - name: nomsNumber
+          in: query
+          description: Prison Number to search for
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Person'
+        400:
+          description: invalid params
+          content:
+            'application/problem+json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/ValidationError'
+        404:
+          description: invalid CRN
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Problem'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+  /people/{crn}/oasys/risk-to-self:
+    get:
+      tags:
+        - People operations
+      summary: Returns the Risk To Individual (known as Risk to Self on frontend) section of an OASys.
+      parameters:
+        - name: crn
+          in: path
+          description: CRN of the Person to fetch latest OASys
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/OASysRiskToSelf'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        404:
+          description: invalid CRN
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Problem'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+  /people/{crn}/oasys/rosh:
+    get:
+      tags:
+        - People operations
+      summary: Returns the Risk of Serious Harm section of an OASys.
+      parameters:
+        - name: crn
+          in: path
+          description: CRN of the Person to fetch latest OASys
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/OASysRiskOfSeriousHarm'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        404:
+          description: invalid CRN
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Problem'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+  /people/{crn}/risks:
+    get:
+      tags:
+        - People operations
+      summary: Returns the risks for a Person
+      parameters:
+        - name: crn
+          in: path
+          description: CRN of the Person to fetch risks for
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/PersonRisks'
+        400:
+          description: invalid params
+          content:
+            'application/problem+json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/ValidationError'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        404:
+          description: invalid CRN
+          content:
+            'application/json':
+              schema:
+                $ref: '_shared.yml#/components/schemas/Problem'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+  /reference-data/application-status:
+    get:
+      tags:
+        - Reference Data
+      summary: Lists all application status update choices
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '_shared.yml#/components/schemas/Cas2ApplicationStatus'
+        401:
+          $ref: '_shared.yml#/components/responses/401Response'
+        403:
+          $ref: '_shared.yml#/components/responses/403Response'
+        500:
+          $ref: '_shared.yml#/components/responses/500Response'
+  /reports/{reportName}:
+    get:
+      tags:
+        - Reports
+      summary: Returns a 'report' spreadsheet of metrics
+      parameters:
+        - name: reportName
+          in: path
+          description: name of the report to download
+          required: true
+          schema:
+            $ref: '_shared.yml#/components/schemas/Cas2ReportName'
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+              schema:
+                type: string
+                format: binary

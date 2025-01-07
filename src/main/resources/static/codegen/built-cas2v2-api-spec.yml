@@ -2,70 +2,30 @@
 # This is a build artefact for use in code generation.
 openapi: 3.0.1
 info:
-  title: 'Community Accommodation Services: Approved Premises (CAS1)'
+  title: 'Community Accommodation Services: Tier 2 (CAS2 version 2)'
   version: 1.0.0
 servers:
-  - url: /cas1
+  - url: /cas2v2
 paths:
-  /spaces/search:
+  /applications:
     post:
       tags:
-        - space searches
-      summary: Search for accommodation "spaces" which are available and match the given requirements
-      operationId: spaceSearch
+        - Operations on CAS2 version 2 applications
+      summary: Creates a CAS2 version 2 application
       requestBody:
+        description: Information to create a blank application with
         content:
           'application/json':
             schema:
-              $ref: '#/components/schemas/Cas1SpaceSearchParameters'
+              $ref: '#/components/schemas/NewApplication'
         required: true
       responses:
-        200:
+        201:
           description: successful operation
           content:
             'application/json':
               schema:
-                $ref: '#/components/schemas/Cas1SpaceSearchResults'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /placement-requests/{placementRequestId}/space-bookings:
-    post:
-      tags:
-        - space bookings
-      summary: Create a booking for a space in premises, associated with a given placement request
-      operationId: createSpaceBooking
-      parameters:
-        - name: placementRequestId
-          in: path
-          description: ID of the placement request from which the matching requirements originate
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the space booking to be created
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/Cas1NewSpaceBooking'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Cas1SpaceBooking'
+                $ref: '#/components/schemas/Application'
         400:
           description: invalid params
           content:
@@ -77,96 +37,7 @@ paths:
         403:
           $ref: '#/components/responses/403Response'
         404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-
-  /premises/summary:
-    get:
-      description: Provide a summary of all premises, with optional filtering
-      tags:
-        - premises
-      operationId: "getPremisesSummaries"
-      parameters:
-        - name: gender
-          in: query
-          required: false
-          description: If specified, only return premises for the corresponding gender
-          schema:
-            $ref: '#/components/schemas/Cas1ApprovedPremisesGender'
-        - name: apAreaId
-          in: query
-          description: ID of the AP area to filter by
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Cas1PremisesBasicSummary'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-
-  /premises/{premisesId}/out-of-service-beds:
-    post:
-      tags:
-        - out-of-service beds
-      summary: Posts an out-of-service bed to a specified approved premises
-      operationId: createOutOfServiceBed
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the out-of-service bed is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the out-of-service bed
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/Cas1NewOutOfServiceBed'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Cas1OutOfServiceBed'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
+          description: invalid CRN
           content:
             'application/json':
               schema:
@@ -176,330 +47,24 @@ paths:
       x-codegen-request-body-name: body
     get:
       tags:
-        - out-of-service beds
-      summary: Lists all Out-Of-Service Beds entries for the Premises
-      operationId: getOutOfServiceBedsForPremises
+        - Operations on CAS2 version 2 applications
+      summary: List summaries of all CAS2 version 2 applications authorised for the logged in user
       parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises to show out-of-service beds for
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Cas1OutOfServiceBed'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /premises/{premisesId}/out-of-service-beds/{outOfServiceBedId}:
-    get:
-      tags:
-        - out-of-service beds
-      summary: Returns a specific out-of-service bed for a premises
-      operationId: getOutOfServiceBed
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the out-of-service bed is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: outOfServiceBedId
-          in: path
-          description: ID of the out-of-service bed
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Cas1OutOfServiceBed'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises or out-of-service bed ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-    put:
-      tags:
-        - out-of-service beds
-      summary: Updates an out-of-service bed for a premises
-      operationId: updateOutOfServiceBed
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the out-of-service bed is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: outOfServiceBedId
-          in: path
-          description: ID of the out-of-service bed
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the out-of-service bed
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/UpdateCas1OutOfServiceBed'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Cas1OutOfServiceBed'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /premises/{premisesId}/out-of-service-beds/{outOfServiceBedId}/cancellations:
-    post:
-      tags:
-        - out-of-service beds
-      summary: Posts a cancellation to a specified out-of-service bed
-      operationId: cancelOutOfServiceBed
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the cancellation is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: outOfServiceBedId
-          in: path
-          description: ID of the out-of-service bed
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the cancellation
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/Cas1NewOutOfServiceBedCancellation'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Cas1OutOfServiceBedCancellation'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or out-of-service bed ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-
-  /premises/{premisesId}:
-    get:
-      tags:
-        - premises
-      operationId: "getPremisesById"
-      summary: Returns premises information
-      parameters:
-        - name: premisesId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Cas1PremisesSummary'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-
-  /premises/{premisesId}/capacity:
-    get:
-      tags:
-        - premises
-      operationId: "getCapacity"
-      summary: Provides capacity information for a given date range
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: startDate
+        - name: isSubmitted
           in: query
-          description: Start date, inclusive
-          required: true
+          description: Returns submitted applications if true, un submitted applications if false, and all applications if absent
           schema:
-            type: string
-            format: date
-        - name: endDate
-          in: query
-          description: End date, inclusive
-          required: true
-          schema:
-            type: string
-            format: date
-        - name: excludeSpaceBookingId
-          in: query
-          description: ID of a booking to exclude from capacity calculations
-          required: false
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Cas1PremiseCapacity'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-
-  /premises/{premisesId}/space-bookings:
-    get:
-      tags:
-        - space bookings
-      summary: Lists space bookings for the premises, given optional filtering criteria
-      operationId: getSpaceBookings
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises to show space bookings for
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: residency
-          in: query
-          required: false
-          description: Residency status to filter results on. 'Current' means marked as arrived and not departed. 'Upcoming' means not marked as arrived.
-          schema:
-            $ref: '#/components/schemas/Cas1SpaceBookingResidency'
-        - name: crnOrName
-          in: query
-          required: false
-          description: Partial search on CRN or Name
-          schema:
-            type: string
-        - name: keyWorkerStaffCode
-          in: query
-          required: false
-          description: Staff Code of the key worker to show bookings for
-          schema:
-            type: string
-        - name: sortDirection
-          in: query
-          required: false
-          description: The direction to sort the results by. If not defined, will sort in descending order
-          schema:
-            $ref: '#/components/schemas/SortDirection'
-        - name: sortBy
-          in: query
-          required: false
-          description: The field to sort the results by. If not defined, will sort on person name
-          schema:
-            $ref: '#/components/schemas/Cas1SpaceBookingSummarySortField'
+            type: boolean
         - name: page
           in: query
-          required: false
-          description: Page number of results to return. If not provided results will not be paged
+          description: Page number of results to return.  If blank, returns all results
           schema:
             type: integer
-        - name: perPage
+        - name: prisonCode
           in: query
-          description: Number of items to return per page (defaults to 20)
+          description: Prison code of applications to return.  If blank, returns all results.
           schema:
-            type: integer
+            type: string
       responses:
         200:
           description: successful operation
@@ -508,7 +73,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Cas1SpaceBookingSummary'
+                  $ref: '#/components/schemas/Cas2ApplicationSummary'
           headers:
             X-Pagination-CurrentPage:
               $ref: '#/components/headers/X-Pagination-CurrentPage'
@@ -517,7 +82,7 @@ paths:
             X-Pagination-TotalResults:
               $ref: '#/components/headers/X-Pagination-TotalResults'
             X-Pagination-PageSize:
-              $ref: '#/components/headers/X-Pagination-PageSize'
+              $ref: '#/components/headers/X-Pagination-TotalResults'
         401:
           $ref: '#/components/responses/401Response'
         403:
@@ -525,23 +90,54 @@ paths:
         500:
           $ref: '#/components/responses/500Response'
 
-  /premises/{premisesId}/space-bookings/{bookingId}:
+  /applications/{applicationId}:
+    put:
+      tags:
+        - Operations on CAS2 version 2 applications
+      summary: Updates a CAS2 version 2 application
+      parameters:
+        - name: applicationId
+          in: path
+          description: ID of the application
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Information to update the application with
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/UpdateApplication'
+        required: true
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Application'
+        400:
+          description: invalid params
+          content:
+            'application/problem+json':
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        500:
+          $ref: '#/components/responses/500Response'
+      x-codegen-request-body-name: body
     get:
       tags:
-        - space bookings
-      operationId: "getSpaceBookingByPremiseAndId"
-      summary: Returns space booking information for a given id
+        - Operations on CAS2 version 2 applications
+      summary: Gets a single CAS2 version 2 application by its ID
       parameters:
-        - name: premisesId
+        - name: applicationId
           in: path
-          description: ID of the corresponding premises
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the space booking
+          description: ID of the application
           required: true
           schema:
             type: string
@@ -552,65 +148,86 @@ paths:
           content:
             'application/json':
               schema:
-                $ref: '#/components/schemas/Cas1SpaceBooking'
+                $ref: '#/components/schemas/Application'
         401:
           $ref: '#/components/responses/401Response'
         403:
           $ref: '#/components/responses/403Response'
         500:
           $ref: '#/components/responses/500Response'
-    patch:
+  /applications/{applicationId}/abandon:
+    put:
       tags:
-        - space bookings
-      operationId: "updateSpaceBooking"
+        - Operations on CAS2 version 2 applications
+      summary: Abandons an in progress CAS2 version 2 application
       parameters:
-        - name: premisesId
+        - name: applicationId
           in: path
-          description: ID of the corresponding premises
+          description: ID of the application
           required: true
           schema:
             type: string
             format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the space booking
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/Cas1UpdateSpaceBooking'
-        required: true
       responses:
         200:
           description: successful operation
         401:
           $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
+        409:
+          description: The application has been submitted
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Problem'
         500:
           $ref: '#/components/responses/500Response'
-
-  /premises/{premisesId}/space-bookings/{bookingId}/timeline:
+  /assessments/{assessmentId}:
+    put:
+      tags:
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: Updates a single CAS2 version 2 assessment by its ID
+      parameters:
+        - name: assessmentId
+          in: path
+          description: ID of the assessment
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Information to update the assessment with
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/UpdateCas2Assessment'
+        required: true
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Cas2Assessment'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        404:
+          description: invalid assessmentId
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Problem'
+        500:
+          $ref: '#/components/responses/500Response'
     get:
       tags:
-        - space bookings
-      operationId: "getSpaceBookingTimeline"
-      summary: Returns timeline of a specific space booking with a given ID
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: Gets a single CAS2 version 2 assessment by its ID
       parameters:
-        - name: premisesId
+        - name: assessmentId
           in: path
-          description: ID of the corresponding premises
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the space booking
+          description: ID of the assessment
           required: true
           schema:
             type: string
@@ -621,98 +238,44 @@ paths:
           content:
             'application/json':
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TimelineEvent'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-
-  /premises/{premisesId}/space-bookings/{bookingId}/arrival:
-    post:
-      tags:
-      - space bookings
-      summary: Posts an arrival to a specified space booking
-      operationId: recordArrival
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the corresponding premises
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the space booking
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/Cas1NewArrival'
-        required: true
-      responses:
-        200:
-          description: successful operation
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
+                $ref: '#/components/schemas/Cas2Assessment'
         401:
           $ref: '#/components/responses/401Response'
         403:
           $ref: '#/components/responses/403Response'
         404:
-          description: invalid premises ID or booking ID
+          description: invalid assessmentId
           content:
             'application/json':
               schema:
                 $ref: '#/components/schemas/Problem'
         500:
           $ref: '#/components/responses/500Response'
-
-
-  /premises/{premisesId}/space-bookings/{bookingId}/keyworker:
+  /assessments/{assessmentId}/status-updates:
     post:
       tags:
-        - space bookings
-      summary: Assign a keyworker to the space booking
-      operationId: assignKeyworker
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: Creates a status update on an assessment
       parameters:
-        - name: premisesId
+        - name: assessmentId
           in: path
-          description: ID of the corresponding premises
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the space booking
+          description: ID of the assessment whose status is to be updated
           required: true
           schema:
             type: string
             format: uuid
       requestBody:
+        description: Information on the new status to be applied
         content:
           'application/json':
             schema:
-              $ref: '#/components/schemas/Cas1AssignKeyWorker'
+              $ref: '#/components/schemas/Cas2AssessmentStatusUpdate'
         required: true
       responses:
         200:
-          description: successful operation
+          description: successfully created the status update
         400:
-          description: invalid key worker staff code
+          description: status update has already been submitted
           content:
             'application/problem+json':
               schema:
@@ -721,107 +284,41 @@ paths:
           $ref: '#/components/responses/401Response'
         403:
           $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
+        500:
+          $ref: '#/components/responses/500Response'
+  /assessments/{assessmentId}/notes:
+    post:
+      tags:
+        - Operations on CAS2 version 2 assessments
+      summary: Add a note to an assessment
+      parameters:
+        - name: assessmentId
+          in: path
+          description: ID of the assessment
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: the note to add
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/NewCas2ApplicationNote'
+        required: true
+      responses:
+        200:
+          description: successful operation
           content:
             'application/json':
               schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-
-  /premises/{premisesId}/space-bookings/{bookingId}/departure:
-    post:
-      tags:
-        - space bookings
-      summary: Posts a departure to a specified space booking
-      operationId: recordDeparture
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the corresponding premises
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the space booking
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/Cas1NewDeparture'
-        required: true
-      responses:
-        200:
-          description: successful operation
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
+                $ref: '#/components/schemas/Cas2ApplicationNote'
         401:
           $ref: '#/components/responses/401Response'
         403:
           $ref: '#/components/responses/403Response'
         404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-
-  /premises/{premisesId}/space-bookings/{bookingId}/cancellations:
-    post:
-      tags:
-        - space bookings
-      summary: Cancels a space booking
-      operationId: "cancelSpaceBooking"
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the space booking is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: space booking id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the cancellation
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/Cas1NewSpaceBookingCancellation'
-        required: true
-      responses:
-        200:
-          description: successful operation
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
+          description: invalid assessmentId
           content:
             'application/json':
               schema:
@@ -829,38 +326,211 @@ paths:
         500:
           $ref: '#/components/responses/500Response'
       x-codegen-request-body-name: body
-
-
-  /premises/{premisesId}/space-bookings/{bookingId}/non-arrival:
-    post:
+  /submissions:
+    get:
       tags:
-        - space bookings
-      summary: Posts a non arrival to a specified space booking
-      operationId: recordNonArrival
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: List summaries of all submitted CAS2 version 2 applications
       parameters:
-        - name: premisesId
-          in: path
-          description: ID of the corresponding premises
-          required: true
+        - name: page
+          in: query
+          description: Page number of results to return. If blank, returns all results
           schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the space booking
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/Cas1NonArrival'
-        required: true
+            type: integer
       responses:
         200:
           description: successful operation
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cas2SubmittedApplicationSummary'
+          headers:
+            X-Pagination-CurrentPage:
+              $ref: '#/components/headers/X-Pagination-CurrentPage'
+            X-Pagination-TotalPages:
+              $ref: '#/components/headers/X-Pagination-TotalPages'
+            X-Pagination-TotalResults:
+              $ref: '#/components/headers/X-Pagination-TotalResults'
+            X-Pagination-PageSize:
+              $ref: '#/components/headers/X-Pagination-TotalResults'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        500:
+          $ref: '#/components/responses/500Response'
+    post:
+      tags:
+        - Operations on CAS2 version 2 applications
+      summary: Submits a CAS2 version 2 Application (creates a SubmittedApplication)
+      requestBody:
+        description: Information needed to submit an application
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/SubmitCas2Application'
+        required: true
+      responses:
+        200:
+          description: successfully submitted the application
+        400:
+          description: application has already been submitted
+          content:
+            'application/problem+json':
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        500:
+          $ref: '#/components/responses/500Response'
+  /submissions/{applicationId}:
+    get:
+      tags:
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: Gets a single submitted CAS2 version 2 application by its ID
+      parameters:
+        - name: applicationId
+          in: path
+          description: ID of the application
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Cas2SubmittedApplication'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        500:
+          $ref: '#/components/responses/500Response'
+  /people/search:
+    get:
+      tags:
+        - People operations
+      summary: Searches for a Person by their Prison Number (NOMIS ID)
+      parameters:
+        - name: nomsNumber
+          in: query
+          description: Prison Number to search for
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Person'
+        400:
+          description: invalid params
+          content:
+            'application/problem+json':
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        404:
+          description: invalid CRN
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Problem'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        500:
+          $ref: '#/components/responses/500Response'
+  /people/{crn}/oasys/risk-to-self:
+    get:
+      tags:
+        - People operations
+      summary: Returns the Risk To Individual (known as Risk to Self on frontend) section of an OASys.
+      parameters:
+        - name: crn
+          in: path
+          description: CRN of the Person to fetch latest OASys
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/OASysRiskToSelf'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        404:
+          description: invalid CRN
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Problem'
+        500:
+          $ref: '#/components/responses/500Response'
+  /people/{crn}/oasys/rosh:
+    get:
+      tags:
+        - People operations
+      summary: Returns the Risk of Serious Harm section of an OASys.
+      parameters:
+        - name: crn
+          in: path
+          description: CRN of the Person to fetch latest OASys
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/OASysRiskOfSeriousHarm'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        404:
+          description: invalid CRN
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Problem'
+        500:
+          $ref: '#/components/responses/500Response'
+  /people/{crn}/risks:
+    get:
+      tags:
+        - People operations
+      summary: Returns the risks for a Person
+      parameters:
+        - name: crn
+          in: path
+          description: CRN of the Person to fetch risks for
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/PersonRisks'
         400:
           description: invalid params
           content:
@@ -872,84 +542,18 @@ paths:
         403:
           $ref: '#/components/responses/403Response'
         404:
-          description: invalid premises ID or booking ID
+          description: invalid CRN
           content:
             'application/json':
               schema:
                 $ref: '#/components/schemas/Problem'
         500:
           $ref: '#/components/responses/500Response'
-
-  /premises/{premisesId}/day-summary/{date}:
-    get:
-      tags:
-        - premises
-      summary: Provides a summary of capacity, space bookings and out of service beds for a premise on a given day
-      operationId: getDaySummary
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: date
-          in: path
-          description: date the summary is required for
-          required: true
-          schema:
-            type: string
-            format: date
-        - name: bookingsCriteriaFilter
-          in: query
-          required: false
-          description: If provided, will only show bookings with matching criteria
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Cas1SpaceBookingCharacteristic'
-        - name: bookingsSortDirection
-          in: query
-          required: false
-          description: The direction to sort the bookings by. If not defined, will sort in descending order
-          schema:
-            $ref: '#/components/schemas/SortDirection'
-        - name: bookingsSortBy
-          in: query
-          required: false
-          description: The field to sort the booking by. If not defined, will sort on person name
-          schema:
-            $ref: '#/components/schemas/Cas1SpaceBookingDaySummarySortField'
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Cas1PremiseDaySummary'
-          headers:
-            X-Pagination-CurrentPage:
-              $ref: '#/components/headers/X-Pagination-CurrentPage'
-            X-Pagination-TotalPages:
-              $ref: '#/components/headers/X-Pagination-TotalPages'
-            X-Pagination-TotalResults:
-              $ref: '#/components/headers/X-Pagination-TotalResults'
-            X-Pagination-PageSize:
-              $ref: '#/components/headers/X-Pagination-PageSize'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-
-  /reference-data/out-of-service-bed-reasons:
+  /reference-data/application-status:
     get:
       tags:
         - Reference Data
-      operationId: getOutOfServiceBedReasons
-      summary: Lists all reasons for beds going out of service
+      summary: Lists all application status update choices
       responses:
         200:
           description: successful operation
@@ -958,268 +562,33 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Cas1OutOfServiceBedReason'
+                  $ref: '#/components/schemas/Cas2ApplicationStatus'
         401:
           $ref: '#/components/responses/401Response'
         403:
           $ref: '#/components/responses/403Response'
         500:
           $ref: '#/components/responses/500Response'
-
-  /reference-data/cru-management-areas:
-    get:
-      tags:
-        - Reference Data
-      operationId: getCruManagementAreas
-      summary: Lists all CRU Management Areas
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Cas1CruManagementArea'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-
   /reports/{reportName}:
     get:
       tags:
         - Reports
-      summary: Returns a spreadsheet of all data metrics for the 'reportName'.
+      summary: Returns a 'report' spreadsheet of metrics
       parameters:
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: Validates user for this service has access to the report
-          schema:
-            $ref: '#/components/schemas/ServiceName'
         - name: reportName
           in: path
-          description: Name of the report to download
+          description: name of the report to download
           required: true
           schema:
-            $ref: '#/components/schemas/Cas1ReportName'
-        - name: year
-          in: query
-          required: true
-          description: The report content will reflect that specified by the given year.
-          schema:
-            type: integer
-        - name: month
-          in: query
-          required: true
-          description: The report content will reflect that specified by the given month.
-          schema:
-            type: integer
-        - name: includePii
-          in: query
-          required: false
-          description: If Personally Identifiable Information (PII) should be included in the report. Defaults to `false`
-          schema:
-            type: boolean
+            $ref: '#/components/schemas/Cas2ReportName'
       responses:
         200:
-          description: Successfully retrieved the report
+          description: successful operation
           content:
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
               schema:
                 type: string
                 format: binary
-
-
-  /space-bookings/{bookingId}:
-    get:
-      tags:
-        - space bookings
-      operationId: "getSpaceBookingById"
-      summary: Returns space booking information for a given id
-      parameters:
-        - name: bookingId
-          in: path
-          description: ID of the space booking
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Cas1SpaceBooking'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-
-  /out-of-service-beds:
-    get:
-      tags:
-        - out-of-service beds
-      summary: Lists all Out-Of-Service Beds entries
-      operationId: getOutOfServiceBeds
-      parameters:
-        - name: temporality
-          in: query
-          description: If provided, restrict the results to only those with the given temporality/ies.
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Temporality'
-        - name: premisesId
-          in: query
-          description: If provided, restrict the results to only those in the premises with the given ID.
-          schema:
-            type: string
-            format: uuid
-        - name: apAreaId
-          in: query
-          description: If provided, restrict the results to only those within the AP area with the given ID.
-          schema:
-            type: string
-            format: uuid
-        - name: sortDirection
-          in: query
-          description: The direction to sort the results by. If blank, will sort in descending order
-          schema:
-            $ref: '#/components/schemas/SortDirection'
-        - name: sortBy
-          in: query
-          description: The field to sort the results by.
-          schema:
-            $ref: '#/components/schemas/Cas1OutOfServiceBedSortField'
-        - name: page
-          in: query
-          required: false
-          description: Page number of results to return. If not provided results will not be paged
-          schema:
-            type: integer
-        - name: perPage
-          in: query
-          description: Number of items to return per page (defaults to 10)
-          schema:
-            type: integer
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Cas1OutOfServiceBed'
-          headers:
-            X-Pagination-CurrentPage:
-              $ref: '#/components/headers/X-Pagination-CurrentPage'
-            X-Pagination-TotalPages:
-              $ref: '#/components/headers/X-Pagination-TotalPages'
-            X-Pagination-TotalResults:
-              $ref: '#/components/headers/X-Pagination-TotalResults'
-            X-Pagination-PageSize:
-              $ref: '#/components/headers/X-Pagination-PageSize'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /users/{id}:
-    get:
-      summary: Get information about a specific user
-      operationId: getUser
-      tags:
-        - users
-      parameters:
-        - in: path
-          name: id
-          required: true
-          description: Id of the user
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successfully retrieved information on user
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ApprovedPremisesUser'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-    put:
-      summary: Update a user
-      operationId: updateUser
-      tags:
-        - users
-      parameters:
-        - in: path
-          name: id
-          required: true
-          description: Id of the user
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/Cas1UpdateUser'
-        required: true
-      responses:
-        200:
-          description: Successfully added information about user roles and qualifications
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/User'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-    delete:
-      summary: Deletes the user
-      operationId: deleteUser
-      tags:
-        - users
-      parameters:
-        - name: id
-          in: path
-          description: ID of the user
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
 components:
   responses:
     401Response:
@@ -6093,1002 +5462,7 @@ components:
         - SHARED_PROPERTY
         - SINGLE_OCCUPANCY
         - WHEELCHAIR_ACCESSIBLE
-    Cas1PremisesBasicSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-          example: Hope House
-        apCode:
-          type: string
-          example: NEHOPE1
-        apArea:
-          $ref: '#/components/schemas/NamedId'
-        bedCount:
-          type: integer
-          example: 22
-        supportsSpaceBookings:
-          type: boolean
-      required:
-        - id
-        - name
-        - apArea
-        - bedCount
-        - supportsSpaceBookings
-    Cas1PremisesSearchResultSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        apType:
-          $ref: '#/components/schemas/ApType'
-        name:
-          type: string
-          example: Hope House
-        addressLine1:
-          type: string
-          example: 1 The Street
-        addressLine2:
-          type: string
-          example: Blackmore End
-        town:
-          type: string
-          example: Braintree
-        postcode:
-          type: string
-          example: LS1 3AD
-        apArea:
-          $ref: '#/components/schemas/NamedId'
-        premisesCharacteristics:
-          type: array
-          items:
-            $ref: '#/components/schemas/CharacteristicPair'
-    Cas1PremisesSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-          example: Hope House
-        apCode:
-          type: string
-          example: NEHOPE1
-        postcode:
-          type: string
-          example: LS1 3AD
-        apArea:
-          $ref: '#/components/schemas/ApArea'
-        bedCount:
-          type: integer
-          description: The total number of beds in this premises
-          example: 22
-        availableBeds:
-          type: integer
-          description: The total number of beds available at this moment in time
-          example: 20
-        outOfServiceBeds:
-          type: integer
-          description: The total number of out of service beds at this moment in time
-          example: 2
-        supportsSpaceBookings:
-          type: boolean
-        managerDetails:
-          type: string
-        overbookingSummary:
-          description: over-bookings for the next 12 weeks
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1OverbookingRange'
-      required:
-        - id
-        - name
-        - apCode
-        - postcode
-        - apArea
-        - bedCount
-        - availableBeds
-        - outOfServiceBeds
-        - supportsSpaceBookings
-        - overbookingSummary
-    Cas1OverbookingRange:
-      type: object
-      properties:
-        startInclusive:
-          type: string
-          format: date
-          example: 2022-07-28
-        endInclusive:
-          description: This can be the same as the start date if overbooked for one night
-          type: string
-          format: date
-          example: 2022-07-29
-      required:
-        - startInclusive
-        - endInclusive
-    Cas1SpaceCharacteristic:
-      type: string
-      description: All of the characteristics of both premises and rooms
-      enum:
-        - acceptsChildSexOffenders
-        - acceptsHateCrimeOffenders
-        - acceptsNonSexualChildOffenders
-        - acceptsSexOffenders
-        - hasArsonInsuranceConditions
-        - hasBrailleSignage
-        - hasCallForAssistance
-        - hasCrib7Bedding
-        - hasEnSuite
-        - hasFixedMobilityAids
-        - hasHearingLoop
-        - hasLift
-        - hasNearbySprinkler
-        - hasSmokeDetector
-        - hasStepFreeAccess
-        - hasStepFreeAccessToCommunalAreas
-        - hasTactileFlooring
-        - hasTurningSpace
-        - hasWheelChairAccessibleBathrooms
-        - hasWideAccessToCommunalAreas
-        - hasWideDoor
-        - hasWideStepFreeAccess
-        - isArsonDesignated
-        - isArsonSuitable
-        - isCatered
-        - isFullyFm
-        - isGroundFloor
-        - isGroundFloorNrOffice
-        - isIAP
-        - isSingle
-        - isStepFreeDesignated
-        - isSuitableForVulnerable
-        - isSuitedForSexOffenders
-        - isTopFloorVulnerable
-        - isWheelchairAccessible
-        - isWheelchairDesignated
-    Cas1SpaceBookingCharacteristic:
-      type: string
-      description: All of the characteristics applicable to a space booking
-      enum:
-        - hasEnSuite
-        - isArsonSuitable
-        - isSingle
-        - isStepFreeDesignated
-        - isSuitedForSexOffenders
-        - isWheelchairDesignated
-      x-enum-varnames:
-        - HAS_EN_SUITE
-        - IS_ARSON_SUITABLE
-        - IS_SINGLE
-        - IS_STEP_FREE_DESIGNATED
-        - IS_SUITED_FOR_SEX_OFFENDERS
-        - IS_WHEELCHAIR_DESIGNATED
-    Cas1NewSpaceBooking:
-      type: object
-      properties:
-        arrivalDate:
-          type: string
-          format: date
-          example: 2022-07-28
-        departureDate:
-          type: string
-          format: date
-          example: 2022-09-30
-        premisesId:
-          type: string
-          format: uuid
-          example: 290fa58c-77b2-47e2-b729-4cd6b2ed1a78
-        requirements:
-          $ref: '#/components/schemas/Cas1SpaceBookingRequirements'
-      required:
-        - arrivalDate
-        - departureDate
-        - premisesId
-        - requirements
-    Cas1SpaceBookingRequirements:
-      type: object
-      properties:
-        essentialCharacteristics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
-      required:
-        - essentialCharacteristics
-    Cas1UpdateSpaceBooking:
-      type: object
-      description: Only provide values when a change is required
-      properties:
-        arrivalDate:
-          type: string
-          format: date
-          example: 2022-07-28
-        departureDate:
-          type: string
-          format: date
-          example: 2022-09-30
-        characteristics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceBookingCharacteristic'
-    Cas1SpaceSearchRequirements:
-      type: object
-      properties:
-        apTypes:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApType'
-        spaceCharacteristics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
-        genders:
-          description: gender is obtained from application's associated gender
-          deprecated: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Gender'
-      required:
-        - apType
-        - gender
-    Cas1SpaceSearchParameters:
-      type: object
-      properties:
-        applicationId:
-          type: string
-          format: uuid
-          description: The id of the application the space search is for
-        startDate:
-          type: string
-          format: date
-          description: The date the space is required from
-        durationInDays:
-          type: integer
-          example: 84
-          description: The number of days the space is needed, from the start date
-        targetPostcodeDistrict:
-          type: string
-          description: The 'target' location, in the form of a postcode district
-          example: SE5
-        requirements:
-          $ref: '#/components/schemas/Cas1SpaceSearchRequirements'
-      required:
-        - applicationId
-        - startDate
-        - durationInDays
-        - targetPostcodeDistrict
-        - requirements
-    Cas1SpaceSearchResults:
-      type: object
-      properties:
-        searchCriteria:
-          $ref: '#/components/schemas/Cas1SpaceSearchParameters'
-        resultsCount:
-          type: integer
-          example: 4
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceSearchResult'
-      required:
-        - resultsCount
-        - results
-    Cas1SpaceSearchResult:
-      type: object
-      properties:
-        premises:
-          $ref: '#/components/schemas/Cas1PremisesSearchResultSummary'
-        distanceInMiles:
-          type: number
-          example: 2.1
-        spacesAvailable:
-          type: array
-          deprecated: true
-          description: "This is not populated and will be removed in the future"
-          items:
-            $ref: '#/components/schemas/Cas1SpaceAvailability'
-    Cas1SpaceAvailability:
-      type: object
-      deprecated: true
-      properties:
-        spaceCharacteristics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
-        durationInDays:
-          type: integer
-          example: 77
-    Cas1SpaceCategory:
-      type: string
-      example: arson
-      description: Spaces are categorised by these traits - 'standard' plus selected physcial and risk characteristics
-      enum:
-        - standard
-        - arson
-        - wheelchair
-        - sexOffender
-        - enSuite
-        - single
-    Cas1SpaceBooking:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        applicationId:
-          type: string
-          format: uuid
-        assessmentId:
-          type: string
-          format: uuid
-        person:
-          $ref: '#/components/schemas/Person'
-        tier:
-          type: string
-        requirements:
-          $ref: '#/components/schemas/Cas1SpaceBookingRequirements'
-        premises:
-          $ref: '#/components/schemas/NamedId'
-        apArea:
-          $ref: '#/components/schemas/NamedId'
-        bookedBy:
-          $ref: '#/components/schemas/User'
-        requestForPlacementId:
-          type: string
-          format: uuid
-        expectedArrivalDate:
-          type: string
-          format: date
-        expectedDepartureDate:
-          type: string
-          format: date
-        actualArrivalDate:
-          description: Use actualArrivalDateOnly and actualArrivalTime
-          deprecated: true
-          type: string
-          format: date-time
-        actualArrivalDateOnly:
-          type: string
-          format: date
-        actualArrivalTime:
-          description: This value may not be defined even if an arrival date is
-          type: string
-          pattern: '^([01][0-9]|2[0-3]):([0-5][0-9])$'
-          example: '23:15'
-        actualDepartureDate:
-          description: Use actualDepartureDateOnly and actualDepartureTime
-          deprecated: true
-          type: string
-          format: date-time
-        actualDepartureDateOnly:
-          type: string
-          format: date
-        actualDepartureTime:
-          description: This value may not be defined even if a departure date is
-          type: string
-          pattern: '^([01][0-9]|2[0-3]):([0-5][0-9])$'
-          example: '23:15'
-        canonicalArrivalDate:
-          description: actual arrival date or, if not known, the expected arrival date
-          type: string
-          format: date
-        canonicalDepartureDate:
-          description: actual departure date or, if not known, the expected departure date
-          type: string
-          format: date
-        departure:
-          $ref: '#/components/schemas/Cas1SpaceBookingDeparture'
-        createdAt:
-          type: string
-          format: date-time
-        keyWorkerAllocation:
-          $ref: '#/components/schemas/Cas1KeyWorkerAllocation'
-        otherBookingsInPremisesForCrn:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceBookingDates'
-        cancellation:
-          $ref: '#/components/schemas/Cas1SpaceBookingCancellation'
-        nonArrival:
-          $ref: '#/components/schemas/Cas1SpaceBookingNonArrival'
-        deliusEventNumber:
-          type: string
-        status:
-          $ref: '#/components/schemas/Cas1SpaceBookingSummaryStatus'
-      required:
-        - id
-        - applicationId
-        - person
-        - requirements
-        - premises
-        - apArea
-        - expectedArrivalDate
-        - expectedDepartureDate
-        - canonicalArrivalDate
-        - canonicalDepartureDate
-        - createdAt
-        - otherBookingsInPremisesForCrn
-    Cas1SpaceBookingDates:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        canonicalArrivalDate:
-          description: actual arrival date or, if not known, the expected arrival date
-          type: string
-          format: date
-        canonicalDepartureDate:
-          description: actual departure date or, if not known, the expected departure date
-          type: string
-          format: date
-      required:
-        - id
-        - canonicalArrivalDate
-        - canonicalDepartureDate
-    Cas1SpaceBookingSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        person:
-          $ref: "#/components/schemas/PersonSummary"
-        canonicalArrivalDate:
-          description: actual arrival date or, if not known, the expected arrival date
-          type: string
-          format: date
-        canonicalDepartureDate:
-          description: actual departure date or, if not known, the expected departure date
-          type: string
-          format: date
-        tier:
-          description: Risk rating tier level of corresponding application
-          type: string
-        keyWorkerAllocation:
-          $ref: '#/components/schemas/Cas1KeyWorkerAllocation'
-        status:
-          $ref: '#/components/schemas/Cas1SpaceBookingSummaryStatus'
-      required:
-        - id
-        - person
-        - canonicalArrivalDate
-        - canonicalDepartureDate
-    Cas1SpaceBookingSummarySortField:
-      type: string
-      enum:
-        - personName
-        - canonicalArrivalDate
-        - canonicalDepartureDate
-        - keyWorkerName
-        - tier
-    Cas1SpaceBookingDaySummarySortField:
-      type: string
-      enum:
-        - personName
-        - tier
-        - canonicalArrivalDate
-        - canonicalDepartureDate
-        - releaseType
-        - spaceType
-      x-enum-varnames:
-        - PERSON_NAME
-        - TIER
-        - CANONICAL_ARRIVAL_DATE
-        - CANONICAL_DEPARTURE_DATE
-        - RELEASE_TYPE
-        - SPACE_TYPE
-    Cas1PremiseDaySummary:
-      type: object
-      properties:
-        forDate:
-          type: string
-          format: date
-        previousDate:
-          type: string
-          format: date
-        nextDate:
-          type: string
-          format: date
-        capacity:
-          $ref: '#/components/schemas/Cas1PremiseCapacityForDay'
-        spaceBookings:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceBookingDaySummary'
-        outOfServiceBeds:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1OutOfServiceBedSummary'
-      required:
-        - forDate
-        - previousDate
-        - nextDate
-        - capacity
-        - spaceBookings
-        - outOfServiceBeds
-    Cas1SpaceBookingDaySummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        person:
-          $ref: "#/components/schemas/PersonSummary"
-        canonicalArrivalDate:
-          description: actual arrival date or, if not known, the expected arrival date
-          type: string
-          format: date
-        canonicalDepartureDate:
-          description: actual departure date or, if not known, the expected departure date
-          type: string
-          format: date
-        tier:
-          description: Risk rating tier level of corresponding application
-          type: string
-        releaseType:
-          type: string
-        essentialCharacteristics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceBookingCharacteristic'
-      required:
-        - id
-        - person
-        - canonicalArrivalDate
-        - canonicalDepartureDate
-        - tier
-        - spaceType
-        - releaseType
-        - essentialCharacteristics
-    Cas1SpaceBookingSummaryStatus:
-      type: string
-      enum:
-        - arrivingWithin6Weeks
-        - arrivingWithin2Weeks
-        - arrivingToday
-        - overdueArrival
-        - arrived
-        - notArrived
-        - departingWithin2Weeks
-        - departingToday
-        - overdueDeparture
-        - departed
-    Cas1SpaceBookingResidency:
-      type: string
-      enum:
-        - upcoming
-        - current
-        - historic
-    Cas1KeyWorkerAllocation:
-      type: object
-      properties:
-        keyWorker:
-          $ref: '#/components/schemas/StaffMember'
-        allocatedAt:
-          type: string
-          format: date
-      required:
-        - keyWorker
-    Cas1SpaceBookingDeparture:
-      type: object
-      properties:
-        reason:
-          $ref: '#/components/schemas/NamedId'
-        parentReason:
-          $ref: '#/components/schemas/NamedId'
-        moveOnCategory:
-          $ref: '#/components/schemas/NamedId'
-        notes:
-          type: string
-      required:
-        - reason
-    Cas1SpaceBookingCancellation:
-      type: object
-      properties:
-        occurredAt:
-          type: string
-          format: date
-        recordedAt:
-          type: string
-          format: date-time
-        reason:
-          $ref: '#/components/schemas/CancellationReason'
-        reason_notes:
-          type: string
-      required:
-        - occurredAt
-        - recordedAt
-        - reason
-    Cas1SpaceBookingNonArrival:
-      type: object
-      properties:
-        confirmedAt:
-          type: string
-          format: date-time
-        reason:
-          $ref: '#/components/schemas/NamedId'
-        notes:
-          type: string
-    Cas1NewArrival:
-      type: object
-      properties:
-        arrivalDateTime:
-          description: This is deprecated. Instead use arrivalDate and arrivalTime
-          deprecated: true
-          type: string
-          format: date-time
-        arrivalDate:
-          type: string
-          format: date
-        arrivalTime:
-          type: string
-          pattern: '^([01][0-9]|2[0-3]):([0-5][0-9])$'
-          example: '23:15'
-    Cas1NonArrival:
-      type: object
-      properties:
-        reason:
-          type: string
-          format: uuid
-        notes:
-          type: string
-      required:
-        - reason
-    Cas1NewDeparture:
-      type: object
-      properties:
-        departureDateTime:
-          type: string
-          format: date-time
-        departureDate:
-          type: string
-          format: date
-        departureTime:
-          type: string
-          pattern: '^([01][0-9]|2[0-3]):([0-5][0-9])$'
-          example: '23:15'
-        reasonId:
-          type: string
-          format: uuid
-        moveOnCategoryId:
-          type: string
-          format: uuid
-        notes:
-          type: string
-      required:
-        - reasonId
-    Cas1AssignKeyWorker:
-      type: object
-      properties:
-        staffCode:
-          type: string
-      required:
-        - staffCode
-    Cas1ApprovedPremisesGender:
-      type: string
-      enum:
-        - man
-        - woman
-    Cas1UpdateUser:
-      type: object
-      properties:
-        roles:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApprovedPremisesUserRole'
-        qualifications:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserQualification'
-        cruManagementAreaOverrideId:
-          type: string
-          format: uuid
-      required:
-        - roles
-        - qualifications
-    Cas1NewSpaceBookingCancellation:
-      type: object
-      properties:
-        occurredAt:
-          type: string
-          format: date
-        reasonId:
-          type: string
-          format: uuid
-        reasonNotes:
-          type: string
-      required:
-        - occurredAt
-        - reasonId
-    Cas1PremiseCapacity:
-      type: object
-      properties:
-        premise:
-          $ref: '#/components/schemas/Cas1PremisesSummary'
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-        capacity:
-          description: Capacity for each day, returning chronologically (oldest first)
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1PremiseCapacityForDay'
-      required:
-        - premise
-        - startDate
-        - endDate
-        - capacity
-    Cas1PremiseCapacityForDay:
-      type: object
-      properties:
-        date:
-          type: string
-          format: date
-        totalBedCount:
-          description: total bed count including temporarily unavailable beds (e.g. out of service beds). this does not consider bookings.
-          type: integer
-        availableBedCount:
-          description: total bed count excluding temporarily unavailable beds (e.g. out of service beds). this does not consider bookings.
-          type: integer
-        bookingCount:
-          description: total number of bookings in the premise on that day
-          type: integer
-        characteristicAvailability:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1PremiseCharacteristicAvailability'
-      required:
-        - date
-        - totalBedCount
-        - availableBedCount
-        - bookingCount
-        - characteristicAvailability
-    Cas1PremiseCharacteristicAvailability:
-      type: object
-      properties:
-        characteristic:
-          $ref: '#/components/schemas/Cas1SpaceBookingCharacteristic'
-        availableBedsCount:
-          description: the number of available beds with this characteristic
-          type: integer
-        bookingsCount:
-          description: the number of bookings requiring this characteristic
-          type: integer
-      required:
-        - characteristic
-        - availableBedsCount
-        - bookingsCount
-    Cas1ReportName:
-      type: string
-      enum:
-        - applications
-        - applicationsV2
-        - dailyMetrics
-        - lostBeds
-        - outOfServiceBeds
-        - placementApplications
-        - placementMatchingOutcomes
-        - placementMatchingOutcomesV2
-        - requestsForPlacement
-    Cas1OutOfServiceBedSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-        reason:
-          $ref: '#/components/schemas/Cas1OutOfServiceBedReason'
-        characteristics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
-      required:
-        - id
-        - startDate
-        - endDate
-        - reason
-        - characteristics
-    Cas1OutOfServiceBed:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        createdAt:
-          type: string
-          format: date-time
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-        bed:
-          $ref: '#/components/schemas/NamedId'
-        room:
-          $ref: '#/components/schemas/NamedId'
-        premises:
-          $ref: '#/components/schemas/NamedId'
-        apArea:
-          $ref: '#/components/schemas/NamedId'
-        reason:
-          $ref: '#/components/schemas/Cas1OutOfServiceBedReason'
-        referenceNumber:
-          type: string
-        notes:
-          type: string
-        daysLostCount:
-          type: integer
-        temporality:
-          $ref: '#/components/schemas/Temporality'
-        status:
-          $ref: '#/components/schemas/Cas1OutOfServiceBedStatus'
-        cancellation:
-          nullable: true
-          allOf:
-            - $ref: '#/components/schemas/Cas1OutOfServiceBedCancellation'
-        revisionHistory:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1OutOfServiceBedRevision'
-      required:
-        - id
-        - createdAt
-        - startDate
-        - endDate
-        - bed
-        - room
-        - premises
-        - apArea
-        - reason
-        - daysLostCount
-        - temporality
-        - status
-        - revisionHistory
-    Cas1NewOutOfServiceBed:
-      type: object
-      properties:
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-        reason:
-          type: string
-          format: uuid
-        referenceNumber:
-          type: string
-        notes:
-          type: string
-        bedId:
-          type: string
-          format: uuid
-      required:
-        - startDate
-        - endDate
-        - reason
-        - bedId
-    UpdateCas1OutOfServiceBed:
-      type: object
-      properties:
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-        reason:
-          type: string
-          format: uuid
-        referenceNumber:
-          type: string
-        notes:
-          type: string
-      required:
-        - startDate
-        - endDate
-        - reason
-    Cas1OutOfServiceBedCancellation:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        createdAt:
-          type: string
-          format: date-time
-        notes:
-          type: string
-      required:
-        - id
-        - createdAt
-    Cas1NewOutOfServiceBedCancellation:
-      type: object
-      properties:
-        notes:
-          type: string
-    Cas1OutOfServiceBedStatus:
-      type: string
-      enum:
-        - active
-        - cancelled
-    Cas1OutOfServiceBedReason:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-          example: Double Room with Single Occupancy - Other (Non-FM)
-        isActive:
-          type: boolean
-      required:
-        - id
-        - name
-        - isActive
-    Cas1OutOfServiceBedSortField:
-      type: string
-      enum:
-        - premisesName
-        - roomName
-        - bedName
-        - startDate
-        - endDate
-        - reason
-        - daysLost
-    Cas1OutOfServiceBedRevision:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        updatedAt:
-          type: string
-          format: date-time
-        updatedBy:
-          $ref: '#/components/schemas/User'
-        revisionType:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1OutOfServiceBedRevisionType'
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-        reason:
-          $ref: '#/components/schemas/Cas1OutOfServiceBedReason'
-        referenceNumber:
-          type: string
-        notes:
-          type: string
-      required:
-        - id
-        - updatedAt
-        - revisionType
-    Cas1OutOfServiceBedRevisionType:
-      type: string
-      enum:
-        - created
-        - updatedStartDate
-        - updatedEndDate
-        - updatedReferenceNumber
-        - updatedReason
-        - updatedNotes
+
+# GARETH above here
+
+# TOBY below here

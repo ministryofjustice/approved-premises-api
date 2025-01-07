@@ -258,11 +258,11 @@ registerAdditionalOpenApiGenerateTask(
 )
 
 registerAdditionalOpenApiGenerateTask(
-  name = "openApiGenerateCas2bailNamespace",
-  ymlPath = "$rootDir/src/main/resources/static/codegen/built-cas2bail-api-spec.yml",
-  apiPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.cas2bail",
+  name = "openApiGenerateCas2v2Namespace",
+  ymlPath = "$rootDir/src/main/resources/static/codegen/built-cas2v2-api-spec.yml",
+  apiPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.cas2v2",
   modelPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model",
-  apiSuffix = "Cas2bail",
+  apiSuffix = "Cas2v2",
 )
 
 registerAdditionalOpenApiGenerateTask(
@@ -344,7 +344,7 @@ tasks.register("openApiPreCompilation") {
       .readFileToString(file, "UTF-8")
       .replace("_shared.yml#/components", "#/components")
       .replace("cas1-schemas.yml#/components", "#/components")
-      .replace("cas2bail-schemas.yml#/components", "#/components")
+      .replace("cas2v2-schemas.yml#/components", "#/components")
     FileUtils.writeStringToFile(file, updatedContents, "UTF-8")
   }
 
@@ -398,9 +398,9 @@ tasks.register("openApiPreCompilation") {
     inputSpec = "cas2-api.yml",
   )
   buildSpecWithSharedComponentsAppended(
-    outputFileName = "built-cas2bail-api-spec.yml",
-    inputSpec = "cas2bail-api.yml",
-    inputSchemas = "cas2bail-schemas.yml",
+    outputFileName = "built-cas2v2-api-spec.yml",
+    inputSpec = "cas2v2-api.yml",
+    inputSchemas = "cas2v2-schemas.yml",
   )
   buildSpecWithSharedComponentsAppended(
     outputFileName = "built-cas3-api-spec.yml",
@@ -415,7 +415,7 @@ tasks.get("openApiGenerate").dependsOn(
   "openApiPreCompilation",
   "openApiGenerateCas1Namespace",
   "openApiGenerateCas2Namespace",
-  "openApiGenerateCas2bailNamespace",
+  "openApiGenerateCas2v2Namespace",
   "openApiGenerateCas3Namespace",
 )
 

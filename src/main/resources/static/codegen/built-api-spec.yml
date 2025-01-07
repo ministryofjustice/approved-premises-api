@@ -6248,7 +6248,7 @@ components:
         - personName
         - crn
         - nomsNumber
-    Cas2BailApplicationSummary:
+    Cas2v2ApplicationSummary:
       type: object
       properties:
         type:
