@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.RoshSummaryFacto
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenACas2PomUser
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnOffender
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextEmptyCaseSummaryToBulkResponse
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apOASysContextMockSuccessfulOffenceDetailsCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apOASysContextMockSuccessfulRoSHSummaryCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apOASysContextMockUnsuccessfulRoshCallWithDelay
@@ -60,6 +61,8 @@ class Cas2v2PersonOASysRoshTest : IntegrationTestBase() {
   fun `Getting cas2v2 Rosh for a CRN that does not exist returns 404`() {
     givenACas2PomUser { userEntity, jwt ->
       val crn = "CRN123"
+
+      apDeliusContextEmptyCaseSummaryToBulkResponse(crn)
 
       webTestClient.get()
         .uri("/cas2v2/people/$crn/oasys/rosh")
