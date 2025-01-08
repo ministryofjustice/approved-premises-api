@@ -9,7 +9,9 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonInfoResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.NomisUserTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.PersonTransformer
 import java.util.*
+import org.springframework.stereotype.Component
 
+@Component("Cas2v2SubmissionsTransformer")
 class Cas2v2SubmissionsTransformer (
   private val objectMapper: ObjectMapper,
   private val personTransformer: PersonTransformer,
