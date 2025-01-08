@@ -6043,6 +6043,40 @@ components:
             - schemaVersion
             - outdatedSchema
             - status
+    Cas2v2Application:
+      allOf:
+        - $ref: '#/components/schemas/Application'
+        - type: object
+          properties:
+            createdBy:
+              $ref: '#/components/schemas/NomisUser'
+            schemaVersion:
+              type: string
+              format: uuid
+            outdatedSchema:
+              type: boolean
+            data:
+              $ref: '#/components/schemas/AnyValue'
+            document:
+              $ref: '#/components/schemas/AnyValue'
+            status:
+              $ref: '#/components/schemas/ApplicationStatus'
+            submittedAt:
+              type: string
+              format: date-time
+            telephoneNumber:
+              type: string
+            assessment:
+              $ref: '#/components/schemas/Cas2v2Assessment'
+            timelineEvents:
+              type: array
+              items:
+                $ref: '#/components/schemas/Cas2TimelineEvent'
+          required:
+            - createdBy
+            - schemaVersion
+            - outdatedSchema
+            - status
     Cas2SubmittedApplication:
       type: object
       properties:
@@ -6075,6 +6109,48 @@ components:
         assessment:
           type: object
           $ref: '#/components/schemas/Cas2Assessment'
+      required:
+        - id
+        - person
+        - createdAt
+        - createdBy
+        - schemaVersion
+        - outdatedSchema
+        - status
+        - timelineEvents
+        - assessment
+    Cas2v2SubmittedApplication:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        person:
+          $ref: '#/components/schemas/Person'
+        createdAt:
+          type: string
+          format: date-time
+        submittedBy:
+          $ref: '#/components/schemas/NomisUser'
+        schemaVersion:
+          type: string
+          format: uuid
+        outdatedSchema:
+          type: boolean
+        document:
+          $ref: '#/components/schemas/AnyValue'
+        submittedAt:
+          type: string
+          format: date-time
+        telephoneNumber:
+          type: string
+        timelineEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas2TimelineEvent'
+        assessment:
+          type: object
+          $ref: '#/components/schemas/Cas2v2Assessment'
       required:
         - id
         - person
@@ -6409,6 +6485,36 @@ components:
         - personName
         - crn
         - nomsNumber
+    Cas2v2SubmittedApplicationSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdByUserId:
+          type: string
+          format: uuid
+        crn:
+          type: string
+        nomsNumber:
+          type: string
+        personName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        submittedAt:
+          type: string
+          format: date-time
+      required:
+        - createdByUserId
+        - status
+        - id
+        - person
+        - createdAt
+        - personName
+        - crn
+        - nomsNumber
     Cas2StatusUpdate:
       type: object
       properties:
@@ -6709,6 +6815,33 @@ components:
         - translatedDocument
         - applicationId
         - telephoneNumber
+    SubmitCas2v2Application:
+      type: object
+      properties:
+        translatedDocument:
+          $ref: '#/components/schemas/AnyValue'
+        applicationId:
+          type: string
+          format: uuid
+          description: Id of the application being submitted
+        preferredAreas:
+          type: string
+          description: First and second preferences for where the accommodation should be located, pipe-separated
+          example: 'Leeds | Bradford'
+        hdcEligibilityDate:
+          type: string
+          example: '2023-03-30'
+          format: date
+        conditionalReleaseDate:
+          type: string
+          example: '2023-04-30'
+          format: date
+        telephoneNumber:
+          type: string
+      required:
+        - translatedDocument
+        - applicationId
+        - telephoneNumber
     SubmitTemporaryAccommodationApplication:
       allOf:
         - $ref: '#/components/schemas/SubmitApplication'
@@ -6981,6 +7114,22 @@ components:
             - application
             - summaryData
     Cas2Assessment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nacroReferralId:
+          type: string
+        assessorName:
+          type: string
+        statusUpdates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas2StatusUpdate'
+      required:
+        - id
+    Cas2v2Assessment:
       type: object
       properties:
         id:

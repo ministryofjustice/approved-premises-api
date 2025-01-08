@@ -19,7 +19,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SortDirection
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SubmitCas2Application
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SubmitCas2v2Application
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.config.NotifyConfig
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.Cas2v2ApplicationJsonSchemaEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.InmateDetailFactory
@@ -770,7 +770,7 @@ class Cas2v2ApplicationServiceTest {
     val hdcEligibilityDate = LocalDate.parse("2023-03-30")
     val conditionalReleaseDate = LocalDate.parse("2023-04-29")
 
-    private val submitCas2Application = SubmitCas2Application(
+    private val submitCas2v2Application = SubmitCas2v2Application(
       translatedDocument = {},
       applicationId = applicationId,
       preferredAreas = "Leeds | Bradford",
@@ -782,7 +782,7 @@ class Cas2v2ApplicationServiceTest {
     @BeforeEach
     fun setup() {
       every { mockCas2v2LockableApplicationRepository.acquirePessimisticLock(any()) } returns Cas2v2LockableApplicationEntity(UUID.randomUUID())
-      every { mockObjectMapper.writeValueAsString(submitCas2Application.translatedDocument) } returns "{}"
+      every { mockObjectMapper.writeValueAsString(submitCas2v2Application.translatedDocument) } returns "{}"
       every { mockDomainEventService.saveCas2ApplicationSubmittedDomainEvent(any()) } just Runs
     }
 
@@ -792,7 +792,7 @@ class Cas2v2ApplicationServiceTest {
 
       every { mockCas2v2ApplicationRepository.findByIdOrNull(applicationId) } returns null
 
-      assertThat(cas2v2ApplicationService.submitCas2v2Application(submitCas2Application, user) is CasResult.NotFound).isTrue
+      assertThat(cas2v2ApplicationService.submitCas2v2Application(submitCas2v2Application, user) is CasResult.NotFound).isTrue
 
       assertEmailAndAssessmentsWereNotCreated()
     }
@@ -811,7 +811,7 @@ class Cas2v2ApplicationServiceTest {
       every { mockJsonSchemaService.checkCas2v2SchemaOutdated(cas2v2Application) } returns
         cas2v2Application
 
-      assertThat(cas2v2ApplicationService.submitCas2v2Application(submitCas2Application, user) is CasResult.Unauthorised).isTrue
+      assertThat(cas2v2ApplicationService.submitCas2v2Application(submitCas2v2Application, user) is CasResult.Unauthorised).isTrue
 
       assertEmailAndAssessmentsWereNotCreated()
     }
@@ -832,7 +832,7 @@ class Cas2v2ApplicationServiceTest {
       } returns cas2v2Application
       every { mockJsonSchemaService.checkCas2v2SchemaOutdated(cas2v2Application) } returns cas2v2Application
 
-      val result = cas2v2ApplicationService.submitCas2v2Application(submitCas2Application, user)
+      val result = cas2v2ApplicationService.submitCas2v2Application(submitCas2v2Application, user)
 
       assertThat(result is CasResult.GeneralValidationError).isTrue
       val validatableActionResult = result as CasResult.GeneralValidationError
@@ -861,7 +861,7 @@ class Cas2v2ApplicationServiceTest {
       } returns cas2v2Application
       every { mockJsonSchemaService.checkCas2v2SchemaOutdated(cas2v2Application) } returns cas2v2Application
 
-      val result = cas2v2ApplicationService.submitCas2v2Application(submitCas2Application, user)
+      val result = cas2v2ApplicationService.submitCas2v2Application(submitCas2v2Application, user)
 
       assertThat(result is CasResult.GeneralValidationError).isTrue
       val validatableActionResult = result as CasResult.GeneralValidationError
@@ -887,7 +887,7 @@ class Cas2v2ApplicationServiceTest {
       } returns cas2v2Application
       every { mockJsonSchemaService.checkCas2v2SchemaOutdated(cas2v2Application) } returns cas2v2Application
 
-      val result = cas2v2ApplicationService.submitCas2v2Application(submitCas2Application, user)
+      val result = cas2v2ApplicationService.submitCas2v2Application(submitCas2v2Application, user)
 
       assertThat(result is CasResult.GeneralValidationError).isTrue
       val validatableActionResult = result as CasResult.GeneralValidationError
@@ -994,7 +994,7 @@ class Cas2v2ApplicationServiceTest {
     }
 
     private fun assertGeneralValidationError(message: String) {
-      val result = cas2v2ApplicationService.submitCas2v2Application(submitCas2Application, user)
+      val result = cas2v2ApplicationService.submitCas2v2Application(submitCas2v2Application, user)
       assertThat(result is CasResult.GeneralValidationError).isTrue
       val error = result as CasResult.GeneralValidationError
 
@@ -1066,7 +1066,7 @@ class Cas2v2ApplicationServiceTest {
 
       every { mockCas2v2AssessmentService.createCas2v2Assessment(any()) } returns any()
 
-      val result = cas2v2ApplicationService.submitCas2v2Application(submitCas2Application, user)
+      val result = cas2v2ApplicationService.submitCas2v2Application(submitCas2v2Application, user)
 
       assertThat(result is CasResult.Success).isTrue
       result as CasResult.Success

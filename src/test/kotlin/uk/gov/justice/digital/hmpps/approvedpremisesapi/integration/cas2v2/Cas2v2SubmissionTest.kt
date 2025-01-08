@@ -15,10 +15,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.test.web.reactive.server.returnResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.Cas2ApplicationSubmittedEvent
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2SubmittedApplication
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2SubmittedApplicationSummary
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SubmitCas2Application
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.*
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.client.toHttpStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ExternalUserDetailsFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.IntegrationTestBase
@@ -204,7 +201,7 @@ class Cas2v2SubmissionTest(
                 withId(UUID.randomUUID())
               }
 
-            val submittedcas2v2ApplicationentitySecond = cas2v2ApplicationEntityFactory
+            val submittedCas2v2ApplicationentitySecond = cas2v2ApplicationEntityFactory
               .produceAndPersist {
                 withApplicationSchema(cas2v2ApplicationSchema)
                 withCreatedByUser(user)
@@ -214,7 +211,7 @@ class Cas2v2SubmissionTest(
                 withData("{}")
               }
 
-            val submittedcas2v2ApplicationentityFirst = cas2v2ApplicationEntityFactory
+            val submittedCas2v2ApplicationentityFirst = cas2v2ApplicationEntityFactory
               .produceAndPersist {
                 withApplicationSchema(cas2v2ApplicationSchema)
                 withCreatedByUser(user)
@@ -224,7 +221,7 @@ class Cas2v2SubmissionTest(
                 withData("{}")
               }
 
-            val submittedcas2v2ApplicationentityThird = cas2v2ApplicationEntityFactory
+            val submittedCas2v2ApplicationentityThird = cas2v2ApplicationEntityFactory
               .produceAndPersist {
                 withApplicationSchema(cas2v2ApplicationSchema)
                 withCreatedByUser(user)
@@ -262,24 +259,24 @@ class Cas2v2SubmissionTest(
             val responseBody =
               objectMapper.readValue(
                 rawResponseBody,
-                object : TypeReference<List<Cas2SubmittedApplicationSummary>>() {},
+                object : TypeReference<List<Cas2v2SubmittedApplicationSummary>>() {},
               )
 
             assertApplicationResponseMatchesExpected(
               responseBody[0],
-              submittedcas2v2ApplicationentityFirst,
+              submittedCas2v2ApplicationentityFirst,
               offenderDetails,
             )
 
             assertApplicationResponseMatchesExpected(
               responseBody[1],
-              submittedcas2v2ApplicationentitySecond,
+              submittedCas2v2ApplicationentitySecond,
               offenderDetails,
             )
 
             assertApplicationResponseMatchesExpected(
               responseBody[2],
-              submittedcas2v2ApplicationentityThird,
+              submittedCas2v2ApplicationentityThird,
               offenderDetails,
             )
 
@@ -292,7 +289,7 @@ class Cas2v2SubmissionTest(
     }
 
     private fun assertApplicationResponseMatchesExpected(
-      response: Cas2SubmittedApplicationSummary,
+      response: Cas2v2SubmittedApplicationSummary,
       expectedSubmittedApplication: Cas2v2ApplicationEntity,
       offenderDetails: OffenderDetailSummary,
     ) {

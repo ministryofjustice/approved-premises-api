@@ -4,11 +4,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.cas2v2.AssessmentsCas2v2Delegate
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2ApplicationNote
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2Assessment
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2AssessmentStatusUpdate
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewCas2ApplicationNote
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.UpdateCas2Assessment
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.*
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2ApplicationNoteEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ConflictProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ForbiddenProblem
@@ -34,7 +30,7 @@ class Cas2v2AssessmentsController(
   private val externalUserService: ExternalUserService,
 ) : AssessmentsCas2v2Delegate {
 
-  override fun assessmentsAssessmentIdGet(assessmentId: UUID): ResponseEntity<Cas2Assessment> {
+  override fun assessmentsAssessmentIdGet(assessmentId: UUID): ResponseEntity<Cas2v2Assessment> {
     val assessment = when (
       val assessmentResult = cas2v2AssessmentService.getAssessment(assessmentId)
     ) {
@@ -53,7 +49,7 @@ class Cas2v2AssessmentsController(
   override fun assessmentsAssessmentIdPut(
     assessmentId: UUID,
     updateCas2Assessment: UpdateCas2Assessment,
-  ): ResponseEntity<Cas2Assessment> {
+  ): ResponseEntity<Cas2v2Assessment> {
     val assessmentResult = cas2v2AssessmentService.updateAssessment(assessmentId, updateCas2Assessment)
     when (assessmentResult) {
       is CasResult.NotFound -> throw NotFoundProblem(assessmentId, "Assessment")

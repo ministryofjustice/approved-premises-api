@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.Ca
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.Cas2StaffMember
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.EventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.PersonReference
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SubmitCas2Application
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SubmitCas2v2Application
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.config.NotifyConfig
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2v2ApplicationJsonSchemaEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.NomisUserEntity
@@ -237,10 +237,10 @@ class Cas2v2ApplicationService(
   @SuppressWarnings("ReturnCount", "TooGenericExceptionThrown")
   @Transactional
   fun submitCas2v2Application(
-    submitApplication: SubmitCas2Application,
+    submitCas2v2Application: SubmitCas2v2Application,
     user: NomisUserEntity,
   ): CasResult<Cas2v2ApplicationEntity> {
-    val applicationId = submitApplication.applicationId
+    val applicationId = submitCas2v2Application.applicationId
 
     cas2v2LockableApplicationRepository.acquirePessimisticLock(applicationId)
 
@@ -248,7 +248,7 @@ class Cas2v2ApplicationService(
       ?.let(jsonSchemaService::checkCas2v2SchemaOutdated)
       ?: return CasResult.NotFound()
 
-    val serializedTranslatedDocument = objectMapper.writeValueAsString(submitApplication.translatedDocument)
+    val serializedTranslatedDocument = objectMapper.writeValueAsString(submitCas2v2Application.translatedDocument)
 
     if (application.createdByUser != user) {
       return CasResult.Unauthorised()
@@ -287,10 +287,10 @@ class Cas2v2ApplicationService(
         submittedAt = OffsetDateTime.now()
         document = serializedTranslatedDocument
         referringPrisonCode = retrievePrisonCode(application)
-        preferredAreas = submitApplication.preferredAreas
-        hdcEligibilityDate = submitApplication.hdcEligibilityDate
-        conditionalReleaseDate = submitApplication.conditionalReleaseDate
-        telephoneNumber = submitApplication.telephoneNumber
+        preferredAreas = submitCas2v2Application.preferredAreas
+        hdcEligibilityDate = submitCas2v2Application.hdcEligibilityDate
+        conditionalReleaseDate = submitCas2v2Application.conditionalReleaseDate
+        telephoneNumber = submitCas2v2Application.telephoneNumber
       }
     } catch (error: UpstreamApiException) {
       return CasResult.GeneralValidationError(error.message.toString())
