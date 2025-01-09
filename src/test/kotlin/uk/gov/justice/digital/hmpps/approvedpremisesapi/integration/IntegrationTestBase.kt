@@ -62,6 +62,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.Cas2AssessmentEn
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.Cas2NoteEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.Cas2StatusUpdateDetailEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.Cas2StatusUpdateEntityFactory
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.Cas2v2ApplicationJsonSchemaEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.CharacteristicEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ConfirmationEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.DateChangeEntityFactory
@@ -98,6 +99,9 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.UserEntityFactor
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.UserQualificationAssignmentEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.UserRoleAssignmentEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.cas1.Cas1CruManagementAreaEntityFactory
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.cas2v2.Cas2v2ApplicationEntityFactory
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.cas2v2.Cas2v2AssessmentEntityFactory
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.cas2v2.Cas2v2StatusUpdateEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.cas3.Cas3VoidBedspaceCancellationEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.cas3.Cas3VoidBedspaceReasonEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.cas3.Cas3VoidBedspacesEntityFactory
@@ -150,6 +154,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2Assessmen
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2StatusUpdateDetailEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2StatusUpdateDetailRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2StatusUpdateEntity
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2v2ApplicationJsonSchemaEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ConfirmationEntity
@@ -192,6 +197,10 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TurnaroundEnt
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualificationAssignmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRoleAssignmentEntity
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas2v2.Cas2v2ApplicationEntity
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas2v2.Cas2v2AssessmentEntity
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas2v2.Cas2v2AssessmentRepository
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas2v2.Cas2v2StatusUpdateEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas3.Cas3VoidBedspaceCancellationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas3.Cas3VoidBedspaceReasonEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas3.Cas3VoidBedspacesEntity
@@ -224,6 +233,9 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas1OutOfServ
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas2ApplicationJsonSchemaTestRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas2ApplicationTestRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas2StatusUpdateTestRepository
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas2v2ApplicationJsonSchemaTestRepository
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas2v2ApplicationTestRepository
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas2v2StatusUpdateTestRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas3VoidBedspaceCancellationTestRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas3VoidBedspaceReasonTestRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas3VoidBedspacesTestRepository
@@ -379,10 +391,19 @@ abstract class IntegrationTestBase {
   lateinit var cas2ApplicationRepository: Cas2ApplicationTestRepository
 
   @Autowired
+  lateinit var cas2v2ApplicationRepository: Cas2v2ApplicationTestRepository
+
+  @Autowired
+  lateinit var cas2v2AssessmentRepository: Cas2v2AssessmentRepository
+
+  @Autowired
   lateinit var cas2AssessmentRepository: Cas2AssessmentRepository
 
   @Autowired
   lateinit var cas2StatusUpdateRepository: Cas2StatusUpdateTestRepository
+
+  @Autowired
+  lateinit var cas2v2StatusUpdateRepository: Cas2v2StatusUpdateTestRepository
 
   @Autowired
   lateinit var cas2NoteRepository: Cas2ApplicationNoteRepository
@@ -395,6 +416,9 @@ abstract class IntegrationTestBase {
 
   @Autowired
   lateinit var approvedPremisesApplicationJsonSchemaRepository: ApprovedPremisesApplicationJsonSchemaTestRepository
+
+  @Autowired
+  lateinit var cas2v2ApplicationJsonSchemaRepository: Cas2v2ApplicationJsonSchemaTestRepository
 
   @Autowired
   lateinit var cas2ApplicationJsonSchemaRepository: Cas2ApplicationJsonSchemaTestRepository
@@ -612,6 +636,10 @@ abstract class IntegrationTestBase {
   lateinit var cas1OutOfServiceBedRevisionEntityFactory: PersistedFactory<Cas1OutOfServiceBedRevisionEntity, UUID, Cas1OutOfServiceBedRevisionEntityFactory>
   lateinit var cas1SpaceBookingEntityFactory: PersistedFactory<Cas1SpaceBookingEntity, UUID, Cas1SpaceBookingEntityFactory>
   lateinit var cas1CruManagementAreaEntityFactory: PersistedFactory<Cas1CruManagementAreaEntity, UUID, Cas1CruManagementAreaEntityFactory>
+  lateinit var cas2v2ApplicationEntityFactory: PersistedFactory<Cas2v2ApplicationEntity, UUID, Cas2v2ApplicationEntityFactory>
+  lateinit var cas2v2AssessmentEntityFactory: PersistedFactory<Cas2v2AssessmentEntity, UUID, Cas2v2AssessmentEntityFactory>
+  lateinit var cas2v2StatusUpdateEntityFactory: PersistedFactory<Cas2v2StatusUpdateEntity, UUID, Cas2v2StatusUpdateEntityFactory>
+  lateinit var cas2v2ApplicationJsonSchemaEntityFactory: PersistedFactory<Cas2v2ApplicationJsonSchemaEntity, UUID, Cas2v2ApplicationJsonSchemaEntityFactory>
 
   lateinit var bedMoveEntityFactory: PersistedFactory<BedMoveEntity, UUID, BedMoveEntityFactory>
   private var clientCredentialsCallMocked = false
@@ -724,6 +752,10 @@ abstract class IntegrationTestBase {
     bedMoveEntityFactory = PersistedFactory({ BedMoveEntityFactory() }, bedMoveRepository)
     cas1SpaceBookingEntityFactory = PersistedFactory({ Cas1SpaceBookingEntityFactory() }, cas1SpaceBookingRepository)
     cas1CruManagementAreaEntityFactory = PersistedFactory({ Cas1CruManagementAreaEntityFactory() }, cas1CruManagementAreaRepository)
+    cas2v2ApplicationEntityFactory = PersistedFactory({ Cas2v2ApplicationEntityFactory() }, cas2v2ApplicationRepository)
+    cas2v2AssessmentEntityFactory = PersistedFactory({ Cas2v2AssessmentEntityFactory() }, cas2v2AssessmentRepository)
+    cas2v2StatusUpdateEntityFactory = PersistedFactory({ Cas2v2StatusUpdateEntityFactory() }, cas2v2StatusUpdateRepository)
+    cas2v2ApplicationJsonSchemaEntityFactory = PersistedFactory({ Cas2v2ApplicationJsonSchemaEntityFactory() }, cas2v2ApplicationJsonSchemaRepository)
   }
 
   fun mockClientCredentialsJwtRequest(

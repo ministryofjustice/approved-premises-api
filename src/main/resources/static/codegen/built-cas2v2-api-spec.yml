@@ -2,1657 +2,16 @@
 # This is a build artefact for use in code generation.
 openapi: 3.0.1
 info:
-  title: Approved Premises
+  title: 'Community Accommodation Services: Tier 2 (CAS2 version 2)'
   version: 1.0.0
 servers:
-  - url: /
+  - url: /cas2v2
 paths:
-  /premises:
-    get:
-      tags:
-        - Premises
-      summary: Lists all approved premises, optionally for the given service
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: false
-          description: If given, only premises for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: X-User-Region
-          in: header
-          required: false
-          description: If given, only premises within this region will be returned
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Premises'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-    post:
-      tags:
-        - Premises
-      summary: Add a new premises
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: false
-          description: If given, persist the service name against this property
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewPremises'
-        required: true
-      responses:
-        201:
-          description: new premises added
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Premises'
-        400:
-          description: invalid request
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /premises/summary:
-    get:
-      tags:
-        - Premises
-      summary: Returns a list of premises
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: If given, only premises for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: probationRegionId
-          in: query
-          description: ID of the probation region to filter by
-          schema:
-            type: string
-            format: uuid
-        - name: apAreaId
-          in: query
-          description: ID of the AP area to filter by
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PremisesSummary'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /premises/{premisesId}:
-    get:
-      tags:
-        - Premises
-      summary: Returns an approved premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises to return
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Premises'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-    put:
-      tags:
-        - Operations on premises
-      summary: Updates a premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Information to update the premises with
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/UpdatePremises'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Premises'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /premises/{premisesId}/staff:
-    get:
-      tags:
-        - Premises
-      summary: Returns the staff that work at an approved premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises to return staff for
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/StaffMember'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /premises/{premisesId}/bookings:
-    get:
-      tags:
-        - Operations on premises
-      summary: Returns all bookings for an approved premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises to get bookings for
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Booking'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-    post:
-      tags:
-        - Operations on premises
-      summary: Adds a new booking for an approved premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises to create a booking for
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewBooking'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Booking'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        409:
-          description: An existing booking for the given bed has overlapping dates
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /premises/{premisesId}/summary:
-    get:
-      tags:
-        - Operations on premises
-      summary: Returns a summary of bookings for an approved premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises to get bookings for
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ExtendedPremisesSummary'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /premises/{premisesId}/bookings/{bookingId}:
-    get:
-      tags:
-        - Operations on premises
-      summary: Returns a specific booking for an approved premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the booking is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the booking
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Booking'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /premises/{premisesId}/bookings/{bookingId}/arrivals:
-    post:
-      tags:
-        - Operations on bookings
-      summary: Posts an arrival to a specified booking
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the booking is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the booking
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the arrival
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewArrival'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Arrival'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /premises/{premisesId}/bookings/{bookingId}/extensions:
-    post:
-      tags:
-        - Operations on bookings
-      summary: Posts an extension to a specified approved premises booking
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the booking is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the booking
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the extension
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewExtension'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Extension'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /premises/{premisesId}/bookings/{bookingId}/date-changes:
-    post:
-      tags:
-        - Operations on bookings
-      summary: Posts a change to the dates for a specified approved premises booking
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the booking is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the booking
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the extension
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewDateChange'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/DateChange'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /premises/{premisesId}/bookings/{bookingId}/departures:
-    post:
-      tags:
-        - Operations on bookings
-      summary: Posts a departure to a specified booking
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the booking is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the booking
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the departure
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewDeparture'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Departure'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /premises/{premisesId}/bookings/{bookingId}/cancellations:
-    post:
-      tags:
-        - Operations on bookings
-      summary: Posts a cancellation to a specified approved premises booking
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the cancellation is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the booking
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the cancellation
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewCancellation'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Cancellation'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /premises/{premisesId}/bookings/{bookingId}/confirmations:
-    post:
-      tags:
-        - Operations on bookings
-      summary: Posts a confirmation to a specified Temporary Accommodation booking
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the confirmation is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the booking
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the confirmation
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewConfirmation'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Confirmation'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /premises/{premisesId}/bookings/{bookingId}/turnarounds:
-    post:
-      tags:
-        - Operations on bookings
-      summary: Posts a turnaround to a specified Temporary Accommodation booking
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the turnaround is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bookingId
-          in: path
-          description: ID of the booking
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the turnaround
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewTurnaround'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Turnaround'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        409:
-          description: An existing booking for the given bed has overlapping dates
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /premises/{premisesId}/beds:
-    get:
-      tags:
-        - Rooms
-      summary: Lists all beds for the given premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises to list the beds for
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BedSummary'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /premises/{premisesId}/beds/{bedId}:
-    get:
-      tags:
-        - Rooms
-      summary: Gets a given bed for a given premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises that the bed is in
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: bedId
-          in: path
-          description: ID of the bed to return
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/BedDetail'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /premises/{premisesId}/rooms:
-    get:
-      tags:
-        - Rooms
-      summary: Lists all rooms for the given premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises to list the rooms for
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Room'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-    post:
-      tags:
-        - Rooms
-      summary: Adds a new room for an approved premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the room is in
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the new room
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewRoom'
-        required: true
-      responses:
-        201:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Room'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /premises/{premisesId}/rooms/{roomId}:
-    get:
-      summary: Returns a specific room for a premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the room is in
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: roomId
-          in: path
-          description: ID of the room to get
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Room'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or room ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-    put:
-      summary: Updates a room
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the room is in
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: roomId
-          in: path
-          description: ID of the room to update
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Information to update the room with
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/UpdateRoom'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Room'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or room ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /people/search:
-    get:
-      summary: Searches for a Person by their CRN
-      parameters:
-        - name: crn
-          in: query
-          description: CRN to search for
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Person'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /people/{crn}/risks:
-    get:
-      summary: Returns the risks for a Person
-      parameters:
-        - name: crn
-          in: path
-          description: CRN of the Person to fetch risks for
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/PersonRisks'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /people/{crn}/prison-case-notes:
-    get:
-      summary: Returns the prison case notes for a Person
-      parameters:
-        - name: crn
-          in: path
-          description: CRN of the Person to fetch prison case notes for
-          required: true
-          schema:
-            type: string
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: CAS1 requests may limit returned case note types
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PrisonCaseNote'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /people/{crn}/adjudications:
-    get:
-      summary: Returns the adjudications for a Person
-      parameters:
-        - name: crn
-          in: path
-          description: CRN of the Person to fetch adjudications for
-          required: true
-          schema:
-            type: string
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: CAS1 requests may be limited to adjudications for last 12 months only
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Adjudication'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /people/{crn}/acct-alerts:
-    get:
-      summary: Returns the ACCT alerts for a Person
-      parameters:
-        - name: crn
-          in: path
-          description: CRN of the Person to fetch ACCT alerts for
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PersonAcctAlert'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /people/{crn}/oasys/selection:
-    get:
-      tags:
-        - OASys
-      summary: Returns the importable sections of OASys including details of links to harm and reoffending
-      parameters:
-        - name: crn
-          in: path
-          description: CRN of the Person to fetch latest OASys selection
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OASysSection'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /people/{crn}/oasys/sections:
-    get:
-      tags:
-        - OASys
-      summary: Returns OASys sections to support an Application.  The Supporting Information sections are returned if linked to harm and optionally if their section number appears in the selected-sections query parameter.
-      parameters:
-        - name: crn
-          in: path
-          description: CRN of the Person to fetch latest OASys selection
-          required: true
-          schema:
-            type: string
-        - name: selected-sections
-          in: query
-          description: Section numbers for optional (not Linked to Harm) suppprting information
-          required: false
-          schema:
-            type: array
-            items:
-              type: integer
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/OASysSections'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /people/{crn}/oasys/risk-to-self:
-    get:
-      tags:
-        - OASys
-      summary: Returns the Risk To Individual (known as Risk to Self on frontend) section of an OASys.
-      parameters:
-        - name: crn
-          in: path
-          description: CRN of the Person to fetch latest OASys
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/OASysRiskToSelf'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /people/{crn}/oasys/rosh:
-    get:
-      tags:
-        - OASys
-      summary: Returns the Risk of Serious Harm section of an OASys.
-      parameters:
-        - name: crn
-          in: path
-          description: CRN of the Person to fetch latest OASys
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/OASysRiskOfSeriousHarm'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /people/{crn}/offences:
-    get:
-      summary: Returns all active offences for a Person.
-      parameters:
-        - name: crn
-          in: path
-          description: CRN of the Person to fetch active offences for
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ActiveOffence'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /people/{crn}/timeline:
-    get:
-      summary: Returns a timeline of all applications for a Person.
-      parameters:
-        - name: crn
-          in: path
-          description: CRN of the Person to fetch the timeline for
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/PersonalTimeline'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /premises/{premisesId}/lost-beds:
-    post:
-      tags:
-        - Operations on premises
-      summary: Posts a lost bed to a specified approved premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the lost bed is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the lost bed
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewLostBed'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/LostBed'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-    get:
-      tags:
-        - Operations on premises
-      summary: Lists all Lost Beds entries for the Premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises to show lost beds for
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/LostBed'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /premises/{premisesId}/lost-beds/{lostBedId}:
-    get:
-      tags:
-        - Operations on premises
-      summary: Returns a specific lost bed for a premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the lost bed is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: lostBedId
-          in: path
-          description: ID of the lost bed
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/LostBed'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises or lost bed ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-    put:
-      tags:
-        - Operations on premises
-      summary: Updates a lost bed for a premises
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the lost bed is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: lostBedId
-          in: path
-          description: ID of the lost bed
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the lost bed
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/UpdateLostBed'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/LostBed'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or booking ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /premises/{premisesId}/lost-beds/{lostBedId}/cancellations:
-    post:
-      tags:
-        - Operations on bookings
-      summary: Posts a cancellation to a specified lost bed
-      parameters:
-        - name: premisesId
-          in: path
-          description: ID of the premises the cancellation is related to
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: lostBedId
-          in: path
-          description: ID of the lost bed
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: details of the cancellation
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewLostBedCancellation'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/LostBedCancellation'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid premises ID or lost bed ID
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /applications/all:
-    get:
-      tags:
-        - Operations on all applications
-      summary: Lists all applications that any user has created
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: Only approved premises anything else gets a 400
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: page
-          in: query
-          description: Page number of results to return. If blank, returns all results
-          schema:
-            type: integer
-        - name: crnOrName
-          in: query
-          description: CRN of applications
-          schema:
-            type: string
-        - name: sortDirection
-          in: query
-          description: The direction to sort the results by. If blank, will sort in descending order
-          schema:
-            $ref: '#/components/schemas/SortDirection'
-        - name: status
-          in: query
-          description: Application statuses to filter on. If none provided, all will be returned
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/ApprovedPremisesApplicationStatus'
-        - name: sortBy
-          in: query
-          description: The field to sort the results by.
-          schema:
-            $ref: '#/components/schemas/ApplicationSortField'
-        - name: apAreaId
-          in: query
-          required: false
-          description: Approved Premises Area ID to filter results by
-          schema:
-            type: string
-            format: uuid
-        - name: releaseType
-          in: query
-          required: false
-          description: If provided, restricts the results to only those with the given release type.
-          schema:
-            $ref: '#/components/schemas/ReleaseTypeOption'
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ApplicationSummary'
-          headers:
-            X-Pagination-CurrentPage:
-              $ref: '#/components/headers/X-Pagination-CurrentPage'
-            X-Pagination-TotalPages:
-              $ref: '#/components/headers/X-Pagination-TotalPages'
-            X-Pagination-TotalResults:
-              $ref: '#/components/headers/X-Pagination-TotalResults'
-            X-Pagination-PageSize:
-              $ref: '#/components/headers/X-Pagination-TotalResults'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
   /applications:
     post:
       tags:
-        - Operations on applications
-      summary: Creates an application
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: false
-          description: Which service the application will belong to, defaults to approved-premises
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: createWithRisks
-          in: query
-          required: false
-          description: Instructs the API to create and return risk information from the OASys API (defaults to true)
-          schema:
-            type: boolean
+        - Operations on CAS2 version 2 applications
+      summary: Creates a CAS2 version 2 application
       requestBody:
         description: Information to create a blank application with
         content:
@@ -1688,15 +47,24 @@ paths:
       x-codegen-request-body-name: body
     get:
       tags:
-        - Operations on all applications
-      summary: Lists all applications that the user has created
+        - Operations on CAS2 version 2 applications
+      summary: List summaries of all CAS2 version 2 applications authorised for the logged in user
       parameters:
-        - name: X-Service-Name
-          in: header
-          required: false
-          description: Which service to get applications for, defaults to approved-premises
+        - name: isSubmitted
+          in: query
+          description: Returns submitted applications if true, un submitted applications if false, and all applications if absent
           schema:
-            $ref: '#/components/schemas/ServiceName'
+            type: boolean
+        - name: page
+          in: query
+          description: Page number of results to return.  If blank, returns all results
+          schema:
+            type: integer
+        - name: prisonCode
+          in: query
+          description: Prison code of applications to return.  If blank, returns all results.
+          schema:
+            type: string
       responses:
         200:
           description: successful operation
@@ -1705,18 +73,28 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ApplicationSummary'
+                  $ref: '#/components/schemas/Cas2v2ApplicationSummary'
+          headers:
+            X-Pagination-CurrentPage:
+              $ref: '#/components/headers/X-Pagination-CurrentPage'
+            X-Pagination-TotalPages:
+              $ref: '#/components/headers/X-Pagination-TotalPages'
+            X-Pagination-TotalResults:
+              $ref: '#/components/headers/X-Pagination-TotalResults'
+            X-Pagination-PageSize:
+              $ref: '#/components/headers/X-Pagination-TotalResults'
         401:
           $ref: '#/components/responses/401Response'
         403:
           $ref: '#/components/responses/403Response'
         500:
           $ref: '#/components/responses/500Response'
+
   /applications/{applicationId}:
     put:
       tags:
-        - Operations on applications
-      summary: Updates an application
+        - Operations on CAS2 version 2 applications
+      summary: Updates a CAS2 version 2 application
       parameters:
         - name: applicationId
           in: path
@@ -1754,8 +132,8 @@ paths:
       x-codegen-request-body-name: body
     get:
       tags:
-        - Operations on applications
-      summary: Gets a single application by its ID
+        - Operations on CAS2 version 2 applications
+      summary: Gets a single CAS2 version 2 application by its ID
       parameters:
         - name: applicationId
           in: path
@@ -1777,11 +155,11 @@ paths:
           $ref: '#/components/responses/403Response'
         500:
           $ref: '#/components/responses/500Response'
-  /applications/{applicationId}/withdrawal:
-    post:
+  /applications/{applicationId}/abandon:
+    put:
       tags:
-        - Operations on applications
-      summary: Withdraws an application with a reason
+        - Operations on CAS2 version 2 applications
+      summary: Abandons an in progress CAS2 version 2 application
       parameters:
         - name: applicationId
           in: path
@@ -1790,38 +168,133 @@ paths:
           schema:
             type: string
             format: uuid
-      requestBody:
-        description: details of the withdrawal
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewWithdrawal'
-        required: true
       responses:
         200:
           description: successful operation
         401:
           $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid applicationId
+        409:
+          description: The application has been submitted
           content:
             'application/json':
               schema:
                 $ref: '#/components/schemas/Problem'
         500:
           $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /applications/{applicationId}/notes:
+  /assessments/{assessmentId}:
+    put:
+      tags:
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: Updates a single CAS2 version 2 assessment by its ID
+      parameters:
+        - name: assessmentId
+          in: path
+          description: ID of the assessment
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Information to update the assessment with
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/UpdateCas2Assessment'
+        required: true
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Cas2v2Assessment'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        404:
+          description: invalid assessmentId
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Problem'
+        500:
+          $ref: '#/components/responses/500Response'
+    get:
+      tags:
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: Gets a single CAS2 version 2 assessment by its ID
+      parameters:
+        - name: assessmentId
+          in: path
+          description: ID of the assessment
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Cas2v2Assessment'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        404:
+          description: invalid assessmentId
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Problem'
+        500:
+          $ref: '#/components/responses/500Response'
+  /assessments/{assessmentId}/status-updates:
     post:
       tags:
-        - Add a note on applications
-      summary: Add a note on applications
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: Creates a status update on an assessment
       parameters:
-        - name: applicationId
+        - name: assessmentId
           in: path
-          description: ID of the application
+          description: ID of the assessment whose status is to be updated
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Information on the new status to be applied
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/Cas2AssessmentStatusUpdate'
+        required: true
+      responses:
+        200:
+          description: successfully created the status update
+        400:
+          description: status update has already been submitted
+          content:
+            'application/problem+json':
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        500:
+          $ref: '#/components/responses/500Response'
+  /assessments/{assessmentId}/notes:
+    post:
+      tags:
+        - Operations on CAS2 version 2 assessments
+      summary: Add a note to an assessment
+      parameters:
+        - name: assessmentId
+          in: path
+          description: ID of the assessment
           required: true
           schema:
             type: string
@@ -1831,7 +304,7 @@ paths:
         content:
           'application/json':
             schema:
-              $ref: '#/components/schemas/NewApplicationTimelineNote'
+              $ref: '#/components/schemas/NewCas2ApplicationNote'
         required: true
       responses:
         200:
@@ -1839,13 +312,13 @@ paths:
           content:
             'application/json':
               schema:
-                $ref: '#/components/schemas/ApplicationTimelineNote'
+                $ref: '#/components/schemas/Cas2ApplicationNote'
         401:
           $ref: '#/components/responses/401Response'
         403:
           $ref: '#/components/responses/403Response'
         404:
-          description: invalid applicationId
+          description: invalid assessmentId
           content:
             'application/json':
               schema:
@@ -1853,25 +326,17 @@ paths:
         500:
           $ref: '#/components/responses/500Response'
       x-codegen-request-body-name: body
-  /applications/{applicationId}/timeline:
+  /submissions:
     get:
       tags:
-        - Application data timeline
-      summary: Returns domain event summary
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: List summaries of all submitted CAS2 version 2 applications
       parameters:
-        - name: applicationId
-          in: path
-          description: ID of the application
-          required: true
+        - name: page
+          in: query
+          description: Page number of results to return. If blank, returns all results
           schema:
-            type: string
-            format: uuid
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: If given, only users for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
+            type: integer
       responses:
         200:
           description: successful operation
@@ -1880,190 +345,32 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TimelineEvent'
+                  $ref: '#/components/schemas/Cas2v2SubmittedApplicationSummary'
+          headers:
+            X-Pagination-CurrentPage:
+              $ref: '#/components/headers/X-Pagination-CurrentPage'
+            X-Pagination-TotalPages:
+              $ref: '#/components/headers/X-Pagination-TotalPages'
+            X-Pagination-TotalResults:
+              $ref: '#/components/headers/X-Pagination-TotalResults'
+            X-Pagination-PageSize:
+              $ref: '#/components/headers/X-Pagination-TotalResults'
         401:
           $ref: '#/components/responses/401Response'
         403:
           $ref: '#/components/responses/403Response'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
         500:
           $ref: '#/components/responses/500Response'
-  /applications/{applicationId}/documents:
-    get:
-      tags:
-        - Application data
-      summary: Returns meta info on documents at the person level or at the Conviction level for the index Offence of this application.
-      parameters:
-        - name: applicationId
-          in: path
-          description: ID of the application
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Document'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /applications/{applicationId}/appeals:
     post:
       tags:
-        - Application data
-      summary: Add an appeal to an application
-      parameters:
-        - name: applicationId
-          in: path
-          description: ID of the application
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: the appeal to add
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewAppeal'
-        required: true
-      responses:
-        201:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Appeal'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid applicationId
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /applications/{applicationId}/appeals/{appealId}:
-    get:
-      tags:
-        - Application data
-      summary: Get an appeal on an application
-      parameters:
-        - name: applicationId
-          in: path
-          description: ID of the application
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: appealId
-          in: path
-          description: ID of the appeal
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Appeal'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid applicationId or appealId
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /documents/{crn}/{documentId}:
-    get:
-      tags:
-        - Application data
-      summary: Downloads a document
-      parameters:
-        - name: crn
-          in: path
-          description: CRN of the Person the document is associated with
-          required: true
-          schema:
-            type: string
-        - name: documentId
-          in: path
-          description: ID of the document
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/octet-stream':
-              schema:
-                type: string
-                format: binary
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid applicationId or documentId
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /applications/{applicationId}/submission:
-    post:
-      tags:
-        - Application data
-      summary: Submits an Application
-      parameters:
-        - in: path
-          name: applicationId
-          required: true
-          description: Id of the application
-          schema:
-            type: string
-            format: uuid
+        - Operations on CAS2 version 2 applications
+      summary: Submits a CAS2 version 2 Application (creates a SubmittedApplication)
       requestBody:
         description: Information needed to submit an application
         content:
           'application/json':
             schema:
-              $ref: '#/components/schemas/SubmitApplication'
+              $ref: '#/components/schemas/SubmitCas2v2Application'
         required: true
       responses:
         200:
@@ -2080,11 +387,11 @@ paths:
           $ref: '#/components/responses/403Response'
         500:
           $ref: '#/components/responses/500Response'
-  /applications/{applicationId}/assessment:
+  /submissions/{applicationId}:
     get:
       tags:
-        - Operations on applications
-      summary: Get the assessment for an application
+        - Operations on submitted CAS2 version 2 applications (Assessors)
+      summary: Gets a single submitted CAS2 version 2 application by its ID
       parameters:
         - name: applicationId
           in: path
@@ -2099,1848 +406,131 @@ paths:
           content:
             'application/json':
               schema:
-                $ref: '#/components/schemas/Assessment'
+                $ref: '#/components/schemas/Cas2v2SubmittedApplication'
         401:
           $ref: '#/components/responses/401Response'
         403:
           $ref: '#/components/responses/403Response'
         500:
           $ref: '#/components/responses/500Response'
-  /applications/{applicationId}/withdrawables:
+  /people/search:
     get:
       tags:
-        - Operations on applications
-      summary: Returns a list of withdrawable items associated with this application, including the application itself, if withdrawable
+        - People operations
+      summary: Searches for a Person by their Prison Number (NOMIS ID)
       parameters:
-        - name: applicationId
-          in: path
-          description: ID of the application
+        - name: nomsNumber
+          in: query
+          description: Prison Number to search for
           required: true
           schema:
             type: string
-            format: uuid
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: If given, only users for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
       responses:
         200:
           description: successful operation
           content:
             'application/json':
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Withdrawable'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /applications/{applicationId}/withdrawablesWithNotes:
-    get:
-      tags:
-        - Operations on applications
-      summary: Returns a list of withdrawable items associated with this application, including the application itself, if withdrawable
-      parameters:
-        - name: applicationId
-          in: path
-          description: ID of the application
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: If given, only users for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-      responses:
-        200:
-          description: successful operation
+                $ref: '#/components/schemas/Person'
+        400:
+          description: invalid params
           content:
-            'application/json':
+            'application/problem+json':
               schema:
-                $ref: '#/components/schemas/Withdrawables'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /applications/{applicationId}/requests-for-placement:
-    get:
-      summary: Returns a list of Requests for Placement for the given application.
-      parameters:
-        - name: applicationId
-          in: path
-          description: ID of the application
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RequestForPlacement'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
+                $ref: '#/components/schemas/ValidationError'
         404:
           description: invalid CRN
           content:
             'application/json':
               schema:
                 $ref: '#/components/schemas/Problem'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
         500:
           $ref: '#/components/responses/500Response'
-  /applications/{applicationId}/requests-for-placement/{requestForPlacementId}:
+  /people/{crn}/oasys/risk-to-self:
     get:
-      summary: Returns the specified Request for Placement.
+      tags:
+        - People operations
+      summary: Returns the Risk To Individual (known as Risk to Self on frontend) section of an OASys.
       parameters:
-        - name: applicationId
-          in: path
-          description: ID of the application which the Request for Placement enacts.
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: requestForPlacementId
-          in: path
-          description: ID of the Request for Placement.
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/RequestForPlacement'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        404:
-          description: invalid CRN
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /beds/search:
-    post:
-      summary: Searches for available Beds within the given parameters
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/BedSearchParameters'
-        required: true
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/BedSearchResults'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /bookings/{bookingId}:
-    get:
-      summary: Gets a booking
-      parameters:
-        - in: path
-          name: bookingId
-          required: true
-          description: ID of the booking
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successfully retrieved booking
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Booking'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /bookings/search:
-    get:
-      summary: Searches for bookings with the given parameters
-      parameters:
-        - name: status
-          in: query
-          description: If provided, only search for bookings with the given status
-          required: false
-          schema:
-            $ref: "#/components/schemas/BookingStatus"
-        - name: sortOrder
-          in: query
-          description: If provided, return results in the given order
-          required: false
-          schema:
-            $ref: "#/components/schemas/SortOrder"
-        - name: sortField
-          in: query
-          description: If provided, return results ordered by the given field name
-          required: false
-          schema:
-            $ref: "#/components/schemas/BookingSearchSortField"
-        - name: page
-          in: query
-          description: Page number of results to return. If blank, returns all results
-          schema:
-            type: integer
-        - name: crnOrName
-          in: query
-          description: Filters bookings using exact or partial match on name or exact CRN match
-          required: false
-          schema:
-            type: string
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/BookingSearchResults'
-          headers:
-            X-Pagination-CurrentPage:
-              $ref: '#/components/headers/X-Pagination-CurrentPage'
-            X-Pagination-TotalPages:
-              $ref: '#/components/headers/X-Pagination-TotalPages'
-            X-Pagination-TotalResults:
-              $ref: '#/components/headers/X-Pagination-TotalResults'
-            X-Pagination-PageSize:
-              $ref: '#/components/headers/X-Pagination-TotalResults'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/departure-reasons:
-    get:
-      tags:
-        - Reference Data
-      summary: Lists all departure reasons
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: false
-          description: If given, only departure reasons for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: includeInactive
-          in: query
-          required: false
-          description: Specifies whether inactive departure reasons should be provided. Defaults to `false`.
-          schema:
-            type: boolean
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DepartureReason'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/move-on-categories:
-    get:
-      tags:
-        - Reference Data
-      summary: Lists all move-on categories for departures
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: false
-          description: If given, only move-on categories for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: includeInactive
-          in: query
-          required: false
-          description: Specifies whether inactive move-on categories should be provided. Defaults to `false`.
-          schema:
-            type: boolean
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MoveOnCategory'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/destination-providers:
-    get:
-      tags:
-        - Reference Data
-      summary: Lists all destination providers for departures
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DestinationProvider'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/supervising-providers:
-    get:
-      tags:
-        - Reference Data
-      summary: Lists all supervising providers for arrivals
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SupervisingProvider'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/supervising-teams:
-    get:
-      tags:
-        - Reference Data
-      summary: Lists all supervising teams for arrivals
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SupervisingTeam'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/non-arrival-reasons:
-    get:
-      tags:
-        - Reference Data
-      summary: Lists reasons for non-arrivals
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NonArrivalReason'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/supervising-officers:
-    get:
-      tags:
-        - Reference Data
-      summary: Lists all supervising officers for arrivals
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SupervisingOfficer'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/lost-bed-reasons:
-    get:
-      tags:
-        - Reference Data
-      summary: Lists all reasons for losing beds
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: false
-          description: If given, only lost bed reasons for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/LostBedReason'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/cancellation-reasons:
-    get:
-      tags:
-        - Reference Data
-      summary: Lists all cancellation reasons
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: false
-          description: If given, only departure reasons for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CancellationReason'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/local-authority-areas:
-    get:
-      tags:
-        - Local Authorities
-      summary: Lists all local authorities
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/LocalAuthorityArea'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/probation-regions:
-    get:
-      tags:
-        - Reference Data
-      summary: Lists all probation regions
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ProbationRegion'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/ap-areas:
-    get:
-      tags:
-        - Reference Data
-      summary: Lists all probation regions
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ApArea'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/characteristics:
-    get:
-      tags:
-        - Characteristics
-      summary: Lists all available characteristics
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: false
-          description: If given, only characteristics for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: includeInactive
-          in: query
-          required: false
-          description: Specifies whether inactive characteristics should be provided. Defaults to `false`.
-          schema:
-            type: boolean
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Characteristic'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/probation-delivery-units:
-    get:
-      tags:
-        - Reference Data
-      summary: Lists probation delivery units, optionally filtered by region
-      parameters:
-        - name: probationRegionId
-          in: query
-          required: false
-          description: If given, only probation delivery units for this region will be returned
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ProbationDeliveryUnit'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reference-data/referral-rejection-reasons:
-    get:
-      tags:
-        - Reference Data
-      summary: Lists all referral rejection reasons
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: false
-          description: If given, only referral rejection reasons for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-      responses:
-        200:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ReferralRejectionReason'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /tasks:
-    get:
-      tags:
-        - Task data
-      summary: List all tasks
-      parameters:
-        - name: type
-          in: query
-          required: false
-          description: Returns tasks that match the given type. BookingAppeal is not supported. Deprecated - use 'types'
-          deprecated: true
-          schema:
-            $ref: '#/components/schemas/TaskType'
-        - name: types
-          in: query
-          required: false
-          description: Returns tasks that match the given types. BookingAppeal is not supported
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/TaskType'
-        - name: page
-          in: query
-          required: false
-          description: Page number of results to return. If not provided results will not be paged
-          schema:
-            type: integer
-        - name: perPage
-          in: query
-          description: Number of items to return per page (defaults to 10)
-          schema:
-            type: integer
-        - name: sortBy
-          in: query
-          required: false
-          description: Which field to sort the results by. If not provided will sort by createdAt
-          schema:
-            $ref: '#/components/schemas/TaskSortField'
-        - name: sortDirection
-          in: query
-          required: false
-          description: The direction to sort the results by. If not provided will sort by descending order
-          schema:
-            $ref: '#/components/schemas/SortDirection'
-        - name: allocatedFilter
-          in: query
-          required: false
-          description: Allows filtering on allocated, unallocated, or both
-          schema:
-            $ref: '#/components/schemas/AllocatedFilter'
-        - name: apAreaId
-          in: query
-          required: false
-          description: Approved Premises Area ID to filter results by.  Deprecated, Use cruManagementAreaId instead.
-          deprecated: true
-          schema:
-            type: string
-            format: uuid
-        - name: cruManagementAreaId
-          in: query
-          required: false
-          description: filter by CRU management area ID
-          schema:
-            type: string
-            format: uuid
-        - name: allocatedToUserId
-          in: query
-          required: false
-          description: Only show tasks allocated to this user id
-          schema:
-            type: string
-            format: uuid
-        - name: requiredQualification
-          in: query
-          required: false
-          description: Only show tasks with this required qualification
-          schema:
-            $ref: '#/components/schemas/UserQualification'
-        - name: crnOrName
-          in: query
-          description: search by CRN or name
-          schema:
-            type: string
-        - name: isCompleted
-          in: query
-          description: filter by if the tasks are completed (defaults to `false`)
-          schema:
-            type: boolean
-      responses:
-        200:
-          description: successfully retrieved tasks
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Task'
-          headers:
-            X-Pagination-CurrentPage:
-              $ref: '#/components/headers/X-Pagination-CurrentPage'
-            X-Pagination-TotalPages:
-              $ref: '#/components/headers/X-Pagination-TotalPages'
-            X-Pagination-TotalResults:
-              $ref: '#/components/headers/X-Pagination-TotalResults'
-            X-Pagination-PageSize:
-              $ref: '#/components/headers/X-Pagination-TotalResults'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /tasks/{taskType}/{id}:
-    get:
-      tags:
-        - Application data
-      summary: Gets a task for an application
-      parameters:
-        - in: path
-          name: id
-          required: true
-          description: ID of the task
-          schema:
-            type: string
-            format: uuid
-        - in: path
-          name: taskType
-          required: true
-          description: Task type
-          schema:
-            type: string
-      responses:
-        200:
-          description: successfully retrieved task
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/TaskWrapper'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /tasks/{taskType}/{id}/allocations:
-    post:
-      tags:
-        - Operations on applications
-      summary: Reallocates a task for an application
-      parameters:
-        - name: id
-          in: path
-          description: ID of the task
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - in: path
-          name: taskType
-          required: true
-          description: Task type
-          schema:
-            type: string
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: Only assessments for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewReallocation'
-        required: false
-      responses:
-        201:
-          description: successful operation
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Reallocation'
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-    delete:
-      tags:
-        - Operations on applications
-      summary: Unallocates a task for an application
-      parameters:
-        - name: id
-          in: path
-          description: ID of the task
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - in: path
-          name: taskType
-          required: true
-          description: Task type
-          schema:
-            type: string
-      responses:
-        200:
-          description: successful operation
-        400:
-          description: invalid params
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /placement-requests:
-    get:
-      tags:
-        - Placement requests
-      summary: Gets placement requests for a given user
-      responses:
-        200:
-          description: successfully retrieved placement requests
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PlacementRequest'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /placement-requests/dashboard:
-    get:
-      tags:
-        - Placement requests
-      summary: Gets all placement requests
-      parameters:
-        - name: status
-          in: query
-          description: filter by status of an application
-          schema:
-            $ref: '#/components/schemas/PlacementRequestStatus'
         - name: crn
-          in: query
-          description: filter by CRN
-          schema:
-            type: string
-        - name: crnOrName
-          in: query
-          description: search by CRN or name
-          schema:
-            type: string
-        - name: tier
-          in: query
-          description: filter by tier of Offender at time Application was created
-          schema:
-            $ref: '#/components/schemas/RiskTierLevel'
-        - name: arrivalDateStart
-          in: query
-          description: filter by minimum expected arrival date
-          schema:
-            type: string
-            format: date
-        - name: arrivalDateEnd
-          in: query
-          description: filter by maximum expected arrival date
-          schema:
-            type: string
-            format: date
-        - name: requestType
-          in: query
-          description: filter by request type
-          schema:
-            $ref: '#/components/schemas/PlacementRequestRequestType'
-        - name: apAreaId
-          in: query
-          required: false
-          description: filter by approved premises area ID.  Use cruManagementAreaId instead.
-          deprecated: true
-          schema:
-            type: string
-            format: uuid
-        - name: cruManagementAreaId
-          in: query
-          required: false
-          description: filter by CRU management area ID
-          schema:
-            type: string
-            format: uuid
-        - name: page
-          in: query
-          description: Page number of results to return. If blank, returns all results
-          schema:
-            type: integer
-        - name: sortBy
-          in: query
-          description: Which field to sort the results by. If blank, will sort by createdAt
-          schema:
-            $ref: '#/components/schemas/PlacementRequestSortField'
-        - name: sortDirection
-          in: query
-          description: The direction to sort the results by. If blank, will sort in descending order
-          schema:
-            $ref: '#/components/schemas/SortDirection'
-      responses:
-        200:
-          description: successfully retrieved placement requests
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PlacementRequest'
-          headers:
-            X-Pagination-CurrentPage:
-              $ref: '#/components/headers/X-Pagination-CurrentPage'
-            X-Pagination-TotalPages:
-              $ref: '#/components/headers/X-Pagination-TotalPages'
-            X-Pagination-TotalResults:
-              $ref: '#/components/headers/X-Pagination-TotalResults'
-            X-Pagination-PageSize:
-              $ref: '#/components/headers/X-Pagination-TotalResults'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /placement-requests/{id}:
-    get:
-      tags:
-        - Placement requests
-      summary: Gets placement requests for a given user
-      parameters:
-        - name: id
           in: path
-          description: ID of the placement request
+          description: CRN of the Person to fetch latest OASys
           required: true
           schema:
             type: string
-            format: uuid
-      responses:
-        200:
-          description: successfully retrieved placement requests
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/PlacementRequestDetail'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /placement-requests/{id}/withdrawal:
-    post:
-      tags:
-        - Placement requests
-      summary: Withdraws a placement request
-      parameters:
-        - name: id
-          in: path
-          description: ID of the placement request
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Withdrawal details
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/WithdrawPlacementRequest'
       responses:
         200:
           description: successful operation
           content:
             'application/json':
               schema:
-                $ref: '#/components/schemas/PlacementRequestDetail'
+                $ref: '#/components/schemas/OASysRiskToSelf'
         401:
           $ref: '#/components/responses/401Response'
         403:
           $ref: '#/components/responses/403Response'
         404:
-          description: invalid applicationId
+          description: invalid CRN
           content:
             'application/json':
               schema:
                 $ref: '#/components/schemas/Problem'
         500:
           $ref: '#/components/responses/500Response'
-      x-codegen-request-body-name: body
-  /placement-requests/{id}/booking:
-    post:
+  /people/{crn}/oasys/rosh:
+    get:
       tags:
-        - Placement requests
-      summary: Creates a Booking for a placement request
+        - People operations
+      summary: Returns the Risk of Serious Harm section of an OASys.
       parameters:
-        - name: id
+        - name: crn
           in: path
-          description: ID of the placement request
+          description: CRN of the Person to fetch latest OASys
           required: true
           schema:
             type: string
-            format: uuid
-      requestBody:
-        description: Booking details
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewPlacementRequestBooking'
-        required: true
-      responses:
-        200:
-          description: successfully created a Booking
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/NewPlacementRequestBookingConfirmation'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /placement-requests/{id}/booking-not-made:
-    post:
-      tags:
-        - Placement requests
-      summary: Records that an attempt to match was made but no suitable Beds could be found
-      parameters:
-        - name: id
-          in: path
-          description: ID of the placement request
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Details about the failure to match
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewBookingNotMade'
-        required: true
-      responses:
-        200:
-          description: successfully recorded that a Booking could not be made
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/BookingNotMade'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /placement-applications:
-    post:
-      tags:
-        - Placement applications
-      summary: Creates an application for a placement
-      requestBody:
-        description: Details about the application
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewPlacementApplication'
-        required: true
-      responses:
-        200:
-          description: successfully recorded that a placement application has been made
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/PlacementApplication'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /placement-applications/{id}:
-    get:
-      tags:
-        - Placement applications
-      summary: Retrieves an application for a placement request
-      parameters:
-        - in: path
-          name: id
-          required: true
-          description: Id of the application
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successfully retrieved placement request application
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/PlacementApplication'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-    put:
-      tags:
-        - Placement applications
-      summary: Updates an application for a placement request
-      parameters:
-        - in: path
-          name: id
-          required: true
-          description: Id of the application
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Details about the application
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/UpdatePlacementApplication'
-        required: true
-      responses:
-        200:
-          description: successfully retrieved placement request application
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/PlacementApplication'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /placement-applications/{id}/submission:
-    post:
-      tags:
-        - Placement applications
-      summary: Submits an application for a placement request
-      parameters:
-        - in: path
-          name: id
-          required: true
-          description: Id of the application
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Information needed to submit a placement application
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/SubmitPlacementApplication'
-        required: true
-      responses:
-        200:
-          description: successfully submitted the placement application
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PlacementApplication'
-        400:
-          description: placement application has already been submitted
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /placement-applications/{id}/decision:
-    post:
-      tags:
-        - Placement applications
-      summary: Submits a decision for a placement application
-      parameters:
-        - in: path
-          name: id
-          required: true
-          description: Id of the application
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Information needed to submit a placement application
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/PlacementApplicationDecisionEnvelope'
-        required: true
-      responses:
-        200:
-          description: successfully made a decision on the placement application
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/PlacementApplication'
-        400:
-          description: placement application already has a decision made
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /placement-applications/{id}/withdraw:
-    post:
-      tags:
-        - Placement applications
-      summary: Withdraw a placement application
-      parameters:
-        - in: path
-          name: id
-          required: true
-          description: Id of the placement application to withdraw
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Withdrawal details
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/WithdrawPlacementApplication'
-      responses:
-        200:
-          description: Placement application withdrawn
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/PlacementApplication'
-        400:
-          description: placement application already has a decision made
-          content:
-            'application/problem+json':
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /assessments:
-    get:
-      tags:
-        - Assessment data
-      summary: Gets assessments the user is authorised to view
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: Only assessments for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: sortDirection
-          in: query
-          description: If provided, return results in the given order
-          required: false
-          schema:
-            $ref: "#/components/schemas/SortDirection"
-        - name: sortBy
-          in: query
-          description: If provided, return results ordered by the given field name
-          required: false
-          schema:
-            $ref: "#/components/schemas/AssessmentSortField"
-        - name: statuses
-          in: query
-          description: If provided, return only results with the given statuses
-          required: false
-          schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/AssessmentStatus"
-        - name: crnOrName
-          in: query
-          description: Filters results using an exact match or CRN, or partial match on name
-          required: false
-          schema:
-            type: string
-        - name: page
-          in: query
-          description: Page number of results to return. If blank, returns all results
-          schema:
-            type: integer
-        - name: perPage
-          in: query
-          description: Number of items to return per page (defaults to 10)
-          schema:
-            type: integer
-      responses:
-        200:
-          description: successfully retrieved assessments
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AssessmentSummary'
-          headers:
-            X-Pagination-CurrentPage:
-              schema:
-                type: integer
-              description: The current page number
-            X-Pagination-TotalPages:
-              schema:
-                type: integer
-              description: The total number of pages
-            X-Pagination-TotalResults:
-              schema:
-                type: integer
-              description: The total number of results
-            X-Pagination-PageSize:
-              schema:
-                type: integer
-              description: The size of each page
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /assessments/{assessmentId}:
-    get:
-      tags:
-        - Assessment data
-      summary: Gets a single assessment by its id
-      parameters:
-        - in: path
-          name: assessmentId
-          required: true
-          description: Id of the assessment
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successfully retrieved assessment
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Assessment'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-    put:
-      tags:
-        - Assessment data
-      summary: Updates an assessment
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: false
-          description: Required for operations specific to each CAS
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - in: path
-          name: assessmentId
-          required: true
-          description: Id of the assessment
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Updated assessment
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/UpdateAssessment'
-        required: true
-      responses:
-        200:
-          description: successfully retrieved assessment
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Assessment'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /assessments/{assessmentId}/notes:
-    post:
-      tags:
-        - Assessment data
-      summary: Adds a clarification note to an assessment
-      parameters:
-        - in: path
-          name: assessmentId
-          required: true
-          description: Id of the assessment
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Clarification note
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewClarificationNote'
-        required: true
-      responses:
-        201:
-          description: successfully created a clarification note
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ClarificationNote'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /assessments/{assessmentId}/notes/{noteId}:
-    put:
-      tags:
-        - Assessment data
-      summary: Updates an assessment's clarification note
-      parameters:
-        - in: path
-          name: assessmentId
-          required: true
-          description: Id of the assessment
-          schema:
-            type: string
-            format: uuid
-        - in: path
-          name: noteId
-          required: true
-          description: Id of the clarification note
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Clarification note
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/UpdatedClarificationNote'
-        required: true
-      responses:
-        201:
-          description: successfully updated a clarification note
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ClarificationNote'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /assessments/{assessmentId}/referral-history-notes:
-    post:
-      tags:
-        - Assessment data
-      summary: Adds a user-written note to an assessment
-      parameters:
-        - in: path
-          name: assessmentId
-          required: true
-          description: Id of the assessment
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: User note
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/NewReferralHistoryUserNote'
-        required: true
-      responses:
-        201:
-          description: successfully created a user-written note
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ReferralHistoryNote'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /assessments/{assessmentId}/acceptance:
-    post:
-      tags:
-        - Assessment data
-      summary: Accepts an Assessment
-      parameters:
-        - in: path
-          name: assessmentId
-          required: true
-          description: Id of the assessment
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Information needed to accept an assessment
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/AssessmentAcceptance'
-        required: true
-      responses:
-        200:
-          description: successfully accepted the assessment
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /assessments/{assessmentId}/rejection:
-    post:
-      tags:
-        - Assessment data
-      summary: Rejects an Assessment
-      parameters:
-        - in: path
-          name: assessmentId
-          required: true
-          description: Id of the assessment
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: Rejection info
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/AssessmentRejection'
-        required: true
-      responses:
-        200:
-          description: successfully rejected the assessment
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /assessments/{assessmentId}/closure:
-    post:
-      tags:
-        - Assessment data
-      summary: Closes an Assessment
-      parameters:
-        - in: path
-          name: assessmentId
-          required: true
-          description: Id of the assessment
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: successfully closed the assessment
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /profile/v2:
-    get:
-      tags:
-        - Auth
-      summary: Returns information on the logged in user
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: Filters the user details to those relevant to the specified service.
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: readOnly
-          in: query
-          required: false
-          description: If set to true, will not attempt to update the user from delius
-          schema:
-            type: boolean
-      responses:
-        200:
-          description: successfully retrieved information on user
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ProfileResponse'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /users:
-    get:
-      tags:
-        - Auth
-      summary: Returns a list of users. If only the user's ID and Name are required, use /users/summary
-      parameters:
-        - in: query
-          name: roles
-          required: false
-          description: Only return users with the provided role(s)
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/ApprovedPremisesUserRole'
-        - in: query
-          name: qualifications
-          required: false
-          description: Only return users with the provided qualification(s)
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/UserQualification'
-        - name: probationRegionId
-          in: query
-          description: Probation region ID to filter results by
-          schema:
-            type: string
-            format: uuid
-        - name: apAreaId
-          in: query
-          description: Approved premises area ID to filter results by.  Deprecated, Use cruManagementAreaId instead.
-          deprecated: true
-          schema:
-            type: string
-            format: uuid
-        - name: cruManagementAreaId
-          in: query
-          required: false
-          description: filter by CRU management area ID
-          schema:
-            type: string
-            format: uuid
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: Filters the user details to those relevant to the specified service.
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: page
-          in: query
-          description: Page number of results to return. If blank, returns all results
-          schema:
-            type: integer
-        - name: sortBy
-          in: query
-          description: Which field to sort the results by. If blank, will sort by createdAt
-          schema:
-            $ref: '#/components/schemas/UserSortField'
-        - name: sortDirection
-          in: query
-          description: The direction to sort the results by. If blank, will sort in descending order
-          schema:
-            $ref: '#/components/schemas/SortDirection'
-      responses:
-        200:
-          description: successfully retrieved users
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-          headers:
-            X-Pagination-CurrentPage:
-              schema:
-                type: integer
-              description: The current page number
-            X-Pagination-TotalPages:
-              schema:
-                type: integer
-              description: The total number of pages
-            X-Pagination-TotalResults:
-              schema:
-                type: integer
-              description: The total number of results
-            X-Pagination-PageSize:
-              schema:
-                type: integer
-              description: The size of each page
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /users/{id}:
-    get:
-      summary: Get information about a specific user
-      parameters:
-        - in: path
-          name: id
-          required: true
-          description: Id of the user
-          schema:
-            type: string
-            format: uuid
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: If given, only users for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-      responses:
-        200:
-          description: successfully retrieved information on user
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/User'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-    put:
-      summary: Update information about a specific user's roles and qualifications. Deprecated. Instead use PUT /cas1/user/{userid}
-      deprecated: true
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: If given, only users for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - in: path
-          name: id
-          required: true
-          description: Id of the user
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/UserRolesAndQualifications'
-        required: true
-      responses:
-        200:
-          description: Successfully added information about user roles and qualifications
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/User'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-    delete:
-      summary: Deletes the user. Deprecated. Instead use DELETE /cas1/user/{userid}
-      deprecated: true
-      parameters:
-        - name: id
-          in: path
-          description: ID of the user
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: Only users for this service will be allowed to delete a user
-          schema:
-            $ref: '#/components/schemas/ServiceName'
       responses:
         200:
           description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/OASysRiskOfSeriousHarm'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        404:
+          description: invalid CRN
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Problem'
+        500:
+          $ref: '#/components/responses/500Response'
+  /people/{crn}/risks:
+    get:
+      tags:
+        - People operations
+      summary: Returns the risks for a Person
+      parameters:
+        - name: crn
+          in: path
+          description: CRN of the Person to fetch risks for
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/PersonRisks'
         400:
           description: invalid params
           content:
@@ -3951,349 +541,49 @@ paths:
           $ref: '#/components/responses/401Response'
         403:
           $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /users/summary:
-    get:
-      tags:
-        - Auth
-      summary: Returns a list of user summaries (i.e. id and name only)
-      parameters:
-        - in: query
-          name: roles
-          required: false
-          description: Only return users with the provided role(s)
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/ApprovedPremisesUserRole'
-        - in: query
-          name: qualifications
-          required: false
-          description: Only return users with the provided qualification(s)
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/UserQualification'
-        - name: probationRegionId
-          in: query
-          description: Probation region ID to filter results by
-          schema:
-            type: string
-            format: uuid
-        - name: apAreaId
-          in: query
-          description: Approved premises area ID to filter results by
-          schema:
-            type: string
-            format: uuid
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: Filters the user details to those relevant to the specified service.
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: page
-          in: query
-          description: Page number of results to return. If blank, returns all results
-          schema:
-            type: integer
-        - name: sortBy
-          in: query
-          description: Which field to sort the results by. If blank, will sort by createdAt
-          schema:
-            $ref: '#/components/schemas/UserSortField'
-        - name: sortDirection
-          in: query
-          description: The direction to sort the results by. If blank, will sort in descending order
-          schema:
-            $ref: '#/components/schemas/SortDirection'
-      responses:
-        200:
-          description: successfully retrieved users
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/UserSummary'
-          headers:
-            X-Pagination-CurrentPage:
-              schema:
-                type: integer
-              description: The current page number
-            X-Pagination-TotalPages:
-              schema:
-                type: integer
-              description: The total number of pages
-            X-Pagination-TotalResults:
-              schema:
-                type: integer
-              description: The total number of results
-            X-Pagination-PageSize:
-              schema:
-                type: integer
-              description: The size of each page
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /users/search:
-    get:
-      tags:
-        - Auth
-      summary: Returns a list of users with partial match on name
-      parameters:
-        - in: query
-          name: name
-          required: true
-          description: Name or partial name of the user
-          schema:
-            type: string
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: Filters the user details to those relevant to the specified service.
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-      responses:
-        200:
-          description: successfully retrieved users
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /users/delius:
-    get:
-      tags:
-        - Auth
-      summary: Returns a user with match on name
-      parameters:
-        - in: query
-          name: name
-          required: true
-          description: Name of the user
-          schema:
-            type: string
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: Filters the user details to those relevant to the specified service.
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-      responses:
-        200:
-          description: successfully retrieved user
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/User'
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
         404:
-          description: User not found
+          description: invalid CRN
           content:
             'application/json':
               schema:
                 $ref: '#/components/schemas/Problem'
         500:
           $ref: '#/components/responses/500Response'
-  /seed:
-    post:
-      summary: Starts the data seeding process, can only be called from a local connection
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/SeedRequest'
-        required: true
-      responses:
-        202:
-          description: successfully requested task
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /seedFromExcel:
-    post:
-      summary: Starts the data seeding from Excel process, can only be called from a local connection
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/SeedFromExcelRequest'
-        required: true
-      responses:
-        202:
-          description: successfully requested task
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /cache/{cacheName}:
-    delete:
-      summary: Clears the given cache, can only be called from a local connection
-      parameters:
-        - in: path
-          name: cacheName
-          required: true
-          schema:
-            $ref: '#/components/schemas/CacheType'
-      responses:
-        200:
-          description: successfully cleared cache
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /migration-job:
-    post:
-      summary: Starts a migration job (process for data migrations that can't be achieved solely via SQL migrations), can only be called from a local connection
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/MigrationJobRequest'
-        required: true
-      responses:
-        202:
-          description: successfully requested task
-        401:
-          $ref: '#/components/responses/401Response'
-        403:
-          $ref: '#/components/responses/403Response'
-        500:
-          $ref: '#/components/responses/500Response'
-  /reports/bookings:
+  /reference-data/application-status:
     get:
       tags:
-        - Reports
-      summary: Returns a spreadsheet of all bookings for the specified service and (optional) region.
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: Only bookings for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: probationRegionId
-          in: query
-          required: false
-          description: If provided, only bookings for this region will be returned
-          schema:
-            type: string
-            format: uuid
-        - name: year
-          in: query
-          required: true
-          description: If provided, only bookings for this year will be returned
-          schema:
-            type: integer
-        - name: month
-          in: query
-          required: true
-          description: If provided, only bookings for this month will be returned - must be provided with year
-          schema:
-            type: integer
+        - Reference Data
+      summary: Lists all application status update choices
       responses:
         200:
-          description: Successfully retrieved the report
+          description: successful operation
           content:
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+            'application/json':
               schema:
-                type: string
-                format: binary
-  /reports/bed-usage:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cas2ApplicationStatus'
+        401:
+          $ref: '#/components/responses/401Response'
+        403:
+          $ref: '#/components/responses/403Response'
+        500:
+          $ref: '#/components/responses/500Response'
+  /reports/{reportName}:
     get:
       tags:
         - Reports
-      summary: Returns a spreadsheet of the bookings, voids and turnarounds all beds for the specified service and (optional) region.
+      summary: Returns a 'report' spreadsheet of metrics
       parameters:
-        - name: X-Service-Name
-          in: header
+        - name: reportName
+          in: path
+          description: name of the report to download
           required: true
-          description: Only bookings for this service will be returned
           schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: probationRegionId
-          in: query
-          required: false
-          description: If provided, only bookings for this region will be returned
-          schema:
-            type: string
-            format: uuid
-        - name: year
-          in: query
-          required: true
-          description: Only bookings for this year will be returned
-          schema:
-            type: integer
-        - name: month
-          in: query
-          required: true
-          description: Only bookings for this month will be returned - must be provided with year
-          schema:
-            type: integer
+            $ref: '#/components/schemas/Cas2ReportName'
       responses:
         200:
-          description: Successfully retrieved the report
-          content:
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-              schema:
-                type: string
-                format: binary
-  /reports/bed-utilisation:
-    get:
-      tags:
-        - Reports
-      summary: Returns a spreadsheet showing how many days per month each bedspace spent in which state and the overall occupancy rate.
-      parameters:
-        - name: X-Service-Name
-          in: header
-          required: true
-          description: Only bookings for this service will be returned
-          schema:
-            $ref: '#/components/schemas/ServiceName'
-        - name: probationRegionId
-          in: query
-          required: false
-          description: If provided, only bookings for this region will be returned
-          schema:
-            type: string
-            format: uuid
-        - name: year
-          in: query
-          required: true
-          description: Only bookings for this year will be returned
-          schema:
-            type: integer
-        - name: month
-          in: query
-          required: true
-          description: Only bookings for this month will be returned - must be provided with year
-          schema:
-            type: integer
-      responses:
-        200:
-          description: Successfully retrieved the report
+          description: successful operation
           content:
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
               schema:
@@ -9288,3 +5578,7 @@ components:
         - SHARED_PROPERTY
         - SINGLE_OCCUPANCY
         - WHEELCHAIR_ACCESSIBLE
+
+# GARETH above here
+
+# TOBY below here
