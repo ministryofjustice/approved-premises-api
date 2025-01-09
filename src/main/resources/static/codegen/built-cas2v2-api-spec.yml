@@ -1018,6 +1018,13 @@ components:
       required:
         - id
         - name
+    ApplicationOrigin:
+      type: string
+      default: homeDetentionCurfew
+      enum:
+        - courtBail
+        - prisonBail
+        - homeDetentionCurfew
     ProbationRegion:
       type: object
       properties:
@@ -2362,6 +2369,8 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Cas2TimelineEvent'
+            applicationOrigin:
+              $ref: "#/components/schemas/ApplicationOrigin"
           required:
             - createdBy
             - schemaVersion
@@ -2441,6 +2450,8 @@ components:
         assessment:
           type: object
           $ref: '#/components/schemas/Cas2v2Assessment'
+        applicationOrigin:
+          $ref: "#/components/schemas/ApplicationOrigin"
       required:
         - id
         - person
@@ -2648,6 +2659,8 @@ components:
           type: string
         nomsNumber:
           type: string
+        applicationOrigin:
+          $ref: "#/components/schemas/ApplicationOrigin"
       required:
         - type
         - id
@@ -2796,6 +2809,8 @@ components:
         submittedAt:
           type: string
           format: date-time
+        applicationOrigin:
+          $ref: "#/components/schemas/ApplicationOrigin"
       required:
         - createdByUserId
         - status
@@ -2933,6 +2948,8 @@ components:
         offenceId:
           type: string
           example: "M1502750438"
+        applicationOrigin:
+          $ref: "#/components/schemas/ApplicationOrigin"
       required:
         - crn
     UpdateApplicationType:
@@ -3125,6 +3142,8 @@ components:
           format: date
         telephoneNumber:
           type: string
+        applicationOrigin:
+          $ref: "#/components/schemas/ApplicationOrigin"
       required:
         - translatedDocument
         - applicationId

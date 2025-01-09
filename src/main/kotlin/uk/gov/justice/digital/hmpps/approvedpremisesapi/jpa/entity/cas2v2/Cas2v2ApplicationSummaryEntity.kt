@@ -55,4 +55,6 @@ data class Cas2v2ApplicationSummaryEntity(
   var latestStatusUpdateStatusId: String? = null,
   @Column(name = "referring_prison_code")
   val prisonCode: String,
+  @Column(name = "application_origin")
+  var applicationOrigin: String? = null,
 )

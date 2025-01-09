@@ -114,6 +114,8 @@ components:
         applicationUrl:
           type: string
           example: https://community-accommodation-tier-2-dev.hmpps.service.justice.gov.uk/applications/484b8b5e-6c3b-4400-b200-425bbe410713
+        applicationOrigin:
+          type: string
         personReference:
           $ref: '#/components/schemas/PersonReference'
         referringPrisonCode:

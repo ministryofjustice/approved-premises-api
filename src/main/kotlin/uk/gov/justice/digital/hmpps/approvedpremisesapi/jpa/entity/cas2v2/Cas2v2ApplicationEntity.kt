@@ -95,6 +95,7 @@ data class Cas2v2ApplicationEntity(
   var hdcEligibilityDate: LocalDate? = null,
   var conditionalReleaseDate: LocalDate? = null,
   var telephoneNumber: String? = null,
+  var applicationOrigin: String? = null,
 ) {
   override fun toString() = "Cas2v2ApplicationEntity: $id"
 }

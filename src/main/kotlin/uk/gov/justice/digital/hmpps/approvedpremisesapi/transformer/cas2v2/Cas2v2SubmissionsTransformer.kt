@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.cas2v2
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApplicationOrigin
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2v2SubmittedApplication
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas2v2SubmittedApplicationSummary
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.cas2v2.Cas2v2ApplicationEntity
@@ -37,6 +38,7 @@ class Cas2v2SubmissionsTransformer(
       telephoneNumber = jpa.telephoneNumber,
       timelineEvents = cas2v2TimelineEventsTransformer.transformApplicationToTimelineEvents(jpa),
       assessment = cas2v2AssessmentsTransformer.transformJpaToApiRepresentation(jpa.assessment!!),
+      applicationOrigin = getApplicationOrigin(jpa.applicationOrigin),
     )
   }
 
@@ -52,6 +54,16 @@ class Cas2v2SubmissionsTransformer(
       submittedAt = jpaSummary.submittedAt?.toInstant(),
       crn = jpaSummary.crn,
       nomsNumber = jpaSummary.nomsNumber,
+      applicationOrigin = getApplicationOrigin(jpaSummary.applicationOrigin),
     )
+  }
+}
+
+// shared function between SubmissionsTransformer and ApplicationsTransformer
+fun getApplicationOrigin(origin: String?): ApplicationOrigin {
+  return when (origin) {
+    "courtBail" -> ApplicationOrigin.courtBail
+    "prisonBail" -> ApplicationOrigin.prisonBail
+    else -> ApplicationOrigin.homeDetentionCurfew
   }
 }

@@ -38,6 +38,7 @@ class Cas2v2ApplicationsTransformer(
       telephoneNumber = jpa.telephoneNumber,
       assessment = if (jpa.assessment != null) cas2v2AssessmentsTransformer.transformJpaToApiRepresentation(jpa.assessment!!) else null,
       timelineEvents = timelineEventsTransformer.transformApplicationToTimelineEvents(jpa),
+      applicationOrigin = getApplicationOrigin(jpa.applicationOrigin),
     )
   }
 
@@ -58,6 +59,7 @@ class Cas2v2ApplicationsTransformer(
       crn = jpaSummary.crn,
       nomsNumber = jpaSummary.nomsNumber,
       personName = personName,
+      applicationOrigin = getApplicationOrigin(jpaSummary.applicationOrigin),
     )
   }
 

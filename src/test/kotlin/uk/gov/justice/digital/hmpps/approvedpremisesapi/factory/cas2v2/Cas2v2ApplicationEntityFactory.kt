@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.cas2v2
 
 import io.github.bluegroundltd.kfactory.Factory
 import io.github.bluegroundltd.kfactory.Yielded
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApplicationOrigin
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ApprovedPremisesApplicationJsonSchemaEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.JsonSchemaEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.NomisUserEntity
@@ -40,6 +41,7 @@ class Cas2v2ApplicationEntityFactory : Factory<Cas2v2ApplicationEntity> {
   private var preferredAreas: Yielded<String?> = { null }
   private var hdcEligibilityDate: Yielded<LocalDate?> = { null }
   private var conditionalReleaseDate: Yielded<LocalDate?> = { null }
+  private var applicationOrigin: Yielded<ApplicationOrigin?> = { null }
 
   fun withId(id: UUID) = apply {
     this.id = { id }
@@ -125,6 +127,10 @@ class Cas2v2ApplicationEntityFactory : Factory<Cas2v2ApplicationEntity> {
     this.conditionalReleaseDate = { conditionalReleaseDate }
   }
 
+  fun withApplicationOrigin(applicationOrigin: ApplicationOrigin) = apply {
+    this.applicationOrigin = { applicationOrigin }
+  }
+
   @SuppressWarnings("TooGenericExceptionThrown")
   override fun produce(): Cas2v2ApplicationEntity {
     val entity = Cas2v2ApplicationEntity(
@@ -147,6 +153,7 @@ class Cas2v2ApplicationEntityFactory : Factory<Cas2v2ApplicationEntity> {
       hdcEligibilityDate = this.hdcEligibilityDate(),
       conditionalReleaseDate = this.conditionalReleaseDate(),
       preferredAreas = this.preferredAreas(),
+      applicationOrigin = this.applicationOrigin().toString(),
     )
 
     return entity
