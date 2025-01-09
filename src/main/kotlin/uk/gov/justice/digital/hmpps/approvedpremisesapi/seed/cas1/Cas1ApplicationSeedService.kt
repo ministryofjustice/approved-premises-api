@@ -24,7 +24,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.OffenderService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService.GetUserResponse
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromCasResult
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromValidatableActionResult
 import java.io.IOException
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -45,14 +44,22 @@ class Cas1ApplicationSeedService(
   private val log = LoggerFactory.getLogger(this::class.java)
 
   @SuppressWarnings("TooGenericExceptionCaught")
-  fun createApplication(deliusUserName: String, crn: String) {
+  fun createApplication(
+    deliusUserName: String,
+    crn: String,
+    createIfExistingApplicationForCrn: Boolean = false,
+  ) {
     if (environmentService.isNotATestEnvironment()) {
       error("Cannot create test applications as not in a test environment")
     }
 
     log.info("Auto-scripting application for CRN $crn")
     try {
-      createApplicationInternal(deliusUserName = deliusUserName, crn = crn)
+      createApplicationInternal(
+        deliusUserName = deliusUserName,
+        crn = crn,
+        createIfExistingApplicationForCrn = createIfExistingApplicationForCrn,
+      )
     } catch (e: Exception) {
       log.error("Creating application with crn $crn failed", e)
     }
@@ -71,8 +78,12 @@ class Cas1ApplicationSeedService(
     }
   }
 
-  private fun createApplicationInternal(deliusUserName: String, crn: String) {
-    if (applicationService.getApplicationsForCrn(crn, ServiceName.approvedPremises).isNotEmpty()) {
+  private fun createApplicationInternal(
+    deliusUserName: String,
+    crn: String,
+    createIfExistingApplicationForCrn: Boolean,
+  ) {
+    if (!createIfExistingApplicationForCrn && applicationService.getApplicationsForCrn(crn, ServiceName.approvedPremises).isNotEmpty()) {
       log.info("Already have CAS1 application for $crn, not seeding a new application")
       return
     }

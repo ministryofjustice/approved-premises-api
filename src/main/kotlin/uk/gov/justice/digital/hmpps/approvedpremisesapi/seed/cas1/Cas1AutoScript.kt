@@ -11,10 +11,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedLogger
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.EnvironmentService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService.GetUserResponse
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromCasResult
-import java.io.IOException
-import java.time.LocalDate
-import java.time.OffsetDateTime
 import java.util.UUID
 
 @SuppressWarnings("MagicNumber", "MaxLineLength", "TooGenericExceptionCaught")

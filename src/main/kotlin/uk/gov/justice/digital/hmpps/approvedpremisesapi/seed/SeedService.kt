@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.ApprovedPremis
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.ApprovedPremisesRoomsSeedJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.Cas1BackfillActiveSpaceBookingsCreatedInDelius
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.Cas1BookingToSpaceBookingSeedJob
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.Cas1CreateTestApplicationsSeedJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.Cas1CruManagementAreaSeedJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.Cas1DomainEventReplaySeedJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.Cas1DuplicateApplicationSeedJob
@@ -90,6 +91,7 @@ class SeedService(
         SeedFileType.approvedPremisesSpacePlanningDryRun -> getBean(Cas1PlanSpacePlanningDryRunSeedJob::class)
         SeedFileType.approvedPremisesImportDeliusReferrals -> getBean(Cas1ImportDeliusReferralsSeedJob::class)
         SeedFileType.approvedPremisesUpdateSpaceBooking -> getBean(Cas1UpdateSpaceBookingSeedJob::class)
+        SeedFileType.approvedPremisesCreateTestApplications -> getBean(Cas1CreateTestApplicationsSeedJob::class)
         SeedFileType.temporaryAccommodationReferralRejection -> getBean(Cas3ReferralRejectionSeedJob::class)
         SeedFileType.approvedPremisesBackfillActiveSpaceBookingsCreatedInDelius -> getBean(Cas1BackfillActiveSpaceBookingsCreatedInDelius::class)
       }
