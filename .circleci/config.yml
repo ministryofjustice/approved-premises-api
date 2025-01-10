@@ -122,6 +122,43 @@ jobs:
           root: .
           paths:
             - docker_cache
+  run_cas3_e2e_tests:
+    executor:
+      name: unit-test-gradle
+    steps:
+      - checkout:
+          path: ./hmpps-approved-premises-api
+      - run:
+          name: Install and set Linuxbrew
+          command: |
+            sudo apt-get install build-essential curl file git
+            sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)" 
+            echo 'export PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin/:$PATH"' >> $BASH_ENV
+            echo 'export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"' >> $BASH_ENV
+            echo 'export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"' >> $BASH_ENV
+      - run:
+          name: "Install dependencies"
+          command: |
+            brew install node nodenv docker
+      - run:
+          name: Clone ap-tools and UI
+          command: |
+            git clone https://github.com/ministryofjustice/hmpps-approved-premises-tools.git
+            git clone https://github.com/ministryofjustice/hmpps-temporary-accommodation-ui.git
+            export LOCAL_CAS_API_PATH=/home/circleci/project/hmpps-approved-premises-api
+            export LOCAL_CAS_UI_PATH=/home/circleci/project/hmpps-temporary-accommodation-ui
+            cd hmpps-temporary-accommodation-ui
+            if [ ! -f .env ]; then
+              cp .env.example .env
+            fi
+                     
+            if [ ! -f .env.test ]; then
+              cp .env.example .env
+            fi
+            cd ..
+            systemctl --user start docker-desktop
+            printenv
+            ls
   build:
     environment:
       _JAVA_OPTIONS: "-Xmx3g"
@@ -365,6 +402,7 @@ workflows:
   version: 2
   build-test-and-deploy:
     jobs:
+      - run_cas3_e2e_tests
       - build
       - code_linting_check_with_ktlint:
           requires:
