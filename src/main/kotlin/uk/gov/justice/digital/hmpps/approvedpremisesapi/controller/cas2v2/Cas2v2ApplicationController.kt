@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ConflictProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ForbiddenProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.NotFoundProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActionResult
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.CasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.ValidatableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.NomisUserService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas2.OffenderService
@@ -33,8 +34,8 @@ class Cas2v2ApplicationController(
   private val cas2v2ApplicationService: Cas2v2ApplicationService,
   private val cas2v2ApplicationsTransformer: Cas2v2ApplicationsTransformer,
   private val objectMapper: ObjectMapper,
-  private val offenderService: OffenderService,
-  private val userService: NomisUserService,
+  private val cas2OffenderService: OffenderService,
+  private val nomisUserService: NomisUserService,
 ) : ApplicationsCas2v2Delegate {
 
   override fun applicationsGet(
@@ -50,7 +51,7 @@ class Cas2v2ApplicationController(
      *
      * In the Cas2v2ApplicationEntity the created_by field would be of type Cas2v2User
      * */
-    val user = userService.getUserForRequest()
+    val user = nomisUserService.getUserForRequest()
 
     prisonCode?.let { if (prisonCode != user.activeCaseloadId) throw ForbiddenProblem() }
 
@@ -64,7 +65,7 @@ class Cas2v2ApplicationController(
   }
 
   override fun applicationsApplicationIdGet(applicationId: UUID): ResponseEntity<Application> {
-    val user = userService.getUserForRequest()
+    val user = nomisUserService.getUserForRequest()
 
     val application = when (
       val applicationResult = cas2v2ApplicationService
@@ -87,9 +88,9 @@ class Cas2v2ApplicationController(
 
   @Transactional
   override fun applicationsPost(body: NewApplication): ResponseEntity<Application> {
-    val user = userService.getUserForRequest()
+    val user = nomisUserService.getUserForRequest()
 
-    val personInfo = offenderService.getFullInfoForPersonOrThrow(body.crn)
+    val personInfo = cas2OffenderService.getFullInfoForPersonOrThrow(body.crn)
 
     val applicationResult = cas2v2ApplicationService.createCas2v2Application(
       body.crn,
@@ -114,7 +115,7 @@ class Cas2v2ApplicationController(
     applicationId: UUID,
     body: UpdateApplication,
   ): ResponseEntity<Application> {
-    val user = userService.getUserForRequest()
+    val user = nomisUserService.getUserForRequest()
 
     val serializedData = objectMapper.writeValueAsString(body.data)
 
@@ -143,7 +144,7 @@ class Cas2v2ApplicationController(
 
   @Transactional
   override fun applicationsApplicationIdAbandonPut(applicationId: UUID): ResponseEntity<Unit> {
-    val user = userService.getUserForRequest()
+    val user = nomisUserService.getUserForRequest()
 
     val validationResult = when (val applicationResult = cas2v2ApplicationService.abandonCas2v2Application(applicationId, user)) {
       is AuthorisableActionResult.NotFound -> throw NotFoundProblem(applicationId, "Application")
@@ -166,7 +167,7 @@ class Cas2v2ApplicationController(
   ): List<ModelCas2v2ApplicationSummary> {
     val crns = applicationSummaries.map { it.crn }
 
-    val personNamesMap = offenderService.getMapOfPersonNamesAndCrns(crns)
+    val personNamesMap = cas2OffenderService.getMapOfPersonNamesAndCrns(crns)
 
     return applicationSummaries.map { application ->
       cas2v2ApplicationsTransformer.transformJpaSummaryToSummary(application, personNamesMap[application.crn]!!)
@@ -176,7 +177,7 @@ class Cas2v2ApplicationController(
   private fun getPersonDetailAndTransform(
     application: Cas2v2ApplicationEntity,
   ): Application {
-    val personInfo = offenderService.getFullInfoForPersonOrThrow(application.crn)
+    val personInfo = cas2OffenderService.getFullInfoForPersonOrThrow(application.crn)
 
     return cas2v2ApplicationsTransformer.transformJpaToApi(application, personInfo)
   }

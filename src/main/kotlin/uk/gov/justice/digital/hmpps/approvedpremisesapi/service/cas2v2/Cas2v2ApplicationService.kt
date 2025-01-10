@@ -45,11 +45,11 @@ class Cas2v2ApplicationService(
   private val cas2v2LockableApplicationRepository: Cas2v2LockableApplicationRepository,
   private val cas2v2ApplicationSummaryRepository: Cas2v2ApplicationSummaryRepository,
   private val jsonSchemaService: JsonSchemaService,
-  private val offenderService: OffenderService,
+  private val cas2OffenderService: OffenderService,
   private val cas2v2UserAccessService: Cas2v2UserAccessService,
-  private val domainEventService: DomainEventService,
+  private val cas2DomainEventService: DomainEventService,
   private val emailNotificationService: EmailNotificationService,
-  private val assessmentService: Cas2v2AssessmentService,
+  private val cas2v2AssessmentService: Cas2v2AssessmentService,
   private val notifyConfig: NotifyConfig,
   private val objectMapper: ObjectMapper,
   @Value("\${url-templates.frontend.cas2.application}") private val applicationUrlTemplate: String,
@@ -124,8 +124,9 @@ class Cas2v2ApplicationService(
 
   @SuppressWarnings("TooGenericExceptionThrown")
   fun createCas2v2Application(crn: String, user: NomisUserEntity, applicationOrigin: ApplicationOrigin? = ApplicationOrigin.homeDetentionCurfew) =
+    //This needs migrating to CasResult rather than ValidateResult
     validated<Cas2v2ApplicationEntity> {
-      val offenderDetailsResult = offenderService.getOffenderByCrn(crn)
+      val offenderDetailsResult = cas2OffenderService.getOffenderByCrn(crn)
 
       val offenderDetails = when (offenderDetailsResult) {
         is AuthorisableActionResult.NotFound -> return "$.crn" hasSingleValidationError "doesNotExist"
@@ -314,7 +315,7 @@ class Cas2v2ApplicationService(
     val domainEventId = UUID.randomUUID()
     val eventOccurredAt = application.submittedAt ?: OffsetDateTime.now()
 
-    domainEventService.saveCas2ApplicationSubmittedDomainEvent(
+    cas2DomainEventService.saveCas2ApplicationSubmittedDomainEvent(
       DomainEvent(
         id = domainEventId,
         applicationId = application.id,
@@ -353,12 +354,12 @@ class Cas2v2ApplicationService(
   }
 
   fun createAssessment(application: Cas2v2ApplicationEntity) {
-    assessmentService.createCas2v2Assessment(application)
+    cas2v2AssessmentService.createCas2v2Assessment(application)
   }
 
   @SuppressWarnings("ThrowsCount")
   private fun retrievePrisonCode(application: Cas2v2ApplicationEntity): String {
-    val inmateDetailResult = offenderService.getInmateDetailByNomsNumber(
+    val inmateDetailResult = cas2OffenderService.getInmateDetailByNomsNumber(
       crn = application.crn,
       nomsNumber = application.nomsNumber.toString(),
     )
