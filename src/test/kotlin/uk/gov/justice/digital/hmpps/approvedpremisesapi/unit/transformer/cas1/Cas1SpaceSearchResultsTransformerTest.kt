@@ -89,7 +89,6 @@ class Cas1SpaceSearchResultsTransformerTest {
     assertThat(premises1.premisesCharacteristics).isEmpty()
     assertThat(premises1.characteristics).isEmpty()
     assertThat(actual.results[0].distanceInMiles).isEqualTo(BigDecimal.valueOf(1.0))
-    assertThat(actual.results[0].spacesAvailable).isEmpty()
 
     val premises2 = actual.results[1].premises
     assertThat(premises2).isNotNull
@@ -107,6 +106,5 @@ class Cas1SpaceSearchResultsTransformerTest {
     assertThat(premises2.premisesCharacteristics).isEmpty()
     assertThat(premises2.characteristics).isEmpty()
     assertThat(actual.results[1].distanceInMiles).isEqualTo(BigDecimal.valueOf(2.0))
-    assertThat(actual.results[1].spacesAvailable).isEmpty()
   }
 }
