@@ -476,6 +476,7 @@ class Cas2v2ApplicationTest : IntegrationTestBase() {
         }
       }
     }
+
     @Test
     fun `Get all cas2v2 applications with pagination returns 200 with correct body and header`() {
       givenACas2PomUser { userEntity, jwt ->
