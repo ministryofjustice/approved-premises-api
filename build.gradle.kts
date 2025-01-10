@@ -54,7 +54,7 @@ dependencies {
 
   implementation("com.networknt:json-schema-validator:1.1.0")
 
-  implementation("com.github.doyaaaaaken:kotlin-csv-jvm:1.9.3")
+  implementation("com.github.doyaaaaaken:kotlin-csv-jvm:1.10.0")
 
   implementation("org.jetbrains.kotlinx:dataframe:0.13.1") {
     exclude(group = "org.jetbrains.kotlinx", module = "dataframe-openapi")
