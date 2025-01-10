@@ -5396,43 +5396,30 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/BedSearchResult'
+            $ref: '#/components/schemas/TemporaryAccommodationBedSearchResult'
       required:
         - resultsRoomCount
         - resultsPremisesCount
         - resultsBedCount
         - results
-    BedSearchResult:
+    TemporaryAccommodationBedSearchResult:
       type: object
       properties:
-        serviceName:
-          $ref: '#/components/schemas/ServiceName'
         premises:
           $ref: '#/components/schemas/BedSearchResultPremisesSummary'
         room:
           $ref: '#/components/schemas/BedSearchResultRoomSummary'
         bed:
           $ref: '#/components/schemas/BedSearchResultBedSummary'
+        overlaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemporaryAccommodationBedSearchResultOverlap'
       required:
-        - serviceName
         - premises
         - room
         - bed
-      discriminator:
-        propertyName: serviceName
-        mapping:
-          temporary-accommodation: '#/components/schemas/TemporaryAccommodationBedSearchResult'
-    TemporaryAccommodationBedSearchResult:
-      allOf:
-        - $ref: '#/components/schemas/BedSearchResult'
-        - type: object
-          properties:
-            overlaps:
-              type: array
-              items:
-                $ref: '#/components/schemas/TemporaryAccommodationBedSearchResultOverlap'
-          required:
-            - overlaps
+        - overlaps
     TemporaryAccommodationBedSearchResultOverlap:
       type: object
       properties:
@@ -7053,15 +7040,3 @@ components:
         - updatedReferenceNumber
         - updatedReason
         - updatedNotes
-    ApprovedPremisesBedSearchResult:
-      deprecated: true
-      description: This is no longer returned by any APIs so should be removed once removed from UI Code
-      allOf:
-        - $ref: '#/components/schemas/BedSearchResult'
-        - type: object
-          properties:
-            distanceMiles:
-              type: number
-              description: how many miles away from the postcode district the Premises this Bed belongs to is
-          required:
-            - distanceMiles

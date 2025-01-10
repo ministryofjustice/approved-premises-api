@@ -97,7 +97,7 @@ class BedSearchRepository(private val namedParameterJdbcTemplate: NamedParameter
     probationRegionId: UUID,
     premisesCharacteristicsIds: List<UUID>,
     roomCharacteristicsIds: List<UUID>,
-  ): List<TemporaryAccommodationBedSearchResult> {
+  ): List<Cas3BedSearchResult> {
     val params = MapSqlParameterSource().apply {
       addValue("probation_region_id", probationRegionId)
       addValue("probation_delivery_unit_ids", probationDeliveryUnits)
@@ -125,7 +125,7 @@ class BedSearchRepository(private val namedParameterJdbcTemplate: NamedParameter
       query,
       params,
       ResultSetExtractor { resultSet ->
-        val beds = mutableMapOf<UUID, TemporaryAccommodationBedSearchResult>()
+        val beds = mutableMapOf<UUID, Cas3BedSearchResult>()
 
         while (resultSet.next()) {
           val premisesId = UUID.fromString(resultSet.getString("premises_id"))
@@ -150,7 +150,7 @@ class BedSearchRepository(private val namedParameterJdbcTemplate: NamedParameter
           if (bedId == null) continue
 
           if (!beds.containsKey(bedId)) {
-            beds[bedId] = TemporaryAccommodationBedSearchResult(
+            beds[bedId] = Cas3BedSearchResult(
               premisesId = premisesId,
               premisesName = premisesName,
               premisesAddressLine1 = premisesAddressLine1,
@@ -206,7 +206,8 @@ private inline fun <reified T> MutableList<T>.addIfNoneMatch(entry: T, matcher: 
   this.add(entry)
 }
 
-sealed class BedSearchResult(
+@SuppressWarnings("LongParameterList")
+class Cas3BedSearchResult(
   val premisesId: UUID,
   val premisesName: String,
   val premisesAddressLine1: String,
@@ -220,41 +221,10 @@ sealed class BedSearchResult(
   val bedId: UUID,
   val bedName: String,
   val roomCharacteristics: MutableList<CharacteristicNames>,
-)
-
-@SuppressWarnings("LongParameterList")
-class TemporaryAccommodationBedSearchResult(
-  premisesId: UUID,
-  premisesName: String,
-  premisesAddressLine1: String,
-  premisesAddressLine2: String?,
-  premisesTown: String?,
-  premisesPostcode: String,
-  premisesCharacteristics: MutableList<CharacteristicNames>,
-  premisesBedCount: Int,
-  roomId: UUID,
-  roomName: String,
-  bedId: UUID,
-  bedName: String,
-  roomCharacteristics: MutableList<CharacteristicNames>,
   val probationDeliveryUnitName: String,
   val premisesNotes: String?,
   val bookedBedCount: Int,
   val overlaps: MutableList<TemporaryAccommodationBedSearchResultOverlap>,
-) : BedSearchResult(
-  premisesId,
-  premisesName,
-  premisesAddressLine1,
-  premisesAddressLine2,
-  premisesTown,
-  premisesPostcode,
-  premisesCharacteristics,
-  premisesBedCount,
-  roomId,
-  roomName,
-  bedId,
-  bedName,
-  roomCharacteristics,
 )
 
 data class CharacteristicNames(

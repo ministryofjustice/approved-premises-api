@@ -1790,7 +1790,6 @@ class BedSearchTest : IntegrationTestBase() {
           id = bed.id,
           name = bed.name,
         ),
-        serviceName = ServiceName.temporaryAccommodation,
         overlaps = overlaps,
       )
     }
