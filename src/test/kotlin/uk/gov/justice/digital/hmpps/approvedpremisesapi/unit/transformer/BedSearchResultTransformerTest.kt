@@ -6,7 +6,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.TemporaryAccommo
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.CharacteristicNames
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.BedSearchResultTransformer
 import java.util.UUID
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TemporaryAccommodationBedSearchResult as ApiTemporaryAccommodationBedSearchResult
 
 class BedSearchResultTransformerTest {
   private val bedSearchTransformer = BedSearchResultTransformer()
@@ -43,29 +42,29 @@ class BedSearchResultTransformerTest {
         .produce(),
     )
 
-    val result = bedSearchTransformer.transformDomainToApi(domainResults)
+    val searchResults = bedSearchTransformer.transformDomainToApi(domainResults)
 
-    assertThat(result.resultsBedCount).isEqualTo(4)
-    assertThat(result.resultsPremisesCount).isEqualTo(2)
-    assertThat(result.resultsRoomCount).isEqualTo(3)
+    assertThat(searchResults.resultsBedCount).isEqualTo(4)
+    assertThat(searchResults.resultsPremisesCount).isEqualTo(2)
+    assertThat(searchResults.resultsRoomCount).isEqualTo(3)
 
-    result.results.forEachIndexed { index, it ->
+    searchResults.results.forEachIndexed { index, result ->
       val domainResult = domainResults[index]
 
-      assertThat(domainResult.premisesId).isEqualTo(it.premises.id)
-      assertThat(domainResult.premisesName).isEqualTo(it.premises.name)
-      assertThat(domainResult.premisesAddressLine1).isEqualTo(it.premises.addressLine1)
-      assertThat(domainResult.premisesAddressLine2).isEqualTo(it.premises.addressLine2)
-      assertThat(domainResult.premisesTown).isEqualTo(it.premises.town)
-      assertThat(domainResult.premisesPostcode).isEqualTo(it.premises.postcode)
-      assertThat(domainResult.premisesCharacteristics).isEqualTo(it.premises.characteristics.map { c -> CharacteristicNames(c.propertyName, c.name) })
-      assertThat(domainResult.premisesBedCount).isEqualTo(it.premises.bedCount)
-      assertThat(domainResult.roomId).isEqualTo(it.room.id)
-      assertThat(domainResult.roomName).isEqualTo(it.room.name)
-      assertThat(domainResult.bedId).isEqualTo(it.bed.id)
-      assertThat(domainResult.bedName).isEqualTo(it.bed.name)
-      assertThat(domainResult.roomCharacteristics).isEqualTo(it.room.characteristics.map { c -> CharacteristicNames(c.propertyName, c.name) })
-      assertThat(domainResult.overlaps).isEqualTo((it as ApiTemporaryAccommodationBedSearchResult).overlaps)
+      assertThat(domainResult.premisesId).isEqualTo(result.premises.id)
+      assertThat(domainResult.premisesName).isEqualTo(result.premises.name)
+      assertThat(domainResult.premisesAddressLine1).isEqualTo(result.premises.addressLine1)
+      assertThat(domainResult.premisesAddressLine2).isEqualTo(result.premises.addressLine2)
+      assertThat(domainResult.premisesTown).isEqualTo(result.premises.town)
+      assertThat(domainResult.premisesPostcode).isEqualTo(result.premises.postcode)
+      assertThat(domainResult.premisesCharacteristics).isEqualTo(result.premises.characteristics.map { c -> CharacteristicNames(c.propertyName, c.name) })
+      assertThat(domainResult.premisesBedCount).isEqualTo(result.premises.bedCount)
+      assertThat(domainResult.roomId).isEqualTo(result.room.id)
+      assertThat(domainResult.roomName).isEqualTo(result.room.name)
+      assertThat(domainResult.bedId).isEqualTo(result.bed.id)
+      assertThat(domainResult.bedName).isEqualTo(result.bed.name)
+      assertThat(domainResult.roomCharacteristics).isEqualTo(result.room.characteristics.map { c -> CharacteristicNames(c.propertyName, c.name) })
+      assertThat(domainResult.overlaps).isEqualTo(result.overlaps)
     }
   }
 }

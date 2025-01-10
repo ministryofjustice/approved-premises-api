@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonSummaryInfoR
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.forCrn
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.validatedCasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.BedSearchRepository
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.TemporaryAccommodationBedSearchResult
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas3BedSearchResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.TemporaryAccommodationBedSearchResultOverlap
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.CasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.CharacteristicService
@@ -45,7 +45,7 @@ class Cas3BedspaceSearchService(
     startDate: LocalDate,
     durationInDays: Int,
     propertyBedAttributes: List<BedSearchAttributes>?,
-  ): CasResult<List<TemporaryAccommodationBedSearchResult>> = validatedCasResult {
+  ): CasResult<List<Cas3BedSearchResult>> = validatedCasResult {
     val probationDeliveryUnitIds = mutableListOf<UUID>()
 
     if (durationInDays < 1) {
