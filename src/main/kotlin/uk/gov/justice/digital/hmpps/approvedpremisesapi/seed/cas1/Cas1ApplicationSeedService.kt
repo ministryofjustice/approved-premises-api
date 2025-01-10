@@ -1,29 +1,43 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1
 
+import org.json.JSONObject
 import org.slf4j.LoggerFactory
-import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.BookingStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1ApplicationTimelinessCategory
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1ApplicationUserDetails
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Gender
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PlacementDates
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PlacementRequirements
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ReleaseTypeOption
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SentenceTypeOption
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SituationOption
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SubmitApprovedPremisesApplication
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesRepository
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.BookingEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.BookingRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas1SpaceBookingEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas1SpaceBookingRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.CharacteristicEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.OfflineApplicationEntity
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PostcodeDistrictRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonInfoResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ForbiddenProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.NotFoundProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationTimelineNoteService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.AssessmentService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.EnvironmentService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.OffenderService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService.GetUserResponse
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.ensureEntityFromCasResultIsSuccess
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromCasResult
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromNestedAuthorisableValidatableActionResult
 import java.io.IOException
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -40,29 +54,29 @@ class Cas1ApplicationSeedService(
   private val applicationService: ApplicationService,
   private val userService: UserService,
   private val environmentService: EnvironmentService,
+  private val assessmentService: AssessmentService,
+  private val assessmentRepository: AssessmentRepository,
+  private val postcodeDistrictRepository: PostcodeDistrictRepository,
 ) {
   private val log = LoggerFactory.getLogger(this::class.java)
+
+  enum class ApplicationState {
+    PENDING_SUBMISSION,
+    AUTHORISED,
+  }
 
   @SuppressWarnings("TooGenericExceptionCaught")
   fun createApplication(
     deliusUserName: String,
     crn: String,
     createIfExistingApplicationForCrn: Boolean = false,
+    state: ApplicationState,
   ) {
     if (environmentService.isNotATestEnvironment()) {
       error("Cannot create test applications as not in a test environment")
     }
 
-    log.info("Auto-scripting application for CRN $crn")
-    try {
-      createApplicationInternal(
-        deliusUserName = deliusUserName,
-        crn = crn,
-        createIfExistingApplicationForCrn = createIfExistingApplicationForCrn,
-      )
-    } catch (e: Exception) {
-      log.error("Creating application with crn $crn failed", e)
-    }
+    createApplicationInternal(deliusUserName, crn, createIfExistingApplicationForCrn, state)
   }
 
   fun createOfflineApplicationWithBooking(deliusUserName: String, crn: String) {
@@ -70,26 +84,38 @@ class Cas1ApplicationSeedService(
       error("Cannot create test applications as not in a test environment")
     }
 
-    log.info("Auto-scripting offline for CRN $crn")
-    try {
-      createOfflineApplicationInternal(deliusUserName, crn)
-    } catch (e: Exception) {
-      log.error("Creating offline application with crn $crn failed", e)
-    }
+    createOfflineApplicationInternal(deliusUserName, crn)
   }
 
   private fun createApplicationInternal(
     deliusUserName: String,
     crn: String,
     createIfExistingApplicationForCrn: Boolean,
+    state: ApplicationState,
   ) {
     if (!createIfExistingApplicationForCrn && applicationService.getApplicationsForCrn(crn, ServiceName.approvedPremises).isNotEmpty()) {
       log.info("Already have CAS1 application for $crn, not seeding a new application")
       return
     }
 
-    log.info("Auto creating a CAS1 application for $crn")
+    log.info("Auto creating a CAS1 application for $crn with state $state")
 
+    when (state) {
+      ApplicationState.PENDING_SUBMISSION -> {
+        createApplicationPendingSubmission(deliusUserName, crn)
+      }
+      ApplicationState.AUTHORISED -> {
+        val application = createApplicationPendingSubmission(deliusUserName, crn)
+        submitApplication(application)
+        assessAndAcceptApplication(application)
+      }
+    }
+  }
+
+  private fun createApplicationPendingSubmission(
+    deliusUserName: String,
+    crn: String,
+  ): ApprovedPremisesApplicationEntity {
     val personInfo = getPersonInfo(crn)
     val createdByUser = (userService.getExistingUserOrCreate(deliusUserName) as GetUserResponse.Success).user
 
@@ -104,31 +130,108 @@ class Cas1ApplicationSeedService(
       ),
     )
 
-    val updateResult = applicationService.updateApprovedPremisesApplication(
-      applicationId = newApplicationEntity.id,
-      updateFields = ApplicationService.Cas1ApplicationUpdateFields(
-        isWomensApplication = false,
-        isPipeApplication = null,
-        isEmergencyApplication = false,
-        isEsapApplication = null,
-        apType = ApType.normal,
-        releaseType = "licence",
-        arrivalDate = LocalDate.of(2025, 12, 12),
-        data = applicationData(),
-        isInapplicable = false,
-        noticeType = Cas1ApplicationTimelinessCategory.standard,
+    val updatedApplication = extractEntityFromCasResult(
+      applicationService.updateApprovedPremisesApplication(
+        applicationId = newApplicationEntity.id,
+        updateFields = ApplicationService.Cas1ApplicationUpdateFields(
+          isWomensApplication = false,
+          isPipeApplication = null,
+          isEmergencyApplication = false,
+          isEsapApplication = null,
+          apType = ApType.normal,
+          releaseType = "licence",
+          arrivalDate = LocalDate.of(2025, 12, 12),
+          data = loadFixtureAsResource("application_data.json"),
+          isInapplicable = false,
+          noticeType = Cas1ApplicationTimelinessCategory.standard,
+        ),
+        userForRequest = createdByUser,
       ),
-      userForRequest = createdByUser,
     )
-
-    extractEntityFromCasResult(updateResult)
 
     applicationTimelineNoteService.saveApplicationTimelineNote(
       applicationId = newApplicationEntity.id,
-      note = "Application automatically created by Cas1 Auto Script",
+      note = "Application automatically created by Cas1 Seeding",
       user = null,
     )
+
+    return updatedApplication
   }
+
+  private fun submitApplication(
+    application: ApprovedPremisesApplicationEntity,
+  ) {
+    val user = application.createdByUser
+
+    applicationService.submitApprovedPremisesApplication(
+      applicationId = application.id,
+      submitApplication = SubmitApprovedPremisesApplication(
+        apType = ApType.normal,
+        translatedDocument = JSONObject(loadFixtureAsResource("application_document.json")).toMap(),
+        caseManagerIsNotApplicant = false,
+        isWomensApplication = false,
+        releaseType = ReleaseTypeOption.licence,
+        targetLocation = postcodeDistrictRepository.findAll()[0].outcode,
+        arrivalDate = LocalDate.of(2030, 1, 1),
+        sentenceType = SentenceTypeOption.ipp,
+        situation = SituationOption.bailSentence,
+        applicantUserDetails = Cas1ApplicationUserDetails(
+          name = user.name,
+          email = user.email,
+          telephoneNumber = user.telephoneNumber,
+        ),
+        noticeType = Cas1ApplicationTimelinessCategory.standard,
+        licenseExpiryDate = LocalDate.of(2050, 1, 1),
+        type = "approved-premises",
+      ),
+      user = user,
+      apAreaId = user.apArea!!.id,
+    )
+  }
+
+  private fun assessAndAcceptApplication(application: ApprovedPremisesApplicationEntity) {
+    val assessor = application.createdByUser
+
+    extractEntityFromNestedAuthorisableValidatableActionResult(
+      assessmentService.reallocateAssessment(
+        id = getAssessmentId(application),
+        allocatingUser = assessor,
+        assigneeUser = assessor,
+      ),
+    )
+
+    ensureEntityFromCasResultIsSuccess(
+      assessmentService.updateAssessment(
+        assessmentId = getAssessmentId(application),
+        updatingUser = assessor,
+        data = loadFixtureAsResource("assessment_data.json"),
+      ),
+    )
+
+    ensureEntityFromCasResultIsSuccess(
+      assessmentService.acceptAssessment(
+        acceptingUser = assessor,
+        assessmentId = getAssessmentId(application),
+        document = loadFixtureAsResource("assessment_document.json"),
+        placementRequirements = PlacementRequirements(
+          gender = Gender.male,
+          type = ApType.normal,
+          location = application.targetLocation!!,
+          radius = 25,
+          essentialCriteria = emptyList(),
+          desirableCriteria = emptyList(),
+        ),
+        placementDates = PlacementDates(
+          expectedArrival = application.arrivalDate!!.toLocalDate(),
+          duration = 28,
+        ),
+        apType = ApType.normal,
+        notes = null,
+      ),
+    )
+  }
+
+  private fun getAssessmentId(application: ApprovedPremisesApplicationEntity) = assessmentRepository.findByApplicationIdAndReallocatedAtNull(applicationId = application.id)!!.id
 
   private fun createOfflineApplicationInternal(deliusUserName: String, crn: String) {
     if (applicationService.getOfflineApplicationsForCrn(crn, ServiceName.approvedPremises).isNotEmpty()) {
@@ -242,19 +345,11 @@ class Cas1ApplicationSeedService(
       is PersonInfoResult.Success.Full -> personInfoResult
     }
 
-  private fun applicationData(): String {
-    return dataFixtureFor(questionnaire = "application")
-  }
-
-  private fun dataFixtureFor(questionnaire: String): String {
-    return loadFixtureAsResource("${questionnaire}_data.json")
-  }
-
   private fun loadFixtureAsResource(filename: String): String {
     val path = "db/seed/local+dev+test/cas1_application_data/$filename"
 
     try {
-      return DefaultResourceLoader().getResource(path).inputStream.bufferedReader().use { it.readText() }
+      return this::class.java.classLoader.getResource(path)?.readText() ?: ""
     } catch (e: IOException) {
       log.warn("Failed to load seed fixture $path: " + e.message!!)
       return "{}"

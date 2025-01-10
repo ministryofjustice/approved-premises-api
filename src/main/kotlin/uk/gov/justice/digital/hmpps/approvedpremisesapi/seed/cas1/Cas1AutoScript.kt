@@ -38,10 +38,48 @@ class Cas1AutoScript(
     seedLogger.info("Auto-Scripting for CAS1 local")
     seedUsers(usersToSeedLocal())
 
-    cas1ApplicationSeedService.createApplication(deliusUserName = "JIMSNOWLDAP", crn = "X320741")
-    cas1ApplicationSeedService.createApplication(deliusUserName = "LAOFULLACCESS", crn = "X400000")
-    cas1ApplicationSeedService.createApplication(deliusUserName = "LAOFULLACCESS", crn = "X400001")
-    cas1ApplicationSeedService.createOfflineApplicationWithBooking(deliusUserName = "JIMSNOWLDAP", crn = "X320741")
+    createApplicationPendingSubmission(
+      deliusUserName = "JIMSNOWLDAP",
+      crn = "X320741",
+    )
+    createApplicationPendingSubmission(
+      deliusUserName = "LAOFULLACCESS",
+      crn = "X400000",
+    )
+    createApplicationPendingSubmission(
+      deliusUserName = "LAOFULLACCESS",
+      crn = "X400001",
+    )
+    createOfflineApplicationWithBooking(deliusUserName = "JIMSNOWLDAP", crn = "X320741")
+  }
+
+  fun createApplicationPendingSubmission(
+    deliusUserName: String,
+    crn: String,
+  ) {
+    seedLogger.info("Auto-scripting application for CRN $crn")
+    try {
+      cas1ApplicationSeedService.createApplication(
+        deliusUserName = deliusUserName,
+        crn = crn,
+        state = Cas1ApplicationSeedService.ApplicationState.PENDING_SUBMISSION,
+      )
+    } catch (e: Exception) {
+      seedLogger.error("Creating application with crn $crn failed", e)
+    }
+  }
+
+  fun createOfflineApplicationWithBooking(deliusUserName: String, crn: String) {
+    if (environmentService.isNotATestEnvironment()) {
+      error("Cannot create test applications as not in a test environment")
+    }
+
+    seedLogger.info("Auto-scripting offline for CRN $crn")
+    try {
+      cas1ApplicationSeedService.createOfflineApplicationWithBooking(deliusUserName, crn)
+    } catch (e: Exception) {
+      seedLogger.error("Creating offline application with crn $crn failed", e)
+    }
   }
 
   fun scriptDev() {

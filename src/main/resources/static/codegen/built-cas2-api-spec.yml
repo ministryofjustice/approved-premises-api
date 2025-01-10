@@ -4372,6 +4372,7 @@ components:
           $ref: '#/components/schemas/ApType'
         location:
           type: string
+          description: Postcode outcode
           example: B74
         radius:
           type: integer

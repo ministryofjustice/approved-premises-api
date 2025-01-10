@@ -8,22 +8,28 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.given
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnOffender
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apDeliusContextMockSuccessfulTeamsManagingCaseCall
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.apOASysContextMockSuccessfulNeedsDetailsCall
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks.govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.seed.SeedTestBase
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.ManagingTeamsResponse
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.CsvBuilder
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.Cas1ApplicationSeedService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.Cas1CreateTestApplicationsSeedCsvRow
 
 class SeedCas1CreateTestApplicationSeedTest : SeedTestBase() {
 
   @Test
   fun `Create test application`() {
-    val (user) = givenAUser()
+    val (user) = givenAUser(roles = listOf(UserRole.CAS1_ASSESSOR, UserRole.CAS1_WORKFLOW_MANAGER))
     val (offender) = givenAnOffender()
 
     val crn = offender.otherIds.crn
 
     apDeliusContextMockSuccessfulTeamsManagingCaseCall(crn, ManagingTeamsResponse(teamCodes = listOf("TEAM1")))
     apOASysContextMockSuccessfulNeedsDetailsCall(crn, NeedsDetailsFactory().produce())
+    govUKBankHolidaysAPIMockSuccessfullCallWithEmptyResponse()
+
+    postCodeDistrictFactory.produceAndPersist()
 
     withCsv(
       csvName = "valid-csv",
@@ -32,6 +38,7 @@ class SeedCas1CreateTestApplicationSeedTest : SeedTestBase() {
           creatorUsername = user.deliusUsername,
           crn = crn,
           count = 1,
+          state = Cas1ApplicationSeedService.ApplicationState.AUTHORISED,
         ),
       ).toCsv(),
     )
@@ -48,6 +55,7 @@ class SeedCas1CreateTestApplicationSeedTest : SeedTestBase() {
         "creator_username",
         "crn",
         "count",
+        "state",
       )
       .newRow()
 
@@ -56,6 +64,7 @@ class SeedCas1CreateTestApplicationSeedTest : SeedTestBase() {
         .withQuotedField(it.creatorUsername)
         .withQuotedField(it.crn)
         .withQuotedField(it.count)
+        .withQuotedField(it.state)
         .newRow()
     }
 

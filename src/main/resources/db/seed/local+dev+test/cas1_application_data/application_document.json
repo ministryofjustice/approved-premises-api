@@ -1,0 +1,213 @@
+{
+  "basic-information": [
+    {
+      "Is this an exceptional case?": "Yes"
+    },
+    {
+      "Have you agreed the case with a senior manager?": "Yes",
+      "Name of senior manager": "senior manager name",
+      "What date was this agreed?": "Mon 1 Jan 2024",
+      "Provide a summary of the reasons why this is an exempt application": "a summary here"
+    },
+    {
+      "If you need to update your details, select the relevant box below": "None",
+      "Applicant name": "JIM SNOW",
+      "Applicant email address": "jim.snow@justice.gov.uk",
+      "Applicant phone number": "01512112121",
+      "Applicant AP area": "South West & South Central",
+      "Do you have case management responsibility?": "Yes"
+    },
+    {
+      "Is the person transgender or do they have a transgender history?": "No"
+    },
+    {
+      "Parole eligibility date": "No date supplied",
+      "Home Detention Curfew (HDC) date": "No date supplied",
+      "Licence expiry date": "No date supplied",
+      "Post sentence supervision (PSS) start date": "No date supplied",
+      "Post sentence supervision (PSS) end date": "No date supplied",
+      "Sentence expiry date": "No date supplied"
+    },
+    {
+      "Which of the following best describes the sentence type the person is on?": "Standard determinate custody"
+    },
+    {
+      "What type of release will the application support?": "Licence"
+    },
+    {
+      "Do you know the person's release date?": "Yes",
+      "Release Date": "Fri 12 Dec 2025"
+    },
+    {
+      "Is Fri 12 Dec 2025 the date you want the placement to start?": "Yes"
+    },
+    {
+      "What is the purpose of the AP placement?": "Public protection"
+    }
+  ],
+  "type-of-ap": [
+    {
+      "Which type of AP does the person require?": "Standard AP"
+    }
+  ],
+  "oasys-import": [
+    {},
+    {
+      "R10.1: Who is at risk": "[R10.1] IN CUSTODY\r\n\r\nKNOWN ADULTS:\r\nSuch as Ms Elaine Underhill and any of the victims of the index offence if they are placed close to Mr Smith cell.\r\n\r\nCHILDREN:\r\nSimon Smith, Roger Smith, Lindy Smith",
+      "R10.2: What is the nature of the risk": "[R10.2] IN CUSTODY:\r\n\r\nKNOWN ADULTS:\r\nIntimidation, threats of violence, use of weapons or boiling water, physical education and violent assault, long term psychological impact as a result of Mr Smith violent behaviour. This harm may be cause in the course of physical altercation due to seeking revenge or holding grudges...",
+      "R10.3: When is the risk likely to be the greatest": "[R10.3] STATIC RISK FACTORS:\r\n\r\nMr Smith gender - At the time of the offence, Mr Smith was 35 years old and considered to be in the higher risk group.\r\n\r\nSTABLE DYNAMIC RISK FACTORS:\r\nThinking and behaviour - limited ability to manage mood or emotions poor impulse control. Mr Smith demonstrated cognitive deficit in committing the index offences and this still remains a concern...",
+      "R10.4: What circumstances are likely to increase risk": "[R10.4] CIRCUMSTANCES:\r\nA lack of stable accommodation\r\nunemployment\r\nnon constructive use of time\r\nbreakdown of family support\r\nbeing unable to access benefits\r\n\r\nUNDERLYING FACTORS:\r\npro criminal attitudes supporting commission of crime...",
+      "R10.5: What circumstances are likely to reduce the risk": "[R10.5] Engage with Mental Health Services in prison and in the community.\r\nMaintain emotional stability.\r\nAbstain from alcohol.\r\nAbstain from illegal drugs.\r\nRegular testing for alcohol and drug use, in prison and on Licence.\r\nMaintain stable accommodation..."
+    },
+    {
+      "2.1: Offence analysis": "[2.1] Mr Smith appeared before Newcastle Crown Court 16/09/2021 where he pleaded guilty to Wounding and other acts endangering life...",
+      "2.4.1: Victim - perpetrator relationship": "[2.4.2] Ms Joan Black, ex-partner of Mr Smith ",
+      "2.4.2: Other victim information": "[2.4.1] There is an element of vulnerability as Ms Black experience years of domestic abuse...",
+      "2.5: Impact on the victim": "[2.5] Ms Black attended Newtree hospital at 22:40 hours on 01/03/21 with injuries to her face and body that they were...",
+      "2.8.3: Motivation and triggers": "[2.8.3] Mr Smith states that he was angry, and became aggressive towards Ms Black because...",
+      "2.12: Pattern of offending": "[2.12] Mr Smith has 11 previous convictions from 22 offences. His criminal history includes...",
+      "2.98: Issues contributing to risks": "[2.98] The index offence is assessed as harm related and there is an identifiable victim Ms Black..."
+    },
+    {
+      "3.9: Accommodation issues contributing to risks of offending and harm": "[3.9] Mr Smith told me that he was renting a room in a shared house, prior to his current remand...",
+      "4.9: Education, training and employability issues contributing to risks of offending and harm": "[4.9] He said that he has since learnt to read and write during periods of custody and an initial assessment of his...",
+      "8.9: Drug misuse issues contributing to risks of offending and harm": "[8.9] Mr Smith told me that he had experimented with many drugs throughout his teens. ...",
+      "9.9: Alcohol misuse issues contributing to risks of offending and harm": "[9.9] Mr Smith told me that he rarely consumes alcohol and has not had any problems associated with excessive drinking in years..."
+    },
+    {
+      "RM28: Further considerations": "[RM28] Mr Smith is currently on remand awaiting sentence",
+      "RM28.1: Key information about current situation": "[RM28.1] Currently on remand at HMP Wandsworth - Management of case under MAPPA - level not yet set.",
+      "RM30: Supervision": "[RM30] Probation Officer, Education training and employment Officer, Prison Offender Supervisor",
+      "RM31: Monitoring and control": "[RM31] State they will have secure accommodation for Mr Smith  and partner on release, although she too is subject to a DRR at present. Supportive wider family.  Has completed previously Short Duration programme and attended one of the support sessions .  Engaged with CARATS in custody.  Complied with voluntary drug tests in custody. Some motivation to desist from alcohol/drug use in the future, this needs to be encouraged with use of community resources. Completed drug and heroin awareness programmes in custody.",
+      "RM32: Interventions and treatment": "[RM32] Requires referral to community drug DIP upon  release. To link in with employment/training resources such as College and ETEO. Completion of victim empathy module via 1-1 supervision to build upon awareness of impact of offending.   Level setting to be undertaken by Senior Probation Officer and OMU. Multi Agency Public Protection Panel to be convened if level 2 either at start of supervision or 6 months prior to release",
+      "RM33: Victim safety planning": "[RM33] Undertake sentence planning with OS within 8 or 16 weeks of sentence carats - continue to work with Mr Smith and refer for relevant programmes during any prison sentence imposed. DIP supervise DRR is imposed or provide support post release if conditions/requirements to manage the specific risks.",
+      "RM34: Contingency plans": "[RM34] Discuss any concerns with line manager/SPO Increase frequency of reporting Bring forward MAPPA/Consider Level 2 MAPPA professionals meetings  considered if MAPPA not applicable. Consider referral to Approved Premises Consider motivational interviewing/engagement officer.  Joint interview with police OM or other relevant agencies? To raise concerns Referral to substance misues worker for additional support. Warning letters to be employed Recall/Breach if risk not manageable.",
+      "RM35: Additional comments": "[RM35] Placeholder content for additional comments"
+    },
+    {
+      "R8.1.1: Current concerns about self-harm or suicide": "[R8.1.1] Review 06.10.21:\r\n\r\n        There have been numerous ACCTs opened since 2013 and every subsequent year he has been in custody.  In 2021...",
+      "R8.2.1: Current concerns about Coping in Custody or Hostel": "[R8.2.1] Has told prison staff that he swallowed batteries on one occasion due to wanting..",
+      "R8.3.1: Current concerns about Vulnerability": "[R8.3.1] Review 06.10.21:\r\n\r\n        A previous assessor opined that Mr Smith was displaying all the characteristics of someone..."
+    }
+  ],
+  "risk-management-features": [
+    {
+      "Describe why an AP placement is needed to manage the risk of the person": "because it is",
+      "Provide details of any additional measures that will be necessary for the management of risk": "none"
+    },
+    {
+      "Has the person ever been convicted of any arson offences, sexual offences, hate crimes or non-sexual offences against children?": "No"
+    },
+    {
+      "Which of the rehabilitative activities will assist the person's rehabilitation in the Approved Premises (AP)?": "Accommodation",
+      "Provide a summary of how these interventions will assist the persons rehabilitation in the AP.": "they just will"
+    }
+  ],
+  "prison-information": [
+    {
+      "Adjudications": [
+        {
+          "Adjudication number": -3002,
+          "Report date and time": "25 Oct 2019, 01:05",
+          "Establishment": "Brixton",
+          "Offence description": "Fails to comply with any condition upon which he is temporarily released under rule 9 - failure to comply with conditions of temp release",
+          "Finding": ""
+        },
+        {
+          "Adjudication number": -3001,
+          "Report date and time": "25 Sep 2019, 01:04",
+          "Establishment": "Leeds",
+          "Offence description": "Fails to comply with any condition upon which he is temporarily released under rule 9 - failure to comply with conditions of temp release",
+          "Finding": ""
+        },
+        {
+          "Adjudication number": -3,
+          "Report date and time": "25 Aug 2019, 01:03",
+          "Establishment": "Moorland",
+          "Offence description": "Detains any person against his will - detention against will of staff (not prison offr)",
+          "Finding": "Proved"
+        }
+      ]
+    }
+  ],
+  "location-factors": [
+    {
+      "What is the preferred postcode area for the Approved Premises (AP) placement?": "LE12",
+      "Give details of why this postcode area would benefit the person": "it's near their faily",
+      "Are there any restrictions linked to placement location?": "No",
+      "If an AP Placement is not available in the persons preferred area, would a placement further away be considered?": "No"
+    },
+    {
+      "First choice AP": "LON Men Premise 1",
+      "Second choice AP": "LON Men Premise 2",
+      "Third choice AP": "No preference",
+      "Fourth choice AP": "No preference",
+      "Fifth choice AP": "No preference"
+    }
+  ],
+  "access-and-healthcare": [
+    {
+      "Does the person have any of the following needs?": "Mobility",
+      "Does the person have any religious or cultural needs?": "No",
+      "Does this person have care and support needs?": "No",
+      "Does the person need an interpreter?": "No",
+      "Has a care act assessment been completed?": "No"
+    },
+    {
+      "Does the person require the use of a wheelchair?": "No",
+      "Does the person have any known health conditions?": "No",
+      "Does the person have any prescribed medication?": "No"
+    },
+    {
+      "Specify any additional details and adjustments required for the person's mobility needs": ""
+    },
+    {
+      "Is the person eligible for COVID-19 vaccination boosters?": "No",
+      "Is the person immunosuppressed, eligible for nMAB treatment or higher risk as per the definitions in the COVID-19 guidance?": "No"
+    }
+  ],
+  "further-considerations": [
+    {
+      "Is there any evidence that the person may pose a risk to AP staff?": "No",
+      "Is there any evidence that the person may pose a risk to other AP residents?": "No",
+      "Do you have any concerns about the person sharing a bedroom?": "No",
+      "Is there any evidence of previous trauma or significant event in the persons history which would indicate that room share may not be suitable?": "No",
+      "Is there potential for the person to benefit from a room share?": "No"
+    },
+    {
+      "Are you aware that the person is vulnerable to exploitation from others?": "No",
+      "Is there any evidence or expectation that the person may groom, radicalise or exploit others?": "No"
+    },
+    {
+      "Has the person stayed or been offered a placement in an AP before?": "No"
+    },
+    {
+      "Can the person be placed in a self-catered Approved Premises (AP)?": "Yes"
+    },
+    {
+      "Does the person pose an arson risk?": "No"
+    },
+    {
+      "Are there are any additional circumstances that have helped the person do well in the past?": "No"
+    }
+  ],
+  "move-on": [
+    {
+      "Does this application require a different placement duration?": "No"
+    },
+    {
+      "Where is the person most likely to live when they move on from the AP?": "LE12"
+    },
+    {
+      "Are move on arrangements already in place for when the person leaves the AP?": "Yes - going home"
+    },
+    {
+      "What type of accommodation will the person have when they leave the AP?": "Own accommodation"
+    }
+  ],
+  "attach-required-documents": [
+    {
+      "N/A": "No documents attached"
+    }
+  ]
+}
