@@ -8028,6 +8028,7 @@ components:
         - approved_premises_import_delius_referrals
         - approved_premises_update_space_booking
         - approved_premises_backfill_active_space_bookings_created_in_delius
+        - approved_premises_create_test_applications
         - temporary_accommodation_referral_rejection
     SeedFromExcelFileType:
       type: string
@@ -8081,6 +8082,7 @@ components:
           $ref: '#/components/schemas/ApType'
         location:
           type: string
+          description: Postcode outcode
           example: B74
         radius:
           type: integer

@@ -1,0 +1,75 @@
+{
+  "review-application": {
+    "review": {
+      "reviewed": "yes"
+    }
+  },
+  "sufficient-information": {
+    "sufficient-information": {
+      "sufficientInformation": "yes",
+      "query": ""
+    }
+  },
+  "suitability-assessment": {
+    "suitability-assessment": {
+      "riskFactors": "yes",
+      "riskFactorsComments": "",
+      "riskManagement": "yes",
+      "riskManagementComments": "",
+      "locationOfPlacement": "yes",
+      "locationOfPlacementComments": "",
+      "moveOnPlan": "yes",
+      "moveOnPlanComments": ""
+    }
+  },
+  "required-actions": {
+    "required-actions": {
+      "additionalActions": "no",
+      "additionalActionsComments": "",
+      "curfewsOrSignIns": "no",
+      "curfewsOrSignInsComments": "",
+      "concernsOfUnmanagableRisk": "no",
+      "concernsOfUnmanagableRiskComments": "",
+      "additionalRecommendations": "no",
+      "additionalRecommendationsComments": "",
+      "nameOfAreaManager": "",
+      "dateOfDiscussion-year": "",
+      "dateOfDiscussion-month": "",
+      "dateOfDiscussion-day": "",
+      "outlineOfDiscussion": ""
+    }
+  },
+  "make-a-decision": {
+    "make-a-decision": {
+      "decision": "accept",
+      "decisionRationale": "what can i say, it's a good application"
+    }
+  },
+  "matching-information": {
+    "matching-information": {
+      "apType": "normal",
+      "lengthOfStayAgreed": "yes",
+      "lengthOfStayWeeks": "",
+      "lengthOfStayDays": "",
+      "cruInformation": "",
+      "isWheelchairDesignated": "notRelevant",
+      "isArsonDesignated": "notRelevant",
+      "isSingle": "notRelevant",
+      "isCatered": "notRelevant",
+      "isSuitedForSexOffenders": "notRelevant",
+      "isStepFreeDesignated": "notRelevant",
+      "hasEnSuite": "notRelevant",
+      "isSuitableForVulnerable": "notRelevant",
+      "acceptsSexOffenders": "notRelevant",
+      "acceptsChildSexOffenders": "notRelevant",
+      "acceptsNonSexualChildOffenders": "notRelevant",
+      "acceptsHateCrimeOffenders": "notRelevant",
+      "isArsonSuitable": "notRelevant"
+    }
+  },
+  "check-your-answers": {
+    "check-your-answers": {
+      "reviewed": "1"
+    }
+  }
+}
