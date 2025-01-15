@@ -364,10 +364,9 @@ class Cas1SpaceSearchTest : InitialiseDatabasePerClassTestBase() {
     expectedApType: ApType = ApType.normal,
     expectedCharacteristics: List<Cas1SpaceCharacteristic>? = null,
   ) {
-    assertThat(actual.spacesAvailable).isEmpty()
     assertThat(actual.distanceInMiles).isGreaterThan(0f.toBigDecimal())
     assertThat(actual.premises).isNotNull
-    val premises = actual.premises!!
+    val premises = actual.premises
     assertThat(premises.id).isEqualTo(expected.id)
     assertThat(premises.apType).isEqualTo(expectedApType)
     assertThat(premises.name).isEqualTo(expected.name)
