@@ -115,7 +115,6 @@ springdoc:
   swagger-ui:
     urls-primary-name: "All CAS"
   remove-broken-reference-definitions: false
-  writer-with-order-by-keys: true
 
 server:
   port: 8080
