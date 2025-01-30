@@ -5,6 +5,8 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualification
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService.GetUserResponse
+
 /**
  * Seeds users, along with their roles and qualifications.
  *
@@ -72,12 +74,16 @@ abstract class AbstractUsersSeedJob(
   }
 
   override fun processRow(row: UsersSeedCsvRow) {
-    log.info("Setting roles for ${row.deliusUsername} to exactly ${row.roles.joinToString(",")}, qualifications to exactly: ${row.qualifications.joinToString(",")}")
+    val username = row.deliusUsername
+    log.info("Setting roles for $username to exactly ${row.roles.joinToString(",")}, qualifications to exactly: ${row.qualifications.joinToString(",")}")
 
     val user = try {
-      userService.getExistingUserOrCreateDeprecated(row.deliusUsername)
+      when (val result = userService.getExistingUserOrCreate(username)) {
+        GetUserResponse.StaffRecordNotFound -> throw RuntimeException("Could not find staff record for user $username")
+        is GetUserResponse.Success -> result.user
+      }
     } catch (exception: Exception) {
-      throw RuntimeException("Could not get user ${row.deliusUsername}", exception)
+      throw RuntimeException("Could not get user $username", exception)
     }
 
     useRolesForServices.forEach { userService.clearRolesForService(user, it) }

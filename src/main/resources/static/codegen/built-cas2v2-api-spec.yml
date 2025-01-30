@@ -5682,17 +5682,17 @@ components:
           format: date-time
         telephoneNumber:
           type: string
+        applicationOrigin:
+          $ref: "#/components/schemas/ApplicationOrigin"
         timelineEvents:
           type: array
           items:
             $ref: '#/components/schemas/Cas2TimelineEvent'
         assessment:
-          type: object
           $ref: '#/components/schemas/Cas2v2Assessment'
         bailHearingDate:
           type: string
           format: date
-          $ref: '#/components/schemas/Cas2v2Assessment'
       required:
         - id
         - person

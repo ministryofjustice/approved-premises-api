@@ -5,6 +5,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedLogger
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService.GetUserResponse
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 /**
@@ -29,12 +30,16 @@ class ApStaffUsersSeedJob(
 
   @SuppressWarnings("TooGenericExceptionThrown", "TooGenericExceptionCaught")
   override fun processRow(row: ApStaffUserSeedCsvRow) {
-    seedLogger.info("Processing AP Staff seeding for ${row.deliusUsername}")
+    val username = row.deliusUsername
+    seedLogger.info("Processing AP Staff seeding for $username")
 
     val user = try {
-      userService.getExistingUserOrCreateDeprecated(row.deliusUsername)
+      when (val result = userService.getExistingUserOrCreate(username)) {
+        GetUserResponse.StaffRecordNotFound -> throw RuntimeException("Could not find staff record for user $username")
+        is GetUserResponse.Success -> result.user
+      }
     } catch (exception: Exception) {
-      throw RuntimeException("Could not get user ${row.deliusUsername}", exception)
+      throw RuntimeException("Could not get user $username", exception)
     }
     seedLogger.info(seedingReport(user))
   }

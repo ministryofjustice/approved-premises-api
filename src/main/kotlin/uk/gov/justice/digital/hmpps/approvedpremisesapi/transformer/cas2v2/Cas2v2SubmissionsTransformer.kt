@@ -34,6 +34,7 @@ class Cas2v2SubmissionsTransformer(
       submittedAt = jpa.submittedAt?.toInstant(),
       document = if (jpa.document != null) objectMapper.readTree(jpa.document) else null,
       telephoneNumber = jpa.telephoneNumber,
+      applicationOrigin = jpa.applicationOrigin,
       timelineEvents = cas2v2TimelineEventsTransformer.transformApplicationToTimelineEvents(jpa),
       assessment = cas2v2AssessmentsTransformer.transformJpaToApiRepresentation(jpa.assessment!!),
     )

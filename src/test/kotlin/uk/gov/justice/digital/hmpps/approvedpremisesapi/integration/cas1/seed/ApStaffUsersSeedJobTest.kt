@@ -45,7 +45,7 @@ class ApStaffUsersSeedJobTest : SeedTestBase() {
         it.message.contains("Error on row 1:") &&
         it.throwable != null &&
         it.throwable.cause != null &&
-        it.throwable.cause!!.message!!.contains("Internal Server Error: Could not find staff record for user INVALID-USER")
+        it.throwable.cause!!.message!!.contains("Could not find staff record for user INVALID-USER")
     }
   }
 

@@ -137,17 +137,17 @@ components:
           format: date-time
         telephoneNumber:
           type: string
+        applicationOrigin:
+          $ref: "_shared.yml#/components/schemas/ApplicationOrigin"
         timelineEvents:
           type: array
           items:
             $ref: '_shared.yml#/components/schemas/Cas2TimelineEvent'
         assessment:
-          type: object
-          $ref: '_shared.yml#/components/schemas/Cas2v2Assessment'
+          $ref: '#/components/schemas/Cas2v2Assessment'
         bailHearingDate:
           type: string
           format: date
-          $ref: '#/components/schemas/Cas2v2Assessment'
       required:
         - id
         - person

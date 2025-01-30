@@ -75,7 +75,10 @@ class UserService(
 
   fun getUserForRequest(): UserEntity {
     val username = getDeliusUserNameForRequest()
-    val user = getExistingUserOrCreateDeprecated(username)
+    val user = when (val result = getExistingUserOrCreate(username)) {
+      GetUserResponse.StaffRecordNotFound -> throw InternalServerErrorProblem("Could not find staff record for user $username")
+      is GetUserResponse.Success -> result.user
+    }
     ensureCas3UserHasCas3ReferrerRole(user)
 
     return user
@@ -261,13 +264,6 @@ class UserService(
   fun updateUserFromDelius(
     user: UserEntity,
     forService: ServiceName,
-  ): GetUserResponse {
-    return updateUserByApprovedPremisesAndDeliusApi(user, forService)
-  }
-
-  private fun updateUserByApprovedPremisesAndDeliusApi(
-    user: UserEntity,
-    forService: ServiceName,
   ) = when (val clientResult = apDeliusContextApiClient.getStaffDetail(user.deliusUsername)) {
     is ClientResult.Failure.StatusCode -> {
       if (clientResult.status == HttpStatus.NOT_FOUND) {
@@ -363,12 +359,6 @@ class UserService(
         ).sum(),
       )
     }
-  }
-
-  @Deprecated("Callers should handle GetUserResponse directly", ReplaceWith("getExistingUserOrCreate(username)"))
-  fun getExistingUserOrCreateDeprecated(username: String) = when (val result = getExistingUserOrCreate(username)) {
-    GetUserResponse.StaffRecordNotFound -> throw InternalServerErrorProblem("Could not find staff record for user $username")
-    is GetUserResponse.Success -> result.user
   }
 
   @SuppressWarnings("TooGenericExceptionThrown")

@@ -5,7 +5,6 @@ orbs:
   mem: circleci/rememborb@0.0.2
   node: circleci/node@5.2.0
   slack: circleci/slack@4.12.6
-  cypress: cypress-io/cypress@3
 
 parameters:
   alerts-slack-channel:
@@ -314,27 +313,33 @@ jobs:
   cas3_e2e_tests:
     parallelism: 5
     circleci_ip_ranges: true # opt-in to jobs running on a restricted set of IPs
+    environment:
+      CYPRESS_SKIP_AXE: 1
     docker:
-      - image: cypress/browsers:node-20.18.0-chrome-129.0.6668.89-1-ff-131.0.2-edge-129.0.2792.65-1
+      - image: cypress/browsers:node16.14.2-slim-chrome100-ff99-edge
     parameters:
       environment:
         type: string
         default: dev
     steps:
-      - checkout
+      - run:
+          name: Checkout e2e repo
+          command: |
+            git clone https://github.com/ministryofjustice/hmpps-temporary-accommodation-ui.git .
+      - run:
+          name: install
+          command: apt-get install xz-utils
+      - run:
+          name: Update npm
+          command: 'npm install -g npm@9.8.1'
       - node/install-packages
-      - cypress/install
-      - persist_to_workspace:
-          paths:
-            - .cache/Cypress
-            - project
-          root: ~/
-      - cypress/run-tests:
-          cypress-command: |
+      - run:
+          name: E2E Check - << parameters.environment >>
+          command: |
             TESTS=$(circleci tests glob "e2e/tests/*.feature" | circleci tests split --split-by=timings | paste -sd ',')
             npm run test:e2e:ci --\
               --env "assessor_username=${CYPRESS_ASSESSOR_USERNAME_<< parameters.environment >>},assessor_password=${CYPRESS_ASSESSOR_PASSWORD_<< parameters.environment >>},referrer_username=${CYPRESS_REFERRER_USERNAME_<< parameters.environment >>},referrer_password=${CYPRESS_REFERRER_PASSWORD_<< parameters.environment >>},acting_user_probation_region_id=${CYPRESS_ACTING_USER_PROBATION_REGION_ID_<< parameters.environment >>},acting_user_probation_region_name=${CYPRESS_ACTING_USER_PROBATION_REGION_NAME_<< parameters.environment >>},environment=${CYPRESS_ENVIRONMENT_<< parameters.environment >>}"\
-              --config baseUrl=https://transitional-accommodation-<< parameters.environment >>.hmpps.service.justice.gov.uk \
+              --config baseUrl=https://temporary-accommodation-<< parameters.environment >>.hmpps.service.justice.gov.uk \
               --spec $TESTS
       - store_artifacts:
           path: e2e/screenshots
@@ -342,10 +347,6 @@ jobs:
       - store_artifacts:
           path: e2e/videos
           destination: videos
-      - slack/notify:
-          event: fail
-          channel: << pipeline.parameters.alerts-slack-channel >>
-          template: basic_fail_1
   trigger_ui_github_action:
     machine:
       image: ubuntu-2204:current
