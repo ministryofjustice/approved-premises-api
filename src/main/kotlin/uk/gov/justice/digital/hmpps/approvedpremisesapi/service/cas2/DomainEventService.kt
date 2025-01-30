@@ -8,7 +8,10 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.*
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.Cas2ApplicationStatusUpdatedEvent
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.Cas2ApplicationSubmittedEvent
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.Cas2Event
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.PersonReference
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.config.DomainEventUrlConfig
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.*
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.AllocationData
@@ -96,7 +99,11 @@ class DomainEventService(
   }
 
   private fun saveCas2DomainEvent(
-    domainEvent: HmppsDomainEvent, applicationId: UUID, eventType: DomainEventType, crn: String, data: String
+    domainEvent: HmppsDomainEvent,
+    applicationId: UUID,
+    eventType: DomainEventType,
+    crn: String,
+    data: String,
   ) {
     val domainEventId = UUID.randomUUID()
     val occurredAt = domainEvent.occurredAt.toInstant().atOffset(ZoneOffset.UTC)
@@ -121,7 +128,7 @@ class DomainEventService(
       ),
     )
 
-      log.info("Saved domain event with id: ${domainEventId} and event type: ${eventType}")
+    log.info("Saved domain event with id: $domainEventId and event type: $eventType")
   }
 
   private fun <T : Cas2Event> saveAndEmit(

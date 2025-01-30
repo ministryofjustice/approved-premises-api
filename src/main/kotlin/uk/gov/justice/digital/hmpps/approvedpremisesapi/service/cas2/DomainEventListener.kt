@@ -1,11 +1,11 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas2
 
-import io.awspring.cloud.sqs.annotation.SqsListener
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.stereotype.Service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.awspring.cloud.sqs.annotation.SqsListener
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.HmppsDomainEvent
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.SQSMessage
@@ -30,11 +30,11 @@ class DomainEventListener(
 
   private fun handleMessage(message: HmppsDomainEvent) {
     when (message.eventType) {
-      DomainEventType.CAS2_ALLOCATION_CHANGED.toString() -> domainEventService.handlePomAllocationChangedMessage(message)
+      DomainEventType.CAS2_ALLOCATION_CHANGED.toString() -> domainEventService.handlePomAllocationChangedMessage(
+        message,
+      )
+
       else -> log.error("Unknown event type: ${message.eventType}")
     }
   }
 }
-
-
-

@@ -245,7 +245,7 @@ class DomainEventServiceTest {
           hmppsQueueService = hmppsQueueServiceMock,
           emitDomainEventsEnabled = false,
           mockDomainEventUrlConfig,
-          cas2ApplicationRepositoryMock
+          cas2ApplicationRepositoryMock,
         )
 
         val id = UUID.fromString("c3b98c67-065a-408d-abea-a252f1d70981")
@@ -381,7 +381,7 @@ class DomainEventServiceTest {
           hmppsQueueService = hmppsQueueServiceMock,
           emitDomainEventsEnabled = false,
           mockDomainEventUrlConfig,
-          cas2ApplicationRepositoryMock
+          cas2ApplicationRepositoryMock,
         )
 
         val id = UUID.fromString("c3b98c67-065a-408d-abea-a252f1d70981")

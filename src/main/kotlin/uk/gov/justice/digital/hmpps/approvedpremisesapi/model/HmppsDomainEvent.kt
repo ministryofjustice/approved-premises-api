@@ -21,7 +21,7 @@ data class HmppsDomainEvent(
 
 data class AllocationData(
   val prisonId: String?,
-  val staffCode: String?
+  val staffCode: String?,
 )
 
 data class HmppsDomainEventPersonReference(val identifiers: List<PersonIdentifier> = listOf()) {

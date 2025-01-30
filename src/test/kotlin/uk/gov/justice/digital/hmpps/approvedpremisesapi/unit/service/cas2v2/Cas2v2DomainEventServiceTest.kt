@@ -45,7 +45,7 @@ class Cas2v2DomainEventServiceTest {
     hmppsQueueService = hmppsQueueServiceMock,
     emitDomainEventsEnabled = true,
     mockDomainEventUrlConfig,
-    cas2ApplicationRepositoryMock
+    cas2ApplicationRepositoryMock,
   )
 
   @BeforeEach
