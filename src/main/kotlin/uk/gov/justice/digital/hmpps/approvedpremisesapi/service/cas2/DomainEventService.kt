@@ -10,10 +10,8 @@ import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.*
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.config.DomainEventUrlConfig
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventEntity
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventRepository
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventType
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TriggerSourceType
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.*
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.AllocationData
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.DomainEvent
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.HmppsDomainEvent
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.domainevent.SnsEvent
@@ -36,6 +34,7 @@ class DomainEventService(
   private val hmppsQueueService: HmppsQueueService,
   @Value("\${domain-events.cas2.emit-enabled}") private val emitDomainEventsEnabled: Boolean,
   private val domainEventUrlConfig: DomainEventUrlConfig,
+  private val cas2ApplicationRepository: Cas2ApplicationRepository,
 ) {
   private val log = LoggerFactory.getLogger(this::class.java)
 
@@ -82,13 +81,18 @@ class DomainEventService(
     )
 
   @Transactional
-  fun saveCas2AllocationChangedDomainEvent(domainEvent: HmppsDomainEvent, applicationId: UUID) =
+  fun handlePomAllocationChangedMessage(message: HmppsDomainEvent) {
+    val prisonId = message.prisonId
+    val staffCode = message.staffCode
+    val applications = cas2ApplicationRepository.findAllByCrn(message.personReference.findCrn().toString())
+
     saveCas2DomainEvent(
-      domainEvent = domainEvent,
-      applicationId = applicationId,
+      domainEvent = message,
+      applicationId = applications[0].id,
       eventType = DomainEventType.CAS2_ALLOCATION_CHANGED,
-      data = objectMapper.writeValueAsString(domainEvent.additionalInformation),
+      data = objectMapper.writeValueAsString(AllocationData(prisonId, staffCode)),
     )
+  }
 
   private fun saveCas2DomainEvent(
     domainEvent: HmppsDomainEvent, applicationId: UUID, eventType: DomainEventType, data: String

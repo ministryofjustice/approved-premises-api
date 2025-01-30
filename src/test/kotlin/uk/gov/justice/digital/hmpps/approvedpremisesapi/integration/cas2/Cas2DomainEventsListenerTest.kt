@@ -7,22 +7,18 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.setup.publishUnwantedMessageToTopic
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.setup.publishWantedMessageToTopic
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas2.MessageListener
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas2.MessageService
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas2.DomainEventListener
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.MissingQueueException
 import java.util.concurrent.TimeUnit
 
-class Cas2DomainEventsQueueTest : IntegrationTestBase() {
+class Cas2DomainEventsListenerTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var hmppsQueueService: HmppsQueueService
 
   @SpykBean
-  private lateinit var mockMessageService: MessageService
-
-  @SpykBean
-  private lateinit var mockMessageListener: MessageListener
+  private lateinit var mockDomainEventListener: DomainEventListener
 
   private val domainEventsTopic by lazy {
     hmppsQueueService.findByTopicId("domainevents") ?: throw MissingQueueException("HmppsTopic domainevents not found")
@@ -44,14 +40,13 @@ class Cas2DomainEventsQueueTest : IntegrationTestBase() {
   fun `Put Message on Domain Events Topic is successful`() {
     publishWantedMessageToDomainEventsTopic()
     TimeUnit.MILLISECONDS.sleep(10000)
-    verify(exactly = 1) { mockMessageListener.processMessage(any()) }
-    verify(exactly = 1) { mockMessageService.handleMessage(any()) }
+    verify(exactly = 1) { mockDomainEventListener.processMessage(any()) }
   }
 
   @Test
   fun `Put Unwanted Message on Domain Events Topic is successful as it is filtered out by the queue`() {
     publishUnwantedMessageToDomainEventsTopic()
     TimeUnit.MILLISECONDS.sleep(10000)
-    verify(exactly = 0) { mockMessageListener.processMessage(any()) }
+    verify(exactly = 0) { mockDomainEventListener.processMessage(any()) }
   }
 }
