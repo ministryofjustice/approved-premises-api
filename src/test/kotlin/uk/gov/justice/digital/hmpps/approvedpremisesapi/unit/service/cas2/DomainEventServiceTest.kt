@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.config.DomainEventUrlCon
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.DomainEventEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.events.cas2.Cas2ApplicationStatusUpdatedEventDetailsFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.events.cas2.Cas2ApplicationSubmittedEventDetailsFactory
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2ApplicationRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventType
@@ -35,6 +36,8 @@ import java.util.concurrent.CompletableFuture
 @SuppressWarnings("CyclomaticComplexMethod")
 class DomainEventServiceTest {
   private val domainEventRepositoryMock = mockk<DomainEventRepository>()
+  private val cas2ApplicationRepositoryMock = mockk<Cas2ApplicationRepository>()
+
   private val hmppsQueueServiceMock = mockk<HmppsQueueService>()
   private val mockDomainEventUrlConfig = mockk<DomainEventUrlConfig>()
 
@@ -48,6 +51,7 @@ class DomainEventServiceTest {
     hmppsQueueService = hmppsQueueServiceMock,
     emitDomainEventsEnabled = true,
     mockDomainEventUrlConfig,
+    cas2ApplicationRepositoryMock,
   )
 
   @BeforeEach
@@ -241,6 +245,7 @@ class DomainEventServiceTest {
           hmppsQueueService = hmppsQueueServiceMock,
           emitDomainEventsEnabled = false,
           mockDomainEventUrlConfig,
+          cas2ApplicationRepositoryMock
         )
 
         val id = UUID.fromString("c3b98c67-065a-408d-abea-a252f1d70981")
@@ -376,6 +381,7 @@ class DomainEventServiceTest {
           hmppsQueueService = hmppsQueueServiceMock,
           emitDomainEventsEnabled = false,
           mockDomainEventUrlConfig,
+          cas2ApplicationRepositoryMock
         )
 
         val id = UUID.fromString("c3b98c67-065a-408d-abea-a252f1d70981")

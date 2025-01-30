@@ -33,8 +33,8 @@ interface Cas2ApplicationRepository : JpaRepository<Cas2ApplicationEntity, UUID>
   @Query("SELECT a FROM Cas2ApplicationEntity a WHERE a.createdByUser.id = :id")
   fun findAllByCreatedByUserId(id: UUID): List<Cas2ApplicationEntity>
 
-  @Query("SELECT a FROM Cas2ApplicationEntity a WHERE a.crn = :crn")
-  fun findAllByCrn(crn: String): List<Cas2ApplicationEntity>
+  @Query("SELECT a FROM Cas2ApplicationEntity a WHERE a.nomsNumber = :nomsNumber")
+  fun findAllByNomsNumber(nomsNumber: String): List<Cas2ApplicationEntity>
 
   @Query(
     "SELECT a FROM Cas2ApplicationEntity a WHERE a.submittedAt IS NOT NULL " +

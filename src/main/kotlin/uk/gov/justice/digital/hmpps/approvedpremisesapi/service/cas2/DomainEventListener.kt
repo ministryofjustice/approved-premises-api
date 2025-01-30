@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.slf4j.LoggerFactory
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.HmppsDomainEvent
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.SQSMessage
 
@@ -18,7 +19,7 @@ class DomainEventListener(
 
   private val log = LoggerFactory.getLogger(this::class.java)
 
-  @SqsListener("hmppsdomaineventsqueue", factory = "hmppsQueueContainerFactoryProxy")
+  @SqsListener("castwodomaineventsqueue", factory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(msg: String) {
     val (message) = objectMapper.readValue<SQSMessage>(msg)
     val hmppsDomainEvent = objectMapper.readValue<HmppsDomainEvent>(message)
@@ -29,7 +30,7 @@ class DomainEventListener(
 
   private fun handleMessage(message: HmppsDomainEvent) {
     when (message.eventType) {
-      "offender-management.allocation.changed" -> domainEventService.handlePomAllocationChangedMessage(message)
+      DomainEventType.CAS2_ALLOCATION_CHANGED.toString() -> domainEventService.handlePomAllocationChangedMessage(message)
       else -> log.error("Unknown event type: ${message.eventType}")
     }
   }

@@ -84,22 +84,22 @@ class DomainEventService(
   fun handlePomAllocationChangedMessage(message: HmppsDomainEvent) {
     val prisonId = message.prisonId
     val staffCode = message.staffCode
-    val applications = cas2ApplicationRepository.findAllByCrn(message.personReference.findCrn().toString())
+    val applications = cas2ApplicationRepository.findAllByNomsNumber(message.personReference.findNomsNumber().toString())
 
     saveCas2DomainEvent(
       domainEvent = message,
       applicationId = applications[0].id,
       eventType = DomainEventType.CAS2_ALLOCATION_CHANGED,
+      crn = applications[0].crn,
       data = objectMapper.writeValueAsString(AllocationData(prisonId, staffCode)),
     )
   }
 
   private fun saveCas2DomainEvent(
-    domainEvent: HmppsDomainEvent, applicationId: UUID, eventType: DomainEventType, data: String
+    domainEvent: HmppsDomainEvent, applicationId: UUID, eventType: DomainEventType, crn: String, data: String
   ) {
     val domainEventId = UUID.randomUUID()
     val occurredAt = domainEvent.occurredAt.toInstant().atOffset(ZoneOffset.UTC)
-    val crn = domainEvent.personReference.findCrn().toString()
 
     domainEventRepository.save(
       DomainEventEntity(

@@ -25,7 +25,6 @@ data class AllocationData(
 )
 
 data class HmppsDomainEventPersonReference(val identifiers: List<PersonIdentifier> = listOf()) {
-  fun findCrn() = get("CRN")
   fun findNomsNumber() = get("NOMS")
   operator fun get(key: String) = identifiers.find { it.type == key }?.value
 }
