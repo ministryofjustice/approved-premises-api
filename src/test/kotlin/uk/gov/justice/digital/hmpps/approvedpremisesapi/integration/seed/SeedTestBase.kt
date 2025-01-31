@@ -9,6 +9,7 @@ import org.junit.jupiter.api.TestInstance
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ProbationAreaProbationRegionMappingPersistor
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedLogger
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedService
@@ -27,6 +28,9 @@ abstract class SeedTestBase : IntegrationTestBase() {
 
   @Autowired
   lateinit var seedXlsxService: SeedXlsxService
+
+  @Autowired
+  lateinit var probationAreaProbationRegionMappingPersistor: ProbationAreaProbationRegionMappingPersistor
 
   @Value("\${seed.file-prefix}")
   lateinit var seedFilePrefix: String

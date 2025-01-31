@@ -22,7 +22,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.client.ApDeliusContextAp
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.client.ClientResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.config.AuthAwareAuthenticationToken
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ApAreaEntityFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ProbationAreaProbationRegionMappingEntityFactory
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ProbationAreaProbationRegionMapping
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ProbationDeliveryUnitEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ProbationRegionEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.StaffDetailFactory
@@ -175,10 +175,10 @@ class UserServiceTest {
         .withApArea(ApAreaEntityFactory().produce())
         .produce()
 
-      every { mockProbationAreaProbationRegionMappingRepository.findByProbationAreaDeliusCode("AREACODE") } returns ProbationAreaProbationRegionMappingEntityFactory()
-        .withProbationRegion(probationRegion)
-        .withProbationAreaDeliusCode("AREACODE")
-        .produce()
+      every { mockProbationAreaProbationRegionMappingRepository.findByProbationAreaDeliusCode("AREACODE") } returns ProbationAreaProbationRegionMapping(
+        probationRegion = probationRegion,
+        probationAreaDeliusCode = "AREACODE",
+      ).toEntity()
 
       val apAreaDefaultCruManagementArea = Cas1CruManagementAreaEntityFactory().produce()
       val apArea = ApAreaEntityFactory().withDefaultCruManagementArea(apAreaDefaultCruManagementArea).produce()
@@ -297,10 +297,10 @@ class UserServiceTest {
         .withApArea(ApAreaEntityFactory().produce())
         .produce()
 
-      every { mockProbationAreaProbationRegionMappingRepository.findByProbationAreaDeliusCode("AREACODE") } returns ProbationAreaProbationRegionMappingEntityFactory()
-        .withProbationRegion(probationRegion)
-        .withProbationAreaDeliusCode("AREACODE")
-        .produce()
+      every { mockProbationAreaProbationRegionMappingRepository.findByProbationAreaDeliusCode("AREACODE") } returns ProbationAreaProbationRegionMapping(
+        probationRegion = probationRegion,
+        probationAreaDeliusCode = "AREACODE",
+      ).toEntity()
 
       val apArea = ApAreaEntityFactory().produce()
 
@@ -796,10 +796,7 @@ class UserServiceTest {
         .withDeliusStaffCode(staffCode)
         .withProbationRegion(probationRegion)
 
-    val regionMappingEntity =
-      ProbationAreaProbationRegionMappingEntityFactory()
-        .withProbationRegion(probationRegion)
-        .produce()
+    val regionMappingEntity = ProbationAreaProbationRegionMapping(probationRegion = probationRegion).toEntity()
 
     val pdu =
       ProbationDeliveryUnitEntityFactory()

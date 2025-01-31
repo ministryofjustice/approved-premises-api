@@ -23,6 +23,7 @@ import java.time.OffsetDateTime
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ApStaffUsersSeedJobTest : SeedTestBase() {
+
   @Test
   fun `Attempting to seed a non existent user logs an error`() {
     apDeliusContextMockNotFoundStaffDetailCall("INVALID-USER")
@@ -53,9 +54,8 @@ class ApStaffUsersSeedJobTest : SeedTestBase() {
   fun `Attempting to seed a real but currently unknown user succeeds`() {
     val probationRegion = givenAProbationRegion()
 
-    val probationRegionDeliusMapping = probationAreaProbationRegionMappingFactory.produceAndPersist {
-      withProbationRegion(probationRegion)
-    }
+    val probationRegionDeliusMapping =
+      probationAreaProbationRegionMappingPersistor.produceAndPersist(probationRegion)
 
     apDeliusContextAddStaffDetailResponse(
       StaffDetailFactory.staffDetail(
