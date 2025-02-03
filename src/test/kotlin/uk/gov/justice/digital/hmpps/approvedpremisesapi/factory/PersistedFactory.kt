@@ -34,6 +34,15 @@ class PersistedFactory<EntityType : Any, PrimaryKeyType : Any, FactoryType : Fac
     }
   }
 
+  fun produceAndSortAndPersistMultiple(amount: Int, configuration: FactoryType.() -> Unit, comparator: Comparator<EntityType>): List<EntityType> {
+    val factory = factoryProducer()
+    configuration(factory)
+    val producedAndSortedEntities = (1..amount).map {
+      factory.produce()
+    }.sortedWith(comparator)
+    return repository.saveAllAndFlush(producedAndSortedEntities)
+  }
+
   fun produceAndPersistMultipleIndexed(amount: Int, configuration: FactoryType.(Int) -> Unit): List<EntityType> {
     val factory = factoryProducer()
     return (1..amount).map {

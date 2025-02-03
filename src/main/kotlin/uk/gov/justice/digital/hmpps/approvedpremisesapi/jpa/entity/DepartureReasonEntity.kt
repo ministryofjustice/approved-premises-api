@@ -19,7 +19,7 @@ interface DepartureReasonRepository : JpaRepository<DepartureReasonEntity, UUID>
   @Query("SELECT d FROM DepartureReasonEntity d WHERE d.serviceScope = :serviceName OR d.serviceScope = '*'")
   fun findAllByServiceScope(serviceName: String): List<DepartureReasonEntity>
 
-  @Query("SELECT d FROM DepartureReasonEntity d WHERE d.serviceScope = 'approved-premises' AND d.isActive = true")
+  @Query("SELECT d FROM DepartureReasonEntity d WHERE d.serviceScope = 'approved-premises' AND d.isActive = true ORDER BY d.name")
   fun findActiveForCas1(): List<DepartureReasonEntity>
 
   @Deprecated("This SQL is ambiguous and may return unexpected resulted")

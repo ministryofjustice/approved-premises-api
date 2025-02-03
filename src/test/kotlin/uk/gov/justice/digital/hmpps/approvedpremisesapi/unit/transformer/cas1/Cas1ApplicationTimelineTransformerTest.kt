@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.approvedpremisesapi.unit.transformer
+package uk.gov.justice.digital.hmpps.approvedpremisesapi.unit.transformer.cas1
 
 import io.mockk.every
 import io.mockk.mockk
@@ -9,28 +9,32 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApprovedPremisesUser
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1BookingChangedContentPayload
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1SpaceCharacteristic
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TimelineEvent
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TimelineEventAssociatedUrl
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TimelineEventType
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TimelineEventUrlType
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NamedId
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEvent
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEventAssociatedUrl
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEventType
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEventUrlType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.domainevents.DomainEventDescriber
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.UserEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TriggerSourceType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.DomainEventSummary
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.ApplicationTimelineTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.UserTransformer
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.cas1.Cas1ApplicationTimelineTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.UrlTemplate
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 
-class ApplicationTimelineTransformerTest {
+class Cas1ApplicationTimelineTransformerTest {
   private val mockDomainEventDescriber = mockk<DomainEventDescriber>()
   private val mockUserTransformer = mockk<UserTransformer>()
 
-  private val applicationTimelineTransformer = ApplicationTimelineTransformer(
+  private val applicationTimelineTransformer = Cas1ApplicationTimelineTransformer(
     applicationUrlTemplate = UrlTemplate("http://somehost:3000/applications/#id"),
     assessmentUrlTemplate = UrlTemplate("http://somehost:3000/assessments/#id"),
     bookingUrlTemplate = UrlTemplate("http://somehost:3000/premises/#premisesId/bookings/#bookingId"),
@@ -80,7 +84,7 @@ class ApplicationTimelineTransformerTest {
     val result = applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)
 
     assertThat(result.id).isEqualTo(domainEvent.id)
-    assertThat(result.type).isEqualTo(domainEventType.timelineEventType)
+    assertThat(result.type).isEqualTo(domainEventType.cas1TimelineEventType)
     assertThat(result.occurredAt).isEqualTo(domainEvent.occurredAt.toInstant())
     assertThat(result.associatedUrls).isEmpty()
     assertThat(result.content).isEqualTo("Some event")
@@ -131,13 +135,13 @@ class ApplicationTimelineTransformerTest {
 
     every { mockDomainEventDescriber.getContentPayload(domainEvent) } returns Pair("Some event", null)
 
-    Assertions.assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
-      TimelineEvent(
+    assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
+      Cas1TimelineEvent(
         id = domainEvent.id,
-        type = TimelineEventType.approvedPremisesApplicationSubmitted,
+        type = Cas1TimelineEventType.applicationSubmitted,
         occurredAt = domainEvent.occurredAt.toInstant(),
         associatedUrls = listOf(
-          TimelineEventAssociatedUrl(TimelineEventUrlType.application, "http://somehost:3000/applications/$applicationId"),
+          Cas1TimelineEventAssociatedUrl(Cas1TimelineEventUrlType.application, "http://somehost:3000/applications/$applicationId"),
         ),
         content = "Some event",
       ),
@@ -165,18 +169,18 @@ class ApplicationTimelineTransformerTest {
 
     every { mockDomainEventDescriber.getContentPayload(domainEvent) } returns Pair("Some event", null)
 
-    Assertions.assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
-      TimelineEvent(
+    assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
+      Cas1TimelineEvent(
         id = domainEvent.id,
-        type = domainEventType.timelineEventType,
+        type = domainEventType.cas1TimelineEventType!!,
         occurredAt = domainEvent.occurredAt.toInstant(),
         associatedUrls = if (domainEventType == DomainEventType.APPROVED_PREMISES_ASSESSMENT_APPEALED) {
           listOf(
-            TimelineEventAssociatedUrl(TimelineEventUrlType.assessmentAppeal, "http://somehost:3000/applications/$applicationId/appeals/$appealId"),
+            Cas1TimelineEventAssociatedUrl(Cas1TimelineEventUrlType.assessmentAppeal, "http://somehost:3000/applications/$applicationId/appeals/$appealId"),
           )
         } else {
           listOf(
-            TimelineEventAssociatedUrl(TimelineEventUrlType.application, "http://somehost:3000/applications/$applicationId"),
+            Cas1TimelineEventAssociatedUrl(Cas1TimelineEventUrlType.application, "http://somehost:3000/applications/$applicationId"),
           )
         },
         content = "Some event",
@@ -205,12 +209,12 @@ class ApplicationTimelineTransformerTest {
     every { mockDomainEventDescriber.getContentPayload(domainEvent) } returns Pair("Some event", null)
 
     assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
-      TimelineEvent(
+      Cas1TimelineEvent(
         id = domainEvent.id,
-        type = TimelineEventType.approvedPremisesBookingMade,
+        type = Cas1TimelineEventType.bookingMade,
         occurredAt = domainEvent.occurredAt.toInstant(),
         associatedUrls = listOf(
-          TimelineEventAssociatedUrl(TimelineEventUrlType.booking, "http://somehost:3000/premises/$premisesId/bookings/$bookingId"),
+          Cas1TimelineEventAssociatedUrl(Cas1TimelineEventUrlType.booking, "http://somehost:3000/premises/$premisesId/bookings/$bookingId"),
         ),
         content = "Some event",
       ),
@@ -238,12 +242,12 @@ class ApplicationTimelineTransformerTest {
     every { mockDomainEventDescriber.getContentPayload(domainEvent) } returns Pair("Some event", null)
 
     assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
-      TimelineEvent(
+      Cas1TimelineEvent(
         id = domainEvent.id,
-        type = TimelineEventType.approvedPremisesBookingMade,
+        type = Cas1TimelineEventType.bookingMade,
         occurredAt = domainEvent.occurredAt.toInstant(),
         associatedUrls = listOf(
-          TimelineEventAssociatedUrl(TimelineEventUrlType.cas1SpaceBooking, "http://somehost:3000/manage/premises/$premisesId/bookings/$spaceBookingId"),
+          Cas1TimelineEventAssociatedUrl(Cas1TimelineEventUrlType.spaceBooking, "http://somehost:3000/manage/premises/$premisesId/bookings/$spaceBookingId"),
         ),
         content = "Some event",
       ),
@@ -269,13 +273,13 @@ class ApplicationTimelineTransformerTest {
 
     every { mockDomainEventDescriber.getContentPayload(domainEvent) } returns Pair("Some event", null)
 
-    Assertions.assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
-      TimelineEvent(
+    assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
+      Cas1TimelineEvent(
         id = domainEvent.id,
-        type = TimelineEventType.approvedPremisesApplicationAssessed,
+        type = Cas1TimelineEventType.applicationAssessed,
         occurredAt = domainEvent.occurredAt.toInstant(),
         associatedUrls = listOf(
-          TimelineEventAssociatedUrl(TimelineEventUrlType.assessment, "http://somehost:3000/assessments/$assessmentId"),
+          Cas1TimelineEventAssociatedUrl(Cas1TimelineEventUrlType.assessment, "http://somehost:3000/assessments/$assessmentId"),
         ),
         content = "Some event",
       ),
@@ -303,13 +307,13 @@ class ApplicationTimelineTransformerTest {
 
     every { mockDomainEventDescriber.getContentPayload(domainEvent) } returns Pair("Some event", null)
 
-    Assertions.assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
-      TimelineEvent(
+    assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
+      Cas1TimelineEvent(
         id = domainEvent.id,
-        type = TimelineEventType.approvedPremisesInformationRequest,
+        type = Cas1TimelineEventType.informationRequest,
         occurredAt = domainEvent.occurredAt.toInstant(),
         associatedUrls = listOf(
-          TimelineEventAssociatedUrl(TimelineEventUrlType.application, "http://somehost:3000/applications/$applicationId"),
+          Cas1TimelineEventAssociatedUrl(Cas1TimelineEventUrlType.application, "http://somehost:3000/applications/$applicationId"),
         ),
         content = "Some event",
       ),
@@ -337,18 +341,18 @@ class ApplicationTimelineTransformerTest {
 
     every { mockDomainEventDescriber.getContentPayload(domainEvent) } returns Pair("Some event", null)
 
-    Assertions.assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent).associatedUrls)
+    assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent).associatedUrls)
       .containsOnly(
-        TimelineEventAssociatedUrl(TimelineEventUrlType.application, "http://somehost:3000/applications/$applicationId"),
+        Cas1TimelineEventAssociatedUrl(Cas1TimelineEventUrlType.application, "http://somehost:3000/applications/$applicationId"),
       )
 
-    Assertions.assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
-      TimelineEvent(
+    assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
+      Cas1TimelineEvent(
         id = domainEvent.id,
-        type = TimelineEventType.approvedPremisesAssessmentAllocated,
+        type = Cas1TimelineEventType.assessmentAllocated,
         occurredAt = domainEvent.occurredAt.toInstant(),
         associatedUrls = listOf(
-          TimelineEventAssociatedUrl(TimelineEventUrlType.application, "http://somehost:3000/applications/$applicationId"),
+          Cas1TimelineEventAssociatedUrl(Cas1TimelineEventUrlType.application, "http://somehost:3000/applications/$applicationId"),
         ),
         content = "Some event",
       ),
@@ -378,15 +382,15 @@ class ApplicationTimelineTransformerTest {
 
     every { mockDomainEventDescriber.getContentPayload(domainEvent) } returns Pair("Some event", null)
 
-    Assertions.assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
-      TimelineEvent(
+    assertThat(applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)).isEqualTo(
+      Cas1TimelineEvent(
         id = domainEvent.id,
-        type = TimelineEventType.approvedPremisesBookingMade,
+        type = Cas1TimelineEventType.bookingMade,
         occurredAt = domainEvent.occurredAt.toInstant(),
         associatedUrls = listOf(
-          TimelineEventAssociatedUrl(TimelineEventUrlType.application, "http://somehost:3000/applications/$applicationId"),
-          TimelineEventAssociatedUrl(TimelineEventUrlType.assessment, "http://somehost:3000/assessments/$assessmentId"),
-          TimelineEventAssociatedUrl(TimelineEventUrlType.booking, "http://somehost:3000/premises/$premisesId/bookings/$bookingId"),
+          Cas1TimelineEventAssociatedUrl(Cas1TimelineEventUrlType.application, "http://somehost:3000/applications/$applicationId"),
+          Cas1TimelineEventAssociatedUrl(Cas1TimelineEventUrlType.assessment, "http://somehost:3000/assessments/$assessmentId"),
+          Cas1TimelineEventAssociatedUrl(Cas1TimelineEventUrlType.booking, "http://somehost:3000/premises/$premisesId/bookings/$bookingId"),
         ),
         content = "Some event",
       ),
@@ -413,9 +417,63 @@ class ApplicationTimelineTransformerTest {
 
     every { mockDomainEventDescriber.getContentPayload(domainEvent) } returns Pair("Some event", null)
 
-    Assertions.assertThat(
+    assertThat(
       applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)
         .triggerSource?.name.equals(triggerSource.name, true),
     )
+  }
+
+  @Test
+  fun `transformDomainEventSummaryToTimelineEvent transforms domain event with booking changed payload`() {
+    val userJpa = UserEntityFactory().withDefaultProbationRegion().produce()
+    val premisesId = UUID.randomUUID()
+    val domainEventType = DomainEventType.APPROVED_PREMISES_BOOKING_CHANGED
+
+    val domainEvent = DomainEventSummaryImpl(
+      id = UUID.randomUUID().toString(),
+      type = domainEventType,
+      occurredAt = OffsetDateTime.now(),
+      bookingId = null,
+      applicationId = null,
+      assessmentId = null,
+      premisesId = premisesId,
+      appealId = null,
+      cas1SpaceBookingId = null,
+      triggerSource = null,
+      triggeredByUser = userJpa,
+    )
+
+    val userApi = mockk<ApprovedPremisesUser>()
+    val payload = Cas1BookingChangedContentPayload(
+      expectedArrival = LocalDate.now(),
+      expectedDeparture = LocalDate.now(),
+      type = domainEventType.cas1TimelineEventType!!,
+      premises = NamedId(premisesId, "name"),
+      schemaVersion = 2,
+      characteristics = listOf(Cas1SpaceCharacteristic.isArsonSuitable),
+      previousCharacteristics = listOf(Cas1SpaceCharacteristic.isGroundFloor),
+    )
+
+    every { mockUserTransformer.transformJpaToApi(userJpa, ServiceName.approvedPremises) } returns userApi
+    every { mockDomainEventDescriber.getContentPayload(domainEvent) } returns Pair("Some event", payload)
+
+    val result = applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(domainEvent)
+
+    assertThat(result.id).isEqualTo(domainEvent.id)
+    assertThat(result.type).isEqualTo(domainEventType.cas1TimelineEventType)
+    assertThat(result.occurredAt).isEqualTo(domainEvent.occurredAt.toInstant())
+    assertThat(result.associatedUrls).isEmpty()
+    assertThat(result.content).isEqualTo("Some event")
+    assertThat(result.createdBy).isEqualTo(userApi)
+    assertThat(result.triggerSource).isEqualTo(null)
+    assertThat(result.payload).isInstanceOf(Cas1BookingChangedContentPayload::class.java)
+    assertThat(payload.premises.id).isEqualTo(premisesId)
+    assertThat(payload.premises.name).isEqualTo("name")
+    assertThat(payload.type).isEqualTo(domainEventType.cas1TimelineEventType)
+    assertThat(payload.schemaVersion).isEqualTo(2)
+    assertThat(payload.expectedArrival).isEqualTo(payload.expectedArrival)
+    assertThat(payload.expectedDeparture).isEqualTo(payload.expectedDeparture)
+    assertThat(payload.characteristics).isEqualTo(payload.characteristics)
+    assertThat(payload.previousCharacteristics).isEqualTo(payload.previousCharacteristics)
   }
 }

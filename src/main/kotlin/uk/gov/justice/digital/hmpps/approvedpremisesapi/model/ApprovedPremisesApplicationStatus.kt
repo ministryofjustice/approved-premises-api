@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.model
 
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1ApplicationStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.BookingEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementRequestEntity
@@ -41,5 +42,23 @@ enum class ApprovedPremisesApplicationStatus(val apiValue: ApiApprovedPremisesAp
   companion object {
     fun valueOf(apiValue: ApiApprovedPremisesApplicationStatus): ApprovedPremisesApplicationStatus =
       ApprovedPremisesApplicationStatus.entries.first { it.apiValue == apiValue }
+  }
+
+  fun toCas1Status(): Cas1ApplicationStatus {
+    return when (this) {
+      EXPIRED -> Cas1ApplicationStatus.expired
+      STARTED -> Cas1ApplicationStatus.started
+      SUBMITTED -> Cas1ApplicationStatus.submitted
+      REJECTED -> Cas1ApplicationStatus.rejected
+      AWAITING_ASSESSMENT -> Cas1ApplicationStatus.awaitingAssesment
+      UNALLOCATED_ASSESSMENT -> Cas1ApplicationStatus.unallocatedAssesment
+      ASSESSMENT_IN_PROGRESS -> Cas1ApplicationStatus.assesmentInProgress
+      AWAITING_PLACEMENT -> Cas1ApplicationStatus.awaitingPlacement
+      PLACEMENT_ALLOCATED -> Cas1ApplicationStatus.placementAllocated
+      INAPPLICABLE -> Cas1ApplicationStatus.inapplicable
+      WITHDRAWN -> Cas1ApplicationStatus.withdrawn
+      REQUESTED_FURTHER_INFORMATION -> Cas1ApplicationStatus.requestedFurtherInformation
+      PENDING_PLACEMENT_REQUEST -> Cas1ApplicationStatus.pendingPlacementRequest
+    }
   }
 }

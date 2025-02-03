@@ -1,21 +1,17 @@
-package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1
+package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed
 
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedJob
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.SeedLogger
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService.GetUserResponse
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 /**
- * Seeds users, without touching roles and qualifications.
+ * Seeds users, without touching any existing user's roles and qualifications.
  *
- *  If you want to set roles and qualifications as part of
- *  the seeding then look at UsersSeedJob.
+ * If you want to set roles and qualifications as part of the seeding then look at [UsersSeedJob].
  */
 @Component
-class ApStaffUsersSeedJob(
+class UsersBasicSeedJob(
   private val userService: UserService,
   private val seedLogger: SeedLogger,
 ) : SeedJob<ApStaffUserSeedCsvRow>(
@@ -31,23 +27,29 @@ class ApStaffUsersSeedJob(
   @SuppressWarnings("TooGenericExceptionThrown", "TooGenericExceptionCaught")
   override fun processRow(row: ApStaffUserSeedCsvRow) {
     val username = row.deliusUsername
-    seedLogger.info("Processing AP Staff seeding for $username")
+    seedLogger.info("Ensuring user exists with username '$username'")
 
-    val user = try {
+    val result = try {
       when (val result = userService.getExistingUserOrCreate(username)) {
         GetUserResponse.StaffRecordNotFound -> throw RuntimeException("Could not find staff record for user $username")
-        is GetUserResponse.Success -> result.user
+        is GetUserResponse.Success -> result
       }
     } catch (exception: Exception) {
       throw RuntimeException("Could not get user $username", exception)
     }
-    seedLogger.info(seedingReport(user))
+    seedLogger.info(seedingReport(result))
   }
 
-  private fun seedingReport(user: UserEntity): String {
-    val timestamp = user.updatedAt ?: user.createdAt
-    val ageInMinutes = ChronoUnit.MINUTES.between(timestamp, OffsetDateTime.now())
-    return "-> User record for: ${user.deliusUsername} last updated $ageInMinutes mins ago"
+  private fun seedingReport(response: GetUserResponse.Success): String {
+    val user = response.user
+    val username = user.deliusUsername
+    if (response.createdOnGet) {
+      return "-> User record for '$username' created"
+    } else {
+      val timestamp = user.updatedAt ?: user.createdAt
+      val ageInMinutes = ChronoUnit.MINUTES.between(timestamp, OffsetDateTime.now())
+      return "-> User record for '$username' already exists. Last updated $ageInMinutes mins ago"
+    }
   }
 }
 

@@ -9,7 +9,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.AllocatedFilte
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.AssessmentTask
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NewReallocation
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PlacementApplicationTask
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PlacementRequestTask
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Reallocation
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SortDirection
@@ -21,7 +20,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.convert.EnumConverterFac
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesAssessmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementApplicationEntity
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementRequestEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TaskEntityType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserPermission
@@ -31,22 +29,17 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonSummaryInfoR
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.TypedTask
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.ValidationErrors
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.BadRequestProblem
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ConflictProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.ForbiddenProblem
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.NotAllowedProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.NotFoundProblem
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActionResult
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.ValidatableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.AssessmentService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.OffenderService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.PlacementApplicationService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.TaskService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.PlacementRequestService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.TaskTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.UserTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.PageCriteria
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromAuthorisableActionResult
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.ensureEntityFromCasResultIsSuccess
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromCasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.kebabCaseToPascalCase
 import java.util.UUID
@@ -56,7 +49,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.UserQualificat
 class TasksController(
   private val userService: UserService,
   private val assessmentService: AssessmentService,
-  private val placementRequestService: PlacementRequestService,
   private val taskTransformer: TaskTransformer,
   private val offenderService: OffenderService,
   private val placementApplicationService: PlacementApplicationService,
@@ -117,7 +109,6 @@ class TasksController(
     val tasks = typedTasks.map {
       when (it) {
         is TypedTask.Assessment -> getAssessmentTask(it.entity, offenderSummaries)
-        is TypedTask.PlacementRequest -> getPlacementRequestTask(it.entity, offenderSummaries)
         is TypedTask.PlacementApplication -> getPlacementApplicationTask(it.entity, offenderSummaries)
       }
     }
@@ -131,7 +122,6 @@ class TasksController(
 
   private fun toTaskEntityType(taskType: TaskType) = when (taskType) {
     TaskType.assessment -> TaskEntityType.ASSESSMENT
-    TaskType.placementRequest -> TaskEntityType.PLACEMENT_REQUEST
     TaskType.placementApplication -> TaskEntityType.PLACEMENT_APPLICATION
   }
 
@@ -159,22 +149,8 @@ class TasksController(
         )
       }
 
-      TaskType.placementRequest -> {
-        val (placementRequest) = extractEntityFromCasResult(
-          placementRequestService.getPlacementRequestForUser(user, id),
-        )
-        val offenderSummaries = getOffenderSummariesForCrns(listOf(placementRequest.application.crn), user)
-
-        TaskInfo(
-          transformedTask = getPlacementRequestTask(placementRequest, offenderSummaries),
-          crn = placementRequest.application.crn,
-          requiredQualifications = emptyList(),
-          requiredPermission = UserPermission.CAS1_ASSESS_PLACEMENT_REQUEST,
-        )
-      }
-
       TaskType.placementApplication -> {
-        val placementApplication = extractEntityFromAuthorisableActionResult(
+        val placementApplication = extractEntityFromCasResult(
           placementApplicationService.getApplication(id),
         )
         val offenderSummaries = getOffenderSummariesForCrns(listOf(placementApplication.application.crn), user)
@@ -186,10 +162,6 @@ class TasksController(
           requiredPermission = UserPermission.CAS1_ASSESS_PLACEMENT_APPLICATION,
         )
       }
-
-      else -> {
-        throw NotAllowedProblem(detail = "The Task Type $taskType is not currently supported")
-      }
     }
 
     val users = userService.getAllocatableUsersForAllocationType(
@@ -198,7 +170,7 @@ class TasksController(
       taskInfo.requiredPermission,
     )
 
-    val workload = userService.getUserWorkloads(users.map { it.id })
+    val workload = taskService.getUserWorkloads(users.map { it.id })
     val transformedAllocatableUsers = users.map {
       userTransformer.transformJpaToAPIUserWithWorkload(it, workload[it.id]!!)
     }
@@ -254,28 +226,9 @@ class TasksController(
 
     val type = toTaskType(taskType)
 
-    val validationResult = when (val authorisationResult = taskService.deallocateTask(user, type, id)) {
-      is AuthorisableActionResult.NotFound -> throw NotFoundProblem(id, taskType)
-      is AuthorisableActionResult.Unauthorised -> throw ForbiddenProblem()
-      is AuthorisableActionResult.Success -> authorisationResult.entity
-    }
-
-    when (validationResult) {
-      is ValidatableActionResult.GeneralValidationError -> throw BadRequestProblem(
-        errorDetail = validationResult.message,
-      )
-
-      is ValidatableActionResult.FieldValidationError -> throw BadRequestProblem(
-        invalidParams = validationResult.validationMessages,
-      )
-
-      is ValidatableActionResult.ConflictError -> throw ConflictProblem(
-        id = validationResult.conflictingEntityId,
-        conflictReason = validationResult.message,
-      )
-
-      is ValidatableActionResult.Success -> validationResult.entity
-    }
+    ensureEntityFromCasResultIsSuccess(
+      taskService.deallocateTask(user, type, id),
+    )
 
     return ResponseEntity(Unit, HttpStatus.NO_CONTENT)
   }
@@ -286,16 +239,6 @@ class TasksController(
   ): AssessmentTask {
     return taskTransformer.transformAssessmentToTask(
       assessment = assessment,
-      offenderSummaries = offenderSummaries,
-    )
-  }
-
-  private fun getPlacementRequestTask(
-    placementRequest: PlacementRequestEntity,
-    offenderSummaries: List<PersonSummaryInfoResult>,
-  ): PlacementRequestTask {
-    return taskTransformer.transformPlacementRequestToTask(
-      placementRequest = placementRequest,
       offenderSummaries = offenderSummaries,
     )
   }

@@ -153,26 +153,12 @@ class ApplicationServiceTest {
   )
 
   @Test
-  fun `Get all applications where Probation Officer with provided distinguished name does not exist returns empty list`() {
-    val distinguishedName = "SOMEPERSON"
-
-    every { mockUserRepository.findByDeliusUsername(distinguishedName) } returns null
-
-    assertThat(
-      applicationService.getAllApplicationsForUsername(
-        distinguishedName,
-        ServiceName.approvedPremises,
-      ),
-    ).isEmpty()
-  }
-
-  @Test
   fun `Get all applications where Probation Officer exists returns applications returned from repository`() {
     val userId = UUID.fromString("8a0624b8-8e92-47ce-b645-b65ea5a197d0")
-    val distinguishedName = "SOMEPERSON"
+    val deliusUsername = "SOMEPERSON"
     val userEntity = UserEntityFactory()
       .withId(userId)
-      .withDeliusUsername(distinguishedName)
+      .withDeliusUsername(deliusUsername)
       .withYieldedProbationRegion {
         ProbationRegionEntityFactory()
           .withYieldedApArea { ApAreaEntityFactory().produce() }
@@ -200,16 +186,16 @@ class ApplicationServiceTest {
       },
     )
 
-    every { mockUserRepository.findByDeliusUsername(distinguishedName) } returns userEntity
+    every { mockUserRepository.findByDeliusUsername(deliusUsername) } returns userEntity
     every { mockApplicationRepository.findNonWithdrawnApprovedPremisesSummariesForUser(userId) } returns applicationSummaries
     every { mockJsonSchemaService.checkSchemaOutdated(any()) } answers { it.invocation.args[0] as ApplicationEntity }
 
     val crns = applicationSummaries.map { it.getCrn() }.distinct()
-    every { mockOffenderService.canAccessOffenders(distinguishedName, crns) } returns mapOf(crns.first() to true)
+    every { mockOffenderService.canAccessOffenders(deliusUsername, crns) } returns mapOf(crns.first() to true)
 
     assertThat(
       applicationService.getAllApplicationsForUsername(
-        distinguishedName,
+        userEntity = userEntity,
         ServiceName.approvedPremises,
       ),
     ).containsAll(applicationSummaries)

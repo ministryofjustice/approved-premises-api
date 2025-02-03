@@ -23,7 +23,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.ApprovedPremisesAp
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.ValidationErrors
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.validated
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.InternalServerErrorProblem
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.CasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1PlacementApplicationDomainEventService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1PlacementApplicationEmailService
@@ -111,11 +110,11 @@ class PlacementApplicationService(
     return success(createdApplication.apply { schemaUpToDate = true })
   }
 
-  fun getApplication(id: UUID): AuthorisableActionResult<PlacementApplicationEntity> {
+  fun getApplication(id: UUID): CasResult<PlacementApplicationEntity> {
     val placementApplication =
-      placementApplicationRepository.findByIdOrNull(id) ?: return AuthorisableActionResult.NotFound()
+      placementApplicationRepository.findByIdOrNull(id) ?: return CasResult.NotFound("placement application", id.toString())
 
-    return AuthorisableActionResult.Success(setSchemaUpToDate(placementApplication))
+    return CasResult.Success(setSchemaUpToDate(placementApplication))
   }
 
   fun getApplicationOrNull(id: UUID) = placementApplicationRepository.findByIdOrNull(id)

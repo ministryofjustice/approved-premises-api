@@ -2,18 +2,14 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.seed
 
 import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import org.springframework.context.ApplicationContext
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionTemplate
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SeedFileType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.config.SeedConfig
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.ApStaffUsersSeedJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.ApprovedPremisesBookingCancelSeedJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.ApprovedPremisesRoomsSeedJob
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.Cas1BackfillActiveSpaceBookingsCreatedInDelius
@@ -45,6 +41,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.findRootCause
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
+import java.util.concurrent.Semaphore
 import kotlin.io.path.absolutePathString
 import kotlin.reflect.KClass
 
@@ -72,8 +69,8 @@ class SeedService(
       val job: SeedJob<*> = when (seedFileType) {
         SeedFileType.approvedPremises -> getBean(Cas1SeedPremisesFromCsvJob::class)
         SeedFileType.approvedPremisesRooms -> getBean(ApprovedPremisesRoomsSeedJob::class)
-        SeedFileType.user -> getBean(AllCasUsersSeedJob::class)
-        SeedFileType.approvedPremisesApStaffUsers -> getBean(ApStaffUsersSeedJob::class)
+        SeedFileType.user -> getBean(UsersSeedJob::class)
+        SeedFileType.usersBasic -> getBean(UsersBasicSeedJob::class)
         SeedFileType.nomisUsers -> getBean(NomisUsersSeedJob::class)
         SeedFileType.externalUsers -> getBean(ExternalUsersSeedJob::class)
         SeedFileType.cas2Applications -> getBean(Cas2ApplicationsSeedJob::class)
@@ -144,74 +141,82 @@ class SeedService(
     return rowsProcessed
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
   @SuppressWarnings("TooGenericExceptionThrown", "MagicNumber", "ThrowsCount")
   private fun <T> processCsv(
     job: SeedJob<T>,
     resolveCsvPath: SeedJob<T>.() -> String,
     rowCount: Int,
   ): Int {
+    val context = JobExecutionContext(job, rowCount, mutableListOf())
     var rowNumber = 0
-    val errors = mutableListOf<String>()
 
     seedLogger.info("Processing $rowCount rows")
 
-    if (job.processRowsConcurrently) {
-      val requestSemaphore = Semaphore(5)
+    try {
+      csvReader().open(job.resolveCsvPath()) {
+        if (!job.processRowsConcurrently) {
+          readAllWithHeaderAsSequence().forEach { row ->
+            rowNumber += 1
+            processRow(context, row, rowNumber)
+          }
+        } else {
+          runBlocking(Dispatchers.IO) {
+            /*
+            We use a semaphore to ensure there are only 5 processing or pending co-routines at
+            any moment in time when processing the CSV. We found that if a coroutine was created
+            for every row in a large CSV file we encountered out of memory exceptions.
 
-      runBlocking(Dispatchers.IO) {
-        try {
-          csvReader().open(job.resolveCsvPath()) {
+            If we were to use a CSV reader that allowed us to stream the CSV rows instead of loading
+            them all in to memory, this restriction may not be required.
+             */
+            val coroutineCreationSemaphore = Semaphore(5)
             readAllWithHeaderAsSequence().forEach { row ->
               rowNumber += 1
+              coroutineCreationSemaphore.acquire()
               launch {
-                requestSemaphore.withPermit {
-                  processRow(job, row, rowNumber, rowCount, errors)
+                try {
+                  processRow(context, row, rowNumber)
+                } finally {
+                  coroutineCreationSemaphore.release()
                 }
               }
             }
           }
-        } catch (exception: Exception) {
-          throw RuntimeException("Unable to process CSV at row $rowNumber", exception)
         }
       }
-    } else {
-      try {
-        csvReader().open(job.resolveCsvPath()) {
-          readAllWithHeaderAsSequence().forEach { row ->
-            processRow(job, row, ++rowNumber, rowCount, errors)
-          }
-        }
-      } catch (exception: Exception) {
-        throw RuntimeException("Unable to process CSV at row $rowNumber", exception)
-      }
+    } catch (exception: Exception) {
+      throw RuntimeException("Unable to process CSV at row $rowNumber", exception)
     }
 
-    if (errors.isNotEmpty()) {
-      throw RuntimeException("The following row-level errors were raised: ${errors.joinToString("\n")}")
+    if (context.errors.isNotEmpty()) {
+      throw RuntimeException("The following row-level errors were raised: ${context.errors.joinToString("\n")}")
     }
 
     return rowNumber
   }
 
+  data class JobExecutionContext<T>(
+    val job: SeedJob<T>,
+    val rowCount: Int,
+    val errors: MutableList<String>,
+  )
+
   @SuppressWarnings("MagicNumber")
   private fun <T> processRow(
-    job: SeedJob<T>,
+    context: JobExecutionContext<T>,
     row: Map<String, String>,
     rowNumber: Int,
-    rowCount: Int,
-    errors: MutableList<String>,
   ) {
-    val deserializedRow = job.deserializeRow(row)
+    val deserializedRow = context.job.deserializeRow(row)
     try {
-      job.processRow(deserializedRow)
+      context.job.processRow(deserializedRow)
     } catch (exception: RuntimeException) {
       val rootCauseException = findRootCause(exception)
-      errors.add("Error on row $rowNumber: ${exception.message} ${if (rootCauseException != null) rootCauseException.message else "no exception cause"}")
+      context.errors.add("Error on row $rowNumber: ${exception.message} ${if (rootCauseException != null) rootCauseException.message else "no exception cause"}")
       seedLogger.error("Error on row $rowNumber:", exception)
     } finally {
       if ((rowNumber % 10_000) == 0) {
-        seedLogger.info("Have processed $rowNumber of $rowCount rows")
+        seedLogger.info("Have processed $rowNumber of ${context.rowCount} rows")
       }
     }
   }

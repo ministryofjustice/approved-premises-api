@@ -70,8 +70,8 @@ class SeedScaffoldingTest : SeedTestBase() {
     withCsv(
       "malformed",
       """
-deliusUsername,roles,qualifications
-RogerSmith,CAS1_FUTURE_MANAGER,
+delius_username,roles,qualifications,remove_existing_roles_and_qualifications
+RogerSmith,CAS1_FUTURE_MANAGER,,false
 ,
       """.trimIndent(),
     )
@@ -82,7 +82,7 @@ RogerSmith,CAS1_FUTURE_MANAGER,
       it.level == "error" &&
         it.message == "Unable to complete Seed Job" &&
         it.throwable != null &&
-        it.throwable.cause!!.message == "Fields num seems to be 3 on each row, but on 2th csv row, fields num is 2."
+        it.throwable.cause!!.message == "Fields num seems to be 4 on each row, but on 2th csv row, fields num is 2."
     }
   }
 }

@@ -6,7 +6,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.returnResult
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEvent
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TimelineEvent
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.InitialiseDatabasePerClassTestBase
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAUser
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApplicationTimelineNoteEntity
@@ -17,14 +17,14 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventEn
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.ApplicationTimelineNoteTransformer
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.ApplicationTimelineTransformer
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.cas1.Cas1ApplicationTimelineTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.unit.domainevents.DomainEventSummaryImpl
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.Cas1DomainEventsFactory
 import java.time.OffsetDateTime
 
 class Cas1ApplicationTimelineTest : InitialiseDatabasePerClassTestBase() {
   @Autowired
-  lateinit var applicationTimelineTransformer: ApplicationTimelineTransformer
+  lateinit var cas1applicationTimelineTransformer: Cas1ApplicationTimelineTransformer
 
   @Autowired
   lateinit var applicationTimelineNoteTransformer: ApplicationTimelineNoteTransformer
@@ -106,14 +106,14 @@ class Cas1ApplicationTimelineTest : InitialiseDatabasePerClassTestBase() {
       val responseBody =
         objectMapper.readValue(
           rawResponseBody,
-          object : TypeReference<List<TimelineEvent>>() {},
+          object : TypeReference<List<Cas1TimelineEvent>>() {},
         )
 
-      val expectedItems = mutableListOf<TimelineEvent>()
+      val expectedItems = mutableListOf<Cas1TimelineEvent>()
 
       expectedItems.addAll(
         domainEvents.map {
-          applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(
+          cas1applicationTimelineTransformer.transformDomainEventSummaryToTimelineEvent(
             DomainEventSummaryImpl(
               it.id.toString(),
               it.type,
@@ -130,7 +130,7 @@ class Cas1ApplicationTimelineTest : InitialiseDatabasePerClassTestBase() {
           )
         },
       )
-      expectedItems.addAll(notes.map { applicationTimelineNoteTransformer.transformToTimelineEvents(it) })
+      expectedItems.addAll(notes.map { applicationTimelineNoteTransformer.transformToCas1TimelineEvents(it) })
 
       assertThat(responseBody.count()).isEqualTo(expectedItems.count())
       assertThat(responseBody).hasSameElementsAs(expectedItems)

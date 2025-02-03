@@ -34,7 +34,7 @@ class Cas1UpdateSpaceBookingSeedJob(
       updateEventNumber = seedColumns.getYesNoBooleanOrNull("update_event_number") ?: false,
       eventNumber = seedColumns.getStringOrNull("event_number"),
       updateCriteria = seedColumns.getYesNoBooleanOrNull("update_criteria") ?: false,
-      criteria = seedColumns.getStringsFromListOrNull("criteria"),
+      criteria = seedColumns.getCommaSeparatedValues("criteria"),
     )
   }
 

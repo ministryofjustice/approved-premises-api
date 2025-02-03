@@ -1,19 +1,20 @@
-package uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer
+package uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.cas1
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TimelineEvent
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TimelineEventAssociatedUrl
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TimelineEventUrlType
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TriggerSourceType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEvent
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEventAssociatedUrl
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEventUrlType
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TriggerSourceType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.domainevents.DomainEventDescriber
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.DomainEventSummary
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.UserTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.UrlTemplate
 
 @Component
-class ApplicationTimelineTransformer(
+class Cas1ApplicationTimelineTransformer(
   @Value("\${url-templates.frontend.application}") private val applicationUrlTemplate: UrlTemplate,
   @Value("\${url-templates.frontend.assessment}") private val assessmentUrlTemplate: UrlTemplate,
   @Value("\${url-templates.frontend.booking}") private val bookingUrlTemplate: UrlTemplate,
@@ -23,29 +24,30 @@ class ApplicationTimelineTransformer(
   private val userTransformer: UserTransformer,
 ) {
 
-  fun transformDomainEventSummaryToTimelineEvent(domainEventSummary: DomainEventSummary): TimelineEvent {
+  fun transformDomainEventSummaryToTimelineEvent(domainEventSummary: DomainEventSummary): Cas1TimelineEvent {
     val associatedUrls = generateUrlsForTimelineEventType(domainEventSummary)
     val contentAndPayload = domainEventDescriber.getContentPayload(domainEventSummary)
 
-    return TimelineEvent(
+    return Cas1TimelineEvent(
       id = domainEventSummary.id,
-      type = domainEventSummary.type.timelineEventType ?: throw IllegalArgumentException("Cannot map ${domainEventSummary.type}, only CAS1 is currently supported"),
+      type = domainEventSummary.type.cas1TimelineEventType ?: throw IllegalArgumentException("Cannot map ${domainEventSummary.type}, only CAS1 is currently supported"),
       occurredAt = domainEventSummary.occurredAt.toInstant(),
       associatedUrls = associatedUrls,
       content = contentAndPayload.first,
+      payload = contentAndPayload.second,
       createdBy = domainEventSummary.triggeredByUser?.let { userTransformer.transformJpaToApi(it, ServiceName.approvedPremises) },
       triggerSource = when (domainEventSummary.triggerSource) {
-        uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TriggerSourceType.USER -> TriggerSourceType.user
-        uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TriggerSourceType.SYSTEM -> TriggerSourceType.system
+        uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TriggerSourceType.USER -> Cas1TriggerSourceType.user
+        uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TriggerSourceType.SYSTEM -> Cas1TriggerSourceType.system
         null -> null
       },
     )
   }
 
-  private fun appealUrlOrNull(domainEventSummary: DomainEventSummary): TimelineEventAssociatedUrl? {
+  private fun appealUrlOrNull(domainEventSummary: DomainEventSummary): Cas1TimelineEventAssociatedUrl? {
     return if (domainEventSummary.type == DomainEventType.APPROVED_PREMISES_ASSESSMENT_APPEALED && domainEventSummary.appealId !== null) {
-      TimelineEventAssociatedUrl(
-        TimelineEventUrlType.assessmentAppeal,
+      Cas1TimelineEventAssociatedUrl(
+        Cas1TimelineEventUrlType.assessmentAppeal,
         appealUrlTemplate.resolve(
           mapOf(
             "applicationId" to domainEventSummary.applicationId.toString(),
@@ -59,23 +61,23 @@ class ApplicationTimelineTransformer(
   }
 
   private fun applicationUrlOrNull(domainEventSummary: DomainEventSummary) = domainEventSummary.applicationId?.let {
-    TimelineEventAssociatedUrl(
-      TimelineEventUrlType.application,
+    Cas1TimelineEventAssociatedUrl(
+      Cas1TimelineEventUrlType.application,
       applicationUrlTemplate.resolve(mapOf("id" to domainEventSummary.applicationId.toString())),
     )
   }
 
   private fun assessmentUrlOrNull(domainEventSummary: DomainEventSummary) = domainEventSummary.assessmentId?.let {
-    TimelineEventAssociatedUrl(
-      TimelineEventUrlType.assessment,
+    Cas1TimelineEventAssociatedUrl(
+      Cas1TimelineEventUrlType.assessment,
       assessmentUrlTemplate.resolve(mapOf("id" to domainEventSummary.assessmentId.toString())),
     )
   }
 
   private fun bookingUrlOrNull(domainEventSummary: DomainEventSummary) = domainEventSummary.bookingId?.let {
     domainEventSummary.premisesId?.let {
-      TimelineEventAssociatedUrl(
-        TimelineEventUrlType.booking,
+      Cas1TimelineEventAssociatedUrl(
+        Cas1TimelineEventUrlType.booking,
         bookingUrlTemplate.resolve(
           mapOf(
             "premisesId" to domainEventSummary.premisesId.toString(),
@@ -88,8 +90,8 @@ class ApplicationTimelineTransformer(
 
   private fun cas1SpaceBookingUrlOrNull(domainEventSummary: DomainEventSummary) = domainEventSummary.cas1SpaceBookingId?.let {
     domainEventSummary.premisesId?.let {
-      TimelineEventAssociatedUrl(
-        TimelineEventUrlType.cas1SpaceBooking,
+      Cas1TimelineEventAssociatedUrl(
+        Cas1TimelineEventUrlType.spaceBooking,
         cas1SpaceBookingUrlTemplate.resolve(
           mapOf(
             "premisesId" to domainEventSummary.premisesId.toString(),
@@ -100,7 +102,7 @@ class ApplicationTimelineTransformer(
     }
   }
 
-  fun generateUrlsForTimelineEventType(domainEventSummary: DomainEventSummary): List<TimelineEventAssociatedUrl> {
+  fun generateUrlsForTimelineEventType(domainEventSummary: DomainEventSummary): List<Cas1TimelineEventAssociatedUrl> {
     return when (domainEventSummary.type) {
       DomainEventType.APPROVED_PREMISES_ASSESSMENT_APPEALED -> listOfNotNull(
         appealUrlOrNull(domainEventSummary),

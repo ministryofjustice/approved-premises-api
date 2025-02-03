@@ -15,8 +15,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApprovedPremis
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.FullPersonSummary
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PersonSummaryDiscriminator
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PlacementDates
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PlacementRequestStatus
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PlacementRequestTaskOutcome
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ProbationDeliveryUnit
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ReleaseTypeOption
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.RestrictedPersonSummary
@@ -28,16 +26,10 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.UnknownPersonS
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ApAreaEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ApprovedPremisesApplicationEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ApprovedPremisesAssessmentEntityFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ApprovedPremisesEntityFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.BookingEntityFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.BookingNotMadeEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.CaseSummaryFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.LocalAuthorityEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.NameFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PersonRisksFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PlacementApplicationEntityFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PlacementRequestEntityFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PlacementRequirementsEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ProbationDeliveryUnitEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ProbationRegionEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.TemporaryAccommodationAssessmentEntityFactory
@@ -110,18 +102,6 @@ class TaskTransformerTest {
     .withAllocatedToUser(user)
     .withDueAt(OffsetDateTime.now())
     .withCreatedAt(OffsetDateTime.parse("2022-12-07T10:40:00Z"))
-
-  private val placementRequestFactory = PlacementRequestEntityFactory()
-    .withPlacementRequirements(
-      PlacementRequirementsEntityFactory()
-        .withApplication(application)
-        .withAssessment(assessmentFactory.produce())
-        .produce(),
-    )
-    .withApplication(application)
-    .withAssessment(assessmentFactory.produce())
-    .withAllocatedToUser(user)
-    .withDueAt(OffsetDateTime.now())
 
   val placementApplicationFactory = PlacementApplicationEntityFactory()
     .withApplication(application)
@@ -409,115 +389,6 @@ class TaskTransformerTest {
       val result = taskTransformer.transformPlacementApplicationToTask(
         placementApplication,
         getOffenderSummariesWithDiscriminator(placementApplication.application.crn, PersonSummaryDiscriminator.fullPersonSummary),
-      )
-
-      assertThat(result.apArea).isEqualTo(mockApArea)
-
-      verify {
-        mockApAreaTransformer.transformJpaToApi(apArea)
-      }
-    }
-  }
-
-  @Nested
-  inner class TransformPlacementRequestToTaskTest {
-
-    val placementRequest = placementRequestFactory.produce()
-    val application = placementRequest.application
-    private val mockTier = mockk<RiskTierEnvelope>()
-    private val releaseType = ReleaseTypeOption.licence
-    private val placementRequestStatus = PlacementRequestStatus.notMatched
-
-    @BeforeEach
-    fun setup() {
-      every { mockRisksTransformer.transformTierDomainToApi(application.riskRatings!!.tier) } returns mockTier
-      every { mockPlacementRequestTransformer.getReleaseType(application.releaseType) } returns releaseType
-      every { mockPlacementRequestTransformer.getStatus(placementRequest) } returns placementRequestStatus
-    }
-
-    @Test
-    fun `Placement request is correctly transformed`() {
-      val result = taskTransformer.transformPlacementRequestToTask(
-        placementRequest,
-        getOffenderSummariesWithDiscriminator(placementRequest.application.crn, PersonSummaryDiscriminator.fullPersonSummary),
-      )
-
-      assertThat(result.status).isEqualTo(TaskStatus.notStarted)
-      assertThat(result.id).isEqualTo(placementRequest.id)
-      assertThat(result.tier).isEqualTo(mockTier)
-      assertThat(result.personName).isEqualTo("First Last")
-      assertThat(result.crn).isEqualTo(placementRequest.application.crn)
-      assertThat(result.releaseType).isEqualTo(releaseType)
-      assertThat(result.expectedArrival).isEqualTo(placementRequest.expectedArrival)
-      assertThat(result.duration).isEqualTo(placementRequest.duration)
-      assertThat(result.placementRequestStatus).isEqualTo(placementRequestStatus)
-      assertThat(result.dueDate).isEqualTo(placementRequest.dueAt!!.toLocalDate())
-      assertThat(result.dueAt).isEqualTo(placementRequest.dueAt!!.toInstant())
-      assertThat(result.probationDeliveryUnit!!.name).isEqualTo("thePduName")
-    }
-
-    @Test
-    fun `Complete placement request is correctly transformed when a booking has been made`() {
-      val booking = BookingEntityFactory()
-        .withPremises(
-          ApprovedPremisesEntityFactory()
-            .withYieldedLocalAuthorityArea { LocalAuthorityEntityFactory().produce() }
-            .withYieldedProbationRegion {
-              ProbationRegionEntityFactory().withYieldedApArea { ApAreaEntityFactory().produce() }.produce()
-            }
-            .produce(),
-        )
-        .produce()
-      val placementRequest = placementRequestFactory
-        .withBooking(booking)
-        .produce()
-
-      every { mockPlacementRequestTransformer.getStatus(placementRequest) } returns placementRequestStatus
-
-      val result = taskTransformer.transformPlacementRequestToTask(
-        placementRequest,
-        getOffenderSummariesWithDiscriminator(placementRequest.application.crn, PersonSummaryDiscriminator.fullPersonSummary),
-      )
-
-      assertThat(result.status).isEqualTo(TaskStatus.complete)
-      assertThat(result.outcome).isEqualTo(PlacementRequestTaskOutcome.matched)
-      assertThat(result.outcomeRecordedAt).isEqualTo(booking.createdAt.toInstant())
-    }
-
-    @Test
-    fun `Complete placement request is correctly transformed when a placement request has been marked as booking not made`() {
-      val placementRequest = placementRequestFactory
-        .produce()
-      val bookingNotMade = BookingNotMadeEntityFactory()
-        .withPlacementRequest(placementRequest)
-        .produce()
-
-      placementRequest.bookingNotMades.add(bookingNotMade)
-
-      every { mockPlacementRequestTransformer.getStatus(any()) } returns placementRequestStatus
-
-      val result = taskTransformer.transformPlacementRequestToTask(
-        placementRequest,
-        getOffenderSummariesWithDiscriminator(placementRequest.application.crn, PersonSummaryDiscriminator.fullPersonSummary),
-      )
-
-      assertThat(result.outcome).isEqualTo(PlacementRequestTaskOutcome.unableToMatch)
-      assertThat(result.outcomeRecordedAt).isEqualTo(bookingNotMade.createdAt.toInstant())
-    }
-
-    @Test
-    fun `placement request with ApArea is correctly transformed`() {
-      val apArea = ApAreaEntityFactory().produce()
-      val application = applicationFactory.withApArea(apArea).produce()
-      val placementRequest = placementRequestFactory
-        .withApplication(application)
-        .produce()
-
-      every { mockPlacementRequestTransformer.getStatus(placementRequest) } returns placementRequestStatus
-
-      val result = taskTransformer.transformPlacementRequestToTask(
-        placementRequest,
-        getOffenderSummariesWithDiscriminator(placementRequest.application.crn, PersonSummaryDiscriminator.fullPersonSummary),
       )
 
       assertThat(result.apArea).isEqualTo(mockApArea)

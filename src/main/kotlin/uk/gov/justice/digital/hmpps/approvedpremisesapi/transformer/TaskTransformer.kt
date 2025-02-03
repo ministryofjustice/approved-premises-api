@@ -6,7 +6,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApprovedPremis
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.AssessmentTask
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PlacementApplicationTask
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PlacementDates
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PlacementRequestTask
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ServiceName
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TaskStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TaskType
@@ -15,7 +14,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremi
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremisesAssessmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementApplicationEntity
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementRequestEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.ApprovedPremisesApplicationStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PersonSummaryInfoResult
@@ -57,33 +55,6 @@ class TaskTransformer(
       probationDeliveryUnitTransformer.transformJpaToApi(it)
     },
   )
-
-  fun transformPlacementRequestToTask(placementRequest: PlacementRequestEntity, offenderSummaries: List<PersonSummaryInfoResult>): PlacementRequestTask {
-    val (outcomeRecordedAt, outcome) = placementRequest.getOutcomeDetails()
-    return PlacementRequestTask(
-      id = placementRequest.id,
-      applicationId = placementRequest.application.id,
-      personName = getPersonNameFromApplication(placementRequest.application, offenderSummaries),
-      personSummary = getPersonSummary(placementRequest.application, offenderSummaries),
-      crn = placementRequest.application.crn,
-      dueDate = transformDueAtToDate(placementRequest.dueAt),
-      dueAt = transformDueAtToInstant(placementRequest.dueAt),
-      allocatedToStaffMember = transformUserOrNull(placementRequest.allocatedToUser),
-      status = getPlacementRequestStatus(placementRequest),
-      taskType = TaskType.placementRequest,
-      tier = risksTransformer.transformTierDomainToApi(placementRequest.application.riskRatings!!.tier),
-      expectedArrival = placementRequest.expectedArrival,
-      duration = placementRequest.duration,
-      placementRequestStatus = placementRequestTransformer.getStatus(placementRequest),
-      releaseType = placementRequestTransformer.getReleaseType(placementRequest.application.releaseType),
-      apArea = getApArea(placementRequest.application),
-      outcomeRecordedAt = outcomeRecordedAt?.toInstant(),
-      outcome = outcome,
-      probationDeliveryUnit = placementRequest.application.createdByUser.probationDeliveryUnit?.let {
-        probationDeliveryUnitTransformer.transformJpaToApi(it)
-      },
-    )
-  }
 
   fun transformPlacementApplicationToTask(placementApplication: PlacementApplicationEntity, offenderSummaries: List<PersonSummaryInfoResult>) = PlacementApplicationTask(
     id = placementApplication.id,
@@ -146,11 +117,6 @@ class TaskTransformer(
     entity.decision !== null -> TaskStatus.complete
     (entity.application as ApprovedPremisesApplicationEntity).status == ApprovedPremisesApplicationStatus.REQUESTED_FURTHER_INFORMATION -> TaskStatus.infoRequested
     else -> TaskStatus.inProgress
-  }
-
-  private fun getPlacementRequestStatus(entity: PlacementRequestEntity): TaskStatus = when {
-    entity.booking !== null -> TaskStatus.complete
-    else -> TaskStatus.notStarted
   }
 
   private fun transformUserOrNull(userEntity: UserEntity?): ApprovedPremisesUser? {

@@ -23,7 +23,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.PlacementApplica
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1WithdrawableService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.PlacementApplicationTransformer
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromAuthorisableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromCasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.extractEntityFromValidatableActionResult
 import java.util.UUID
@@ -60,7 +59,7 @@ class PlacementApplicationsController(
     val user = userService.getUserForRequest()
 
     val result = placementApplicationService.getApplication(id)
-    val placementApplication = extractEntityFromAuthorisableActionResult(result)
+    val placementApplication = extractEntityFromCasResult(result)
 
     val offenderResult = offenderService.getOffenderByCrn(placementApplication.application.crn, user.deliusUsername, user.hasQualification(UserQualification.LAO))
 

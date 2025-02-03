@@ -119,12 +119,6 @@ class UserAccessService(
       else -> false
     }
 
-  fun getTemporaryAccommodationApplicationAccessLevelForUser(user: UserEntity): TemporaryAccommodationApplicationAccessLevel = when {
-    user.hasRole(UserRole.CAS3_ASSESSOR) -> TemporaryAccommodationApplicationAccessLevel.SUBMITTED_IN_REGION
-    user.hasRole(UserRole.CAS3_REFERRER) -> TemporaryAccommodationApplicationAccessLevel.SELF
-    else -> TemporaryAccommodationApplicationAccessLevel.NONE
-  }
-
   fun userCanViewApplication(user: UserEntity, application: ApplicationEntity): Boolean {
     if (user.id == application.createdByUser.id) {
       return true
@@ -225,10 +219,4 @@ class UserAccessService(
       userCanAccessRegion(user, (application as TemporaryAccommodationApplicationEntity).probationRegion.id) &&
       user.hasRole(UserRole.CAS3_REFERRER)
   }
-}
-
-enum class TemporaryAccommodationApplicationAccessLevel {
-  SUBMITTED_IN_REGION,
-  SELF,
-  NONE,
 }

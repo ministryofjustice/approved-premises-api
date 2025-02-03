@@ -17,6 +17,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TimelineEventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.DomainEventSummary
 import java.time.OffsetDateTime
@@ -181,7 +182,8 @@ enum class DomainEventType(
   val cas: DomainEventCas,
   val typeName: String,
   val typeDescription: String,
-  val timelineEventType: TimelineEventType?,
+  val timelineEventType: TimelineEventType? = null,
+  val cas1TimelineEventType: Cas1TimelineEventType? = null,
   val schemaVersions: List<DomainEventSchemaVersion> = listOf(DEFAULT_DOMAIN_EVENT_SCHEMA_VERSION),
 ) {
   APPROVED_PREMISES_APPLICATION_SUBMITTED(
@@ -189,24 +191,28 @@ enum class DomainEventType(
     Cas1EventType.applicationSubmitted.value,
     "An application has been submitted for an Approved Premises placement",
     TimelineEventType.approvedPremisesApplicationSubmitted,
+    Cas1TimelineEventType.applicationSubmitted,
   ),
   APPROVED_PREMISES_APPLICATION_ASSESSED(
     DomainEventCas.CAS1,
     Cas1EventType.applicationAssessed.value,
     "An application has been assessed for an Approved Premises placement",
     TimelineEventType.approvedPremisesApplicationAssessed,
+    Cas1TimelineEventType.applicationAssessed,
   ),
   APPROVED_PREMISES_APPLICATION_EXPIRED(
     DomainEventCas.CAS1,
     Cas1EventType.applicationExpired.value,
     "An Approved Premises application has expired",
     TimelineEventType.approvedPremisesApplicationExpired,
+    Cas1TimelineEventType.applicationExpired,
   ),
   APPROVED_PREMISES_BOOKING_MADE(
     DomainEventCas.CAS1,
     Cas1EventType.bookingMade.value,
     "An Approved Premises booking has been made",
     TimelineEventType.approvedPremisesBookingMade,
+    Cas1TimelineEventType.bookingMade,
     schemaVersions = listOf(
       DEFAULT_DOMAIN_EVENT_SCHEMA_VERSION,
       DomainEventSchemaVersion(2, "Added characteristics field"),
@@ -217,6 +223,7 @@ enum class DomainEventType(
     Cas1EventType.personArrived.value,
     "Someone has arrived at an Approved Premises for their Booking",
     TimelineEventType.approvedPremisesPersonArrived,
+    Cas1TimelineEventType.personArrived,
     schemaVersions = listOf(
       DEFAULT_DOMAIN_EVENT_SCHEMA_VERSION,
       DomainEventSchemaVersion(2, "Added recordedBy field"),
@@ -227,12 +234,14 @@ enum class DomainEventType(
     Cas1EventType.personNotArrived.value,
     "Someone has failed to arrive at an Approved Premises for their Booking",
     TimelineEventType.approvedPremisesPersonNotArrived,
+    Cas1TimelineEventType.personNotArrived,
   ),
   APPROVED_PREMISES_PERSON_DEPARTED(
     DomainEventCas.CAS1,
     Cas1EventType.personDeparted.value,
     "Someone has left an Approved Premises",
     TimelineEventType.approvedPremisesPersonDeparted,
+    Cas1TimelineEventType.personDeparted,
     schemaVersions = listOf(
       DEFAULT_DOMAIN_EVENT_SCHEMA_VERSION,
       DomainEventSchemaVersion(2, "Added recordedBy field"),
@@ -243,12 +252,14 @@ enum class DomainEventType(
     Cas1EventType.bookingNotMade.value,
     "It was not possible to create a Booking on this attempt",
     TimelineEventType.approvedPremisesBookingNotMade,
+    Cas1TimelineEventType.bookingNotMade,
   ),
   APPROVED_PREMISES_BOOKING_CANCELLED(
     DomainEventCas.CAS1,
     Cas1EventType.bookingCancelled.value,
     "An Approved Premises Booking has been cancelled",
     TimelineEventType.approvedPremisesBookingCancelled,
+    Cas1TimelineEventType.bookingCancelled,
     schemaVersions = listOf(
       DEFAULT_DOMAIN_EVENT_SCHEMA_VERSION,
       DomainEventSchemaVersion(2, "Added mandatory cancelledAtDate and cancellationRecordedAt fields"),
@@ -259,6 +270,7 @@ enum class DomainEventType(
     Cas1EventType.bookingChanged.value,
     "An Approved Premises Booking has been changed",
     TimelineEventType.approvedPremisesBookingChanged,
+    Cas1TimelineEventType.bookingChanged,
     schemaVersions = listOf(
       DEFAULT_DOMAIN_EVENT_SCHEMA_VERSION,
       DomainEventSchemaVersion(2, "Captures previous set values, if changed."),
@@ -269,137 +281,134 @@ enum class DomainEventType(
     Cas1EventType.bookingKeyWorkerAssigned.value,
     "A keyworker has been assigned to the booking",
     TimelineEventType.approvedPremisesBookingKeyworkerAssigned,
+    Cas1TimelineEventType.bookingKeyworkerAssigned,
   ),
   APPROVED_PREMISES_APPLICATION_WITHDRAWN(
     DomainEventCas.CAS1,
     Cas1EventType.applicationWithdrawn.value,
     "An Approved Premises Application has been withdrawn",
     TimelineEventType.approvedPremisesApplicationWithdrawn,
+    Cas1TimelineEventType.applicationWithdrawn,
   ),
   APPROVED_PREMISES_ASSESSMENT_APPEALED(
     DomainEventCas.CAS1,
     Cas1EventType.assessmentAppealed.value,
     "An Approved Premises Assessment has been appealed",
     TimelineEventType.approvedPremisesAssessmentAppealed,
+    Cas1TimelineEventType.assessmentAppealed,
   ),
   APPROVED_PREMISES_ASSESSMENT_ALLOCATED(
     DomainEventCas.CAS1,
     Cas1EventType.assessmentAllocated.value,
     "An Approved Premises Assessment has been allocated",
     TimelineEventType.approvedPremisesAssessmentAllocated,
+    Cas1TimelineEventType.assessmentAllocated,
   ),
   APPROVED_PREMISES_ASSESSMENT_INFO_REQUESTED(
     DomainEventCas.CAS1,
     Cas1EventType.informationRequestMade.value,
     "An information request has been made for an Approved Premises Assessment",
     TimelineEventType.approvedPremisesInformationRequest,
+    Cas1TimelineEventType.informationRequest,
   ),
   APPROVED_PREMISES_PLACEMENT_APPLICATION_WITHDRAWN(
     DomainEventCas.CAS1,
     Cas1EventType.placementApplicationWithdrawn.value,
     "An Approved Premises Request for Placement has been withdrawn",
     TimelineEventType.approvedPremisesPlacementApplicationWithdrawn,
+    Cas1TimelineEventType.applicationWithdrawn,
   ),
   APPROVED_PREMISES_PLACEMENT_APPLICATION_ALLOCATED(
     DomainEventCas.CAS1,
     Cas1EventType.placementApplicationAllocated.value,
     "An Approved Premises Request for Placement has been allocated",
     TimelineEventType.approvedPremisesPlacementApplicationAllocated,
+    Cas1TimelineEventType.placementApplicationAllocated,
   ),
   APPROVED_PREMISES_MATCH_REQUEST_WITHDRAWN(
     DomainEventCas.CAS1,
     Cas1EventType.matchRequestWithdrawn.value,
     "An Approved Premises Match Request has been withdrawn",
     TimelineEventType.approvedPremisesMatchRequestWithdrawn,
+    Cas1TimelineEventType.matchRequestWithdrawn,
   ),
   APPROVED_PREMISES_REQUEST_FOR_PLACEMENT_CREATED(
     DomainEventCas.CAS1,
     Cas1EventType.requestForPlacementCreated.value,
     "An Approved Premises Request for Placement has been created",
     TimelineEventType.approvedPremisesRequestForPlacementCreated,
+    Cas1TimelineEventType.requestForPlacementCreated,
   ),
   APPROVED_PREMISES_REQUEST_FOR_PLACEMENT_ASSESSED(
     DomainEventCas.CAS1,
     Cas1EventType.requestForPlacementAssessed.value,
     "An request for placement has been assessed",
     TimelineEventType.approvedPremisesRequestForPlacementAssessed,
+    Cas1TimelineEventType.requestForPlacementAssessed,
   ),
   CAS2_APPLICATION_SUBMITTED(
     DomainEventCas.CAS2,
     Cas2EventType.applicationSubmitted.value,
     "An application has been submitted for a CAS2 placement",
-    null,
   ),
   CAS2_APPLICATION_STATUS_UPDATED(
     DomainEventCas.CAS2,
     Cas2EventType.applicationStatusUpdated.value,
     "An assessor has updated the status of a CAS2 application",
-    null,
   ),
   CAS3_BOOKING_CANCELLED(
     DomainEventCas.CAS3,
     Cas3EventType.bookingCancelled.value,
     "A booking for a Transitional Accommodation premises has been cancelled",
-    null,
   ),
   CAS3_BOOKING_CONFIRMED(
     DomainEventCas.CAS3,
     Cas3EventType.bookingConfirmed.value,
     "A booking has been confirmed for a Transitional Accommodation premises",
-    null,
   ),
   CAS3_BOOKING_PROVISIONALLY_MADE(
     DomainEventCas.CAS3,
     Cas3EventType.bookingProvisionallyMade.value,
     "A booking has been provisionally made for a Transitional Accommodation premises",
-    null,
   ),
   CAS3_PERSON_ARRIVED(
     DomainEventCas.CAS3,
     Cas3EventType.personArrived.value,
     "Someone has arrived at a Transitional Accommodation premises for their booking",
-    null,
   ),
   CAS3_PERSON_ARRIVED_UPDATED(
     DomainEventCas.CAS3,
     Cas3EventType.personArrivedUpdated.value,
     "Someone has changed arrival date at a Transitional Accommodation premises for their booking",
-    null,
   ),
   CAS3_PERSON_DEPARTED(
     DomainEventCas.CAS3,
     Cas3EventType.personDeparted.value,
     "Someone has left a Transitional Accommodation premises",
-    null,
   ),
   CAS3_REFERRAL_SUBMITTED(
     DomainEventCas.CAS3,
     Cas3EventType.referralSubmitted.value,
     "A referral for Transitional Accommodation has been submitted",
-    null,
   ),
   CAS3_PERSON_DEPARTURE_UPDATED(
     DomainEventCas.CAS3,
     Cas3EventType.personDepartureUpdated.value,
     "Person has updated departure date of Transitional Accommodation premises",
-    null,
   ),
   CAS3_BOOKING_CANCELLED_UPDATED(
     DomainEventCas.CAS3,
     Cas3EventType.bookingCancelledUpdated.value,
     "A cancelled booking for a Transitional Accommodation premises has been updated",
-    null,
   ),
   CAS3_ASSESSMENT_UPDATED(
     DomainEventCas.CAS3,
     Cas3EventType.assessmentUpdated.value,
     "A field has been updated on an assessment",
-    null,
   ),
   CAS3_DRAFT_REFERRAL_DELETED(
     DomainEventCas.CAS3,
     Cas3EventType.draftReferralDeleted.value,
     "A draft referral has been deleted",
-    null,
   ),
 }

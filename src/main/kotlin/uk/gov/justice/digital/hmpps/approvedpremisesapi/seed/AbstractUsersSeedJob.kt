@@ -7,33 +7,64 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService.GetUserResponse
 
-/**
- * Seeds users, along with their roles and qualifications.
- *
- *  NB: this clears roles and qualifications.
- *
- *  If you want to seed users without touching the pre-existing
- *  roles/qualifications of pre-existing users, then consider
- *  using ApStaffUsersSeedJob.
- */
 @SuppressWarnings("TooGenericExceptionThrown", "TooGenericExceptionCaught")
 abstract class AbstractUsersSeedJob(
   private val useRolesForServices: List<ServiceName>,
   private val userService: UserService,
 ) : SeedJob<UsersSeedCsvRow>(
   requiredHeaders = setOf(
-    "deliusUsername",
+    "delius_username",
     "roles",
     "qualifications",
+    "remove_existing_roles_and_qualifications",
   ),
 ) {
   private val log = LoggerFactory.getLogger(this::class.java)
 
-  override fun deserializeRow(columns: Map<String, String>) = UsersSeedCsvRow(
-    deliusUsername = columns["deliusUsername"]!!.trim().uppercase(),
-    roles = parseAllRolesOrThrow(columns["roles"]!!.split(",").filter(String::isNotBlank).map(String::trim)),
-    qualifications = parseAllQualificationsOrThrow(columns["qualifications"]!!.split(",").filter(String::isNotBlank).map(String::trim)),
-  )
+  override fun deserializeRow(columns: Map<String, String>): UsersSeedCsvRow {
+    val seedColumns = SeedColumns(columns)
+
+    return UsersSeedCsvRow(
+      deliusUsername = seedColumns.getStringOrNull("delius_username")!!.uppercase(),
+      roles = parseAllRolesOrThrow(seedColumns.getCommaSeparatedValues("roles")),
+      qualifications = parseAllQualificationsOrThrow(seedColumns.getCommaSeparatedValues("qualifications")),
+      removeExistingRolesAndQualifications = seedColumns.getYesNoBooleanOrNull("remove_existing_roles_and_qualifications")!!,
+    )
+  }
+
+  override fun processRow(row: UsersSeedCsvRow) {
+    val username = row.deliusUsername
+    val removeExistingRolesAndQualifications = row.removeExistingRolesAndQualifications
+
+    val rolesString = row.roles.joinToString(",")
+    val qualsString = row.qualifications.joinToString(",")
+
+    log.info(
+      "Adding/updating $username. Roles $rolesString, Qualifications $qualsString. " +
+        "Remove existing roles and qualifications? $removeExistingRolesAndQualifications",
+    )
+
+    val user = try {
+      when (val result = userService.getExistingUserOrCreate(username)) {
+        GetUserResponse.StaffRecordNotFound -> throw RuntimeException("Could not find staff record for user $username")
+        is GetUserResponse.Success -> result.user
+      }
+    } catch (exception: Exception) {
+      throw RuntimeException("Could not get user $username", exception)
+    }
+
+    if (row.removeExistingRolesAndQualifications) {
+      useRolesForServices.forEach { userService.clearRolesForService(user, it) }
+      userService.clearQualifications(user)
+    }
+
+    row.roles.forEach {
+      userService.addRoleToUser(user, it)
+    }
+    row.qualifications.forEach {
+      userService.addQualificationToUser(user, it)
+    }
+  }
 
   private fun parseAllRolesOrThrow(roleNames: List<String>): List<UserRole> {
     val unknownRoles = mutableListOf<String>()
@@ -72,34 +103,11 @@ abstract class AbstractUsersSeedJob(
 
     return roles
   }
-
-  override fun processRow(row: UsersSeedCsvRow) {
-    val username = row.deliusUsername
-    log.info("Setting roles for $username to exactly ${row.roles.joinToString(",")}, qualifications to exactly: ${row.qualifications.joinToString(",")}")
-
-    val user = try {
-      when (val result = userService.getExistingUserOrCreate(username)) {
-        GetUserResponse.StaffRecordNotFound -> throw RuntimeException("Could not find staff record for user $username")
-        is GetUserResponse.Success -> result.user
-      }
-    } catch (exception: Exception) {
-      throw RuntimeException("Could not get user $username", exception)
-    }
-
-    useRolesForServices.forEach { userService.clearRolesForService(user, it) }
-
-    userService.clearQualifications(user)
-    row.roles.forEach {
-      userService.addRoleToUser(user, it)
-    }
-    row.qualifications.forEach {
-      userService.addQualificationToUser(user, it)
-    }
-  }
 }
 
 data class UsersSeedCsvRow(
   val deliusUsername: String,
   val roles: List<UserRole>,
   val qualifications: List<UserQualification>,
+  val removeExistingRolesAndQualifications: Boolean,
 )

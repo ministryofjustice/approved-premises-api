@@ -4,7 +4,6 @@ import io.github.bluegroundltd.kfactory.Factory
 import io.github.bluegroundltd.kfactory.Yielded
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.SeedFileType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.StaffDetailFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAProbationRegion
@@ -16,15 +15,14 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualifica
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRoleAssignmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.ProbationArea
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.ApStaffUserSeedCsvRow
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.CsvBuilder
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.seed.cas1.ApStaffUserSeedCsvRow
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.randomStringMultiCaseWithNumbers
 import java.time.OffsetDateTime
 
-@TestInstance(TestInstance.Lifecycle.PER_METHOD)
-class ApStaffUsersSeedJobTest : SeedTestBase() {
+class UsersBasicSeedJobTest : SeedTestBase() {
   @Test
-  fun `Attempting to seed a non existent user logs an error`() {
+  fun `Seeding a non existent user logs an error`() {
     apDeliusContextMockNotFoundStaffDetailCall("INVALID-USER")
 
     withCsv(
@@ -38,7 +36,7 @@ class ApStaffUsersSeedJobTest : SeedTestBase() {
       ),
     )
 
-    seedService.seedData(SeedFileType.approvedPremisesApStaffUsers, "invalid-user.csv")
+    seedService.seedData(SeedFileType.usersBasic, "invalid-user.csv")
 
     assertThat(logEntries).anyMatch {
       it.level == "error" &&
@@ -50,7 +48,7 @@ class ApStaffUsersSeedJobTest : SeedTestBase() {
   }
 
   @Test
-  fun `Attempting to seed a real but currently unknown user succeeds`() {
+  fun `Seeding a real but currently unknown user succeeds`() {
     val probationRegion = givenAProbationRegion()
 
     val probationRegionDeliusMapping = probationAreaProbationRegionMappingFactory.produceAndPersist {
@@ -78,7 +76,7 @@ class ApStaffUsersSeedJobTest : SeedTestBase() {
       ),
     )
 
-    seedService.seedData(SeedFileType.approvedPremisesApStaffUsers, "unknown-user.csv")
+    seedService.seedData(SeedFileType.usersBasic, "unknown-user.csv")
 
     val persistedUser = userRepository.findByDeliusUsername("UNKNOWN-USER")
 
@@ -86,18 +84,18 @@ class ApStaffUsersSeedJobTest : SeedTestBase() {
 
     assertThat(logEntries).anyMatch {
       it.level == "info" &&
-        it.message.contains("User record for: UNKNOWN-USER last updated")
+        it.message.contains("User record for 'UNKNOWN-USER' created")
     }
   }
 
-  @Test fun `Seeding a pre-existing user leaves roles and qualifications untouched`() {
+  @Test fun `Seeding an existing user leaves roles and qualifications untouched`() {
     val user = userEntityFactory.produceAndPersist {
       withDeliusUsername("PRE-EXISTING-USER")
       withUpdatedAt(OffsetDateTime.now().minusDays(3))
       withYieldedProbationRegion { givenAProbationRegion() }
     }
 
-    val roleEntities = listOf(UserRole.CAS1_ASSESSOR, UserRole.CAS1_WORKFLOW_MANAGER).map { role ->
+    val roleEntities = listOf(UserRole.CAS1_ASSESSOR, UserRole.CAS1_CRU_MEMBER).map { role ->
       userRoleAssignmentEntityFactory.produceAndPersist {
         withUser(user)
         withRole(role)
@@ -124,7 +122,7 @@ class ApStaffUsersSeedJobTest : SeedTestBase() {
       ),
     )
 
-    seedService.seedData(SeedFileType.approvedPremisesApStaffUsers, "pre-existing-user.csv")
+    seedService.seedData(SeedFileType.usersBasic, "pre-existing-user.csv")
 
     val persistedUser = userRepository.findByDeliusUsername("PRE-EXISTING-USER")
 
@@ -132,7 +130,7 @@ class ApStaffUsersSeedJobTest : SeedTestBase() {
 
     assertThat(persistedUser!!.roles.map(UserRoleAssignmentEntity::role)).containsExactlyInAnyOrder(
       UserRole.CAS1_ASSESSOR,
-      UserRole.CAS1_WORKFLOW_MANAGER,
+      UserRole.CAS1_CRU_MEMBER,
     )
     assertThat(persistedUser.qualifications.map(UserQualificationAssignmentEntity::qualification)).containsExactlyInAnyOrder(
       UserQualification.PIPE,
@@ -141,7 +139,7 @@ class ApStaffUsersSeedJobTest : SeedTestBase() {
 
     assertThat(logEntries).anyMatch {
       it.level == "info" &&
-        it.message.contains("User record for: PRE-EXISTING-USER last updated")
+        it.message.contains("User record for 'PRE-EXISTING-USER' already exists. Last updated")
     }
   }
 

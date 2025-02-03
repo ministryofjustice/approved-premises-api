@@ -33,10 +33,10 @@ data class SeedColumns(
     return LocalDate.parse(rawValue.substring(startIndex = 0, endIndex = 10))
   }
 
-  fun getStringsFromListOrNull(label: String): List<String> {
+  fun getCommaSeparatedValues(label: String): List<String> {
     val rawValue = getStringOrNull(label) ?: return emptyList()
 
-    return rawValue.split(",")
+    return rawValue.split(",").filter(String::isNotBlank).map(String::trim)
   }
 
   fun getYesNoBooleanOrNull(label: String): Boolean? {

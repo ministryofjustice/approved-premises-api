@@ -100,29 +100,12 @@ class ApplicationService(
 ) {
   fun getApplication(applicationId: UUID) = applicationRepository.findByIdOrNull(applicationId)
 
-  fun getAllApplicationsForUsername(userDistinguishedName: String, serviceName: ServiceName): List<ApplicationSummary> {
-    val userEntity = userRepository.findByDeliusUsername(userDistinguishedName)
-      ?: return emptyList()
-
-    val applicationSummaries = when (serviceName) {
+  fun getAllApplicationsForUsername(userEntity: UserEntity, serviceName: ServiceName): List<ApplicationSummary> {
+    return when (serviceName) {
       ServiceName.approvedPremises -> getAllApprovedPremisesApplicationsForUser(userEntity)
-      ServiceName.cas2 -> throw RuntimeException(
-        "CAS2 applications now require " +
-          "NomisUser",
-      )
-
-      ServiceName.cas2v2 -> throw RuntimeException(
-        "CAS2v2 applications now require " +
-          "Cas2v2User",
-      )
-
+      ServiceName.cas2 -> throw RuntimeException("CAS2 applications now require NomisUser")
+      ServiceName.cas2v2 -> throw RuntimeException("CAS2v2 applications now require Cas2v2User")
       ServiceName.temporaryAccommodation -> getAllTemporaryAccommodationApplicationsForUser(userEntity)
-    }
-
-    val crns = applicationSummaries.map { it.getCrn() }.distinct()
-    val offendersAccess = offenderService.canAccessOffenders(userDistinguishedName, crns)
-    return applicationSummaries.filter {
-      offendersAccess.containsKey(it.getCrn()) && offendersAccess[it.getCrn()] == true
     }
   }
 
@@ -162,17 +145,8 @@ class ApplicationService(
   private fun getAllApprovedPremisesApplicationsForUser(user: UserEntity) =
     applicationRepository.findNonWithdrawnApprovedPremisesSummariesForUser(user.id)
 
-  private fun getAllTemporaryAccommodationApplicationsForUser(user: UserEntity): List<ApplicationSummary> {
-    return when (userAccessService.getTemporaryAccommodationApplicationAccessLevelForUser(user)) {
-      TemporaryAccommodationApplicationAccessLevel.SUBMITTED_IN_REGION ->
-        applicationRepository.findAllSubmittedTemporaryAccommodationSummariesByRegion(user.probationRegion.id)
-
-      TemporaryAccommodationApplicationAccessLevel.SELF ->
-        applicationRepository.findAllTemporaryAccommodationSummariesCreatedByUser(user.id)
-
-      TemporaryAccommodationApplicationAccessLevel.NONE -> emptyList()
-    }
-  }
+  private fun getAllTemporaryAccommodationApplicationsForUser(user: UserEntity): List<ApplicationSummary> =
+    applicationRepository.findAllTemporaryAccommodationSummariesCreatedByUser(user.id)
 
   fun getApplicationForUsername(
     applicationId: UUID,

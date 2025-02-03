@@ -130,7 +130,7 @@ tasks.register("bootRunLocal") {
   doFirst {
     tasks.bootRun.configure {
       systemProperty("spring.profiles.active", "local")
-      jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=32323")
+      jvmArgs("-Xmx512m", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=32323")
     }
   }
   finalizedBy("bootRun")
@@ -141,7 +141,7 @@ tasks.register("bootRunDebug") {
   description = "Runs this project as a Spring Boot application with debug configuration"
   doFirst {
     tasks.bootRun.configure {
-      jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=32323")
+      jvmArgs("-Xmx512m", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=32323")
     }
   }
   finalizedBy("bootRun")

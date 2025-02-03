@@ -96,20 +96,8 @@ class ApplicationsController(
 
     val user = userService.getUserForRequest()
 
-    val applications = applicationService.getAllApplicationsForUsername(user.deliusUsername, serviceName)
+    val applications = applicationService.getAllApplicationsForUsername(user, serviceName)
 
-      /*
-      This code is inefficient:
-
-      getPersonDetailAndTransformToSummary will retrieve/check user access (via the call to offenderService),
-      but the prior call to getAllApplicationsForUsername has already retrieved this information
-      and filtered out applications that the user cannot access. This leads to duplicate calls being made.
-
-      This check should be moved into getPersonDetailAndTransformToSummary (or a custom version of it to
-      avoid breaking behaviour for other callers), where we filter out any response from
-      offenderService.getInfoForPerson of type PersonInfoResult.Restricted. This will most likely have
-      to be optional as to not 'break' other functions using getPersonDetailAndTransformToSummary
-       */
     return ResponseEntity.ok(getPersonDetailAndTransformToSummary(applications, user))
   }
 

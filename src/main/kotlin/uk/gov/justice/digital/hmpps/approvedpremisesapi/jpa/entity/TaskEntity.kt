@@ -131,68 +131,10 @@ interface TaskRepository : JpaRepository<Task, UUID> {
         )
     """
 
-    private const val PLACEMENT_REQUEST_QUERY = """
-      SELECT
-        placement_request.id AS id,
-        placement_request.created_at AS created_at,
-        placement_request.due_at AS due_at,
-        'PLACEMENT_REQUEST' AS type,
-        apa.name as person,
-        u.name as allocated_to,
-        CASE
-          WHEN placement_request.booking_id IS NOT NULL THEN booking.created_at
-          WHEN booking_not_made.id IS NOT NULL THEN booking_not_made.created_at
-          ELSE null
-        END as completed_at,
-        CASE
-          WHEN placement_request.booking_id IS NOT NULL THEN 'matched'
-          WHEN booking_not_made.id IS NOT NULL THEN 'unableToMatch'
-          ELSE null
-        END as decision
-      FROM
-        placement_requests placement_request
-        INNER JOIN applications application ON placement_request.application_id = application.id
-        INNER JOIN approved_premises_applications apa ON application.id = apa.id
-        LEFT JOIN booking_not_mades booking_not_made ON booking_not_made.placement_request_id = placement_request.id
-        LEFT JOIN ap_areas area ON area.id = apa.ap_area_id
-        LEFT JOIN users u ON u.id = placement_request.allocated_to_user_id
-        LEFT JOIN bookings booking ON booking.id = placement_request.booking_id
-      WHERE
-        'PLACEMENT_REQUEST' IN :taskTypes
-        AND placement_request.reallocated_at IS NULL
-        AND placement_request.is_withdrawn IS FALSE
-        AND (
-          (:completed = true AND (placement_request.booking_id IS NOT NULL OR booking_not_made.id IS NOT NULL)) OR 
-          (:completed = false AND placement_request.booking_id IS NULL AND booking_not_made.id IS NULL)
-        )
-        AND (
-          (:isAllocated IS NULL) OR 
-          (
-              (:isAllocated = true AND placement_request.allocated_to_user_id IS NOT NULL) OR
-              (:isAllocated = false AND placement_request.allocated_to_user_id IS NULL)
-          )
-        ) AND (
-          (cast(:apAreaId as uuid) IS NULL) OR
-          (area.id = :apAreaId)
-        ) AND (
-          (cast(:cruManagementAreaId as uuid) IS NULL) OR
-          (apa.cas1_cru_management_area_id = :cruManagementAreaId)           
-        ) AND (
-          (cast(:allocatedToUserId as uuid) IS NULL) OR
-          placement_request.allocated_to_user_id = :allocatedToUserId
-        ) AND (
-          $QUALIFICATION_QUERY
-        ) AND (
-          $CRN_OR_NAME_QUERY
-        )
-        """
-
     private const val ALL_QUERY = """
       $ASSESSMENT_QUERY
       UNION ALL
       $PLACEMENT_APPLICATION_QUERY
-      UNION ALL
-      $PLACEMENT_REQUEST_QUERY
     """
   }
 
@@ -202,23 +144,6 @@ interface TaskRepository : JpaRepository<Task, UUID> {
     nativeQuery = true,
   )
   fun getAll(
-    isAllocated: Boolean?,
-    apAreaId: UUID?,
-    cruManagementAreaId: UUID?,
-    taskTypes: List<String>,
-    allocatedToUserId: UUID?,
-    requiredQualification: String?,
-    crnOrName: String?,
-    completed: Boolean,
-    pageable: Pageable?,
-  ): Page<Task>
-
-  @Query(
-    PLACEMENT_REQUEST_QUERY,
-    countQuery = "SELECT COUNT(1) FROM ($PLACEMENT_REQUEST_QUERY) as count",
-    nativeQuery = true,
-  )
-  fun getAllPlacementRequests(
     isAllocated: Boolean?,
     apAreaId: UUID?,
     cruManagementAreaId: UUID?,
@@ -281,5 +206,4 @@ data class Task(
 enum class TaskEntityType {
   ASSESSMENT,
   PLACEMENT_APPLICATION,
-  PLACEMENT_REQUEST,
 }

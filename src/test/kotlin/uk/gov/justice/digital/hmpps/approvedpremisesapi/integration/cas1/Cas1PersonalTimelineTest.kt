@@ -6,16 +6,16 @@ import com.github.tomakehurst.wiremock.client.WireMock.get
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApArea
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApplicationTimeline
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApprovedPremisesApplicationStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ApprovedPremisesUser
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1ApplicationStatus
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1ApplicationTimeline
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1PersonalTimeline
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TimelineEvent
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TimelineEventAssociatedUrl
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TimelineEventType
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1TimelineEventUrlType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.NamedId
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.PersonalTimeline
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.ProbationRegion
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEvent
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEventAssociatedUrl
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEventType
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.TimelineEventUrlType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.InitialiseDatabasePerClassTestBase
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAUser
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.givens.givenAnApplication
@@ -148,13 +148,13 @@ class Cas1PersonalTimelineTest : InitialiseDatabasePerClassTestBase() {
             .expectBody()
             .json(
               objectMapper.writeValueAsString(
-                PersonalTimeline(
+                Cas1PersonalTimeline(
                   person = personTransformer.transformModelToPersonApi(personInfoResult),
                   applications = listOf(
-                    ApplicationTimeline(
+                    Cas1ApplicationTimeline(
                       id = application.id,
                       createdAt = application.createdAt.toInstant(),
-                      status = ApprovedPremisesApplicationStatus.started,
+                      status = Cas1ApplicationStatus.started,
                       isOfflineApplication = false,
                       createdBy = ApprovedPremisesUser(
                         qualifications = emptyList(),
@@ -188,28 +188,28 @@ class Cas1PersonalTimelineTest : InitialiseDatabasePerClassTestBase() {
                         cruManagementAreaOverride = null,
                       ),
                       timelineEvents = listOf(
-                        TimelineEvent(
-                          type = TimelineEventType.approvedPremisesApplicationSubmitted,
+                        Cas1TimelineEvent(
+                          type = Cas1TimelineEventType.applicationSubmitted,
                           id = domainEvents[0].id.toString(),
                           occurredAt = domainEvents[0].occurredAt.toInstant(),
                           content = "The application was submitted",
                           createdBy = null,
                           associatedUrls = listOf(
-                            TimelineEventAssociatedUrl(
-                              type = TimelineEventUrlType.application,
+                            Cas1TimelineEventAssociatedUrl(
+                              type = Cas1TimelineEventUrlType.application,
                               url = "http://frontend/applications/${application.id}",
                             ),
                           ),
                         ),
-                        TimelineEvent(
-                          type = TimelineEventType.approvedPremisesApplicationSubmitted,
+                        Cas1TimelineEvent(
+                          type = Cas1TimelineEventType.applicationSubmitted,
                           id = domainEvents[1].id.toString(),
                           occurredAt = domainEvents[1].occurredAt.toInstant(),
                           content = "The application was submitted",
                           createdBy = null,
                           associatedUrls = listOf(
-                            TimelineEventAssociatedUrl(
-                              type = TimelineEventUrlType.application,
+                            Cas1TimelineEventAssociatedUrl(
+                              type = Cas1TimelineEventUrlType.application,
                               url = "http://frontend/applications/${application.id}",
                             ),
                           ),
@@ -244,7 +244,7 @@ class Cas1PersonalTimelineTest : InitialiseDatabasePerClassTestBase() {
           .expectBody()
           .json(
             objectMapper.writeValueAsString(
-              PersonalTimeline(
+              Cas1PersonalTimeline(
                 person = personTransformer.transformModelToPersonApi(personInfoResult),
                 applications = emptyList(),
               ),
@@ -285,13 +285,13 @@ class Cas1PersonalTimelineTest : InitialiseDatabasePerClassTestBase() {
             .expectBody()
             .json(
               objectMapper.writeValueAsString(
-                PersonalTimeline(
+                Cas1PersonalTimeline(
                   person = personTransformer.transformModelToPersonApi(personInfoResult),
                   applications = listOf(
-                    ApplicationTimeline(
+                    Cas1ApplicationTimeline(
                       id = application.id,
                       createdAt = application.createdAt.toInstant(),
-                      status = ApprovedPremisesApplicationStatus.started,
+                      status = Cas1ApplicationStatus.started,
                       isOfflineApplication = false,
                       createdBy = ApprovedPremisesUser(
                         qualifications = emptyList(),
@@ -325,28 +325,28 @@ class Cas1PersonalTimelineTest : InitialiseDatabasePerClassTestBase() {
                         cruManagementAreaOverride = null,
                       ),
                       timelineEvents = listOf(
-                        TimelineEvent(
-                          type = TimelineEventType.approvedPremisesApplicationSubmitted,
+                        Cas1TimelineEvent(
+                          type = Cas1TimelineEventType.applicationSubmitted,
                           id = domainEvents[0].id.toString(),
                           occurredAt = domainEvents[0].occurredAt.toInstant(),
                           content = "The application was submitted",
                           createdBy = null,
                           associatedUrls = listOf(
-                            TimelineEventAssociatedUrl(
-                              type = TimelineEventUrlType.application,
+                            Cas1TimelineEventAssociatedUrl(
+                              type = Cas1TimelineEventUrlType.application,
                               url = "http://frontend/applications/${application.id}",
                             ),
                           ),
                         ),
-                        TimelineEvent(
-                          type = TimelineEventType.approvedPremisesApplicationSubmitted,
+                        Cas1TimelineEvent(
+                          type = Cas1TimelineEventType.applicationSubmitted,
                           id = domainEvents[1].id.toString(),
                           occurredAt = domainEvents[1].occurredAt.toInstant(),
                           content = "The application was submitted",
                           createdBy = null,
                           associatedUrls = listOf(
-                            TimelineEventAssociatedUrl(
-                              type = TimelineEventUrlType.application,
+                            Cas1TimelineEventAssociatedUrl(
+                              type = Cas1TimelineEventUrlType.application,
                               url = "http://frontend/applications/${application.id}",
                             ),
                           ),
@@ -392,38 +392,38 @@ class Cas1PersonalTimelineTest : InitialiseDatabasePerClassTestBase() {
           .expectBody()
           .json(
             objectMapper.writeValueAsString(
-              PersonalTimeline(
+              Cas1PersonalTimeline(
                 person = personTransformer.transformModelToPersonApi(personInfoResult),
                 applications = listOf(
-                  ApplicationTimeline(
+                  Cas1ApplicationTimeline(
                     id = offlineApplication.id,
                     createdAt = offlineApplication.createdAt.toInstant(),
                     status = null,
                     isOfflineApplication = true,
                     createdBy = null,
                     timelineEvents = listOf(
-                      TimelineEvent(
-                        type = TimelineEventType.approvedPremisesApplicationSubmitted,
+                      Cas1TimelineEvent(
+                        type = Cas1TimelineEventType.applicationSubmitted,
                         id = domainEvents[0].id.toString(),
                         occurredAt = domainEvents[0].occurredAt.toInstant(),
                         content = "The application was submitted",
                         createdBy = null,
                         associatedUrls = listOf(
-                          TimelineEventAssociatedUrl(
-                            type = TimelineEventUrlType.application,
+                          Cas1TimelineEventAssociatedUrl(
+                            type = Cas1TimelineEventUrlType.application,
                             url = "http://frontend/applications/${offlineApplication.id}",
                           ),
                         ),
                       ),
-                      TimelineEvent(
-                        type = TimelineEventType.approvedPremisesApplicationSubmitted,
+                      Cas1TimelineEvent(
+                        type = Cas1TimelineEventType.applicationSubmitted,
                         id = domainEvents[1].id.toString(),
                         occurredAt = domainEvents[1].occurredAt.toInstant(),
                         content = "The application was submitted",
                         createdBy = null,
                         associatedUrls = listOf(
-                          TimelineEventAssociatedUrl(
-                            type = TimelineEventUrlType.application,
+                          Cas1TimelineEventAssociatedUrl(
+                            type = Cas1TimelineEventUrlType.application,
                             url = "http://frontend/applications/${offlineApplication.id}",
                           ),
                         ),
@@ -458,7 +458,7 @@ class Cas1PersonalTimelineTest : InitialiseDatabasePerClassTestBase() {
           .expectBody()
           .json(
             objectMapper.writeValueAsString(
-              PersonalTimeline(
+              Cas1PersonalTimeline(
                 person = personTransformer.transformModelToPersonApi(personInfoResult),
                 applications = emptyList(),
               ),

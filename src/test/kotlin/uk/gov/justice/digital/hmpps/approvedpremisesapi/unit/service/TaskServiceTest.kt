@@ -20,8 +20,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ApAreaEntityFact
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ApprovedPremisesApplicationEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ApprovedPremisesAssessmentEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PlacementApplicationEntityFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PlacementRequestEntityFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PlacementRequirementsEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ProbationRegionEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.TemporaryAccommodationAssessmentEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.UserEntityFactory
@@ -31,26 +29,21 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.ApprovedPremi
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementApplicationRepository
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementRequestEntity
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementRequestRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Task
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TaskEntityType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TaskRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PaginationMetadata
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.TypedTask
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.CasResult
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.ValidatableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.AssessmentService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.PlacementApplicationService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.TaskService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserAccessService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserService
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.PlacementRequestService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.UserTransformer
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.unit.util.assertThat
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.unit.util.assertThatCasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.PageCriteria
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.PaginationConfig
@@ -61,25 +54,23 @@ class TaskServiceTest {
   private val assessmentServiceMock = mockk<AssessmentService>()
   private val userServiceMock = mockk<UserService>()
   private val userAccessServiceMock = mockk<UserAccessService>()
-  private val placementRequestServiceMock = mockk<PlacementRequestService>()
   private val userTransformerMock = mockk<UserTransformer>()
   private val placementApplicationServiceMock = mockk<PlacementApplicationService>()
   private val taskRepositoryMock = mockk<TaskRepository>()
   private val assessmentRepositoryMock = mockk<AssessmentRepository>()
   private val placementApplicationRepositoryMock = mockk<PlacementApplicationRepository>()
-  private val placementRequestRepositoryMock = mockk<PlacementRequestRepository>()
+  private val userRepositoryMock = mockk<UserRepository>()
 
   private val taskService = TaskService(
     assessmentServiceMock,
     userServiceMock,
     userAccessServiceMock,
-    placementRequestServiceMock,
     userTransformerMock,
     placementApplicationServiceMock,
     taskRepositoryMock,
     assessmentRepositoryMock,
     placementApplicationRepositoryMock,
-    placementRequestRepositoryMock,
+    userRepositoryMock,
   )
 
   private val requestUserWithPermission = UserEntityFactory()
@@ -162,49 +153,6 @@ class TaskServiceTest {
   }
 
   @Test
-  fun `reallocateTask reallocates a placementRequest`() {
-    every { userAccessServiceMock.userCanReallocateTask(any()) } returns true
-
-    val assigneeUser = generateAndStubAssigneeUser()
-    val application = generateApplication()
-    val assessment = ApprovedPremisesAssessmentEntityFactory()
-      .withApplication(application)
-      .withAllocatedToUser(assigneeUser)
-      .produce()
-
-    val placementRequest = PlacementRequestEntityFactory()
-      .withPlacementRequirements(
-        PlacementRequirementsEntityFactory()
-          .withApplication(assessment.application as ApprovedPremisesApplicationEntity)
-          .withAssessment(assessment)
-          .produce(),
-      )
-      .withApplication(application)
-      .withAssessment(assessment)
-      .withAllocatedToUser(assigneeUser)
-      .produce()
-
-    every {
-      placementRequestServiceMock.reallocatePlacementRequest(assigneeUser, placementRequest.id)
-    } returns CasResult.Success(placementRequest)
-
-    val transformedUser = mockk<ApprovedPremisesUser>()
-
-    every { userTransformerMock.transformJpaToApi(assigneeUser, ServiceName.approvedPremises) } returns transformedUser
-
-    val reallocation = Reallocation(
-      taskType = TaskType.placementRequest,
-      user = transformedUser,
-    )
-
-    val result = taskService.reallocateTask(requestUserWithPermission, TaskType.placementRequest, assigneeUser.id, placementRequest.id)
-
-    assertThatCasResult(result).isSuccess().with {
-      Assertions.assertThat(it).isEqualTo(reallocation)
-    }
-  }
-
-  @Test
   fun `reallocateTask reallocates a placementApplication`() {
     every { userAccessServiceMock.userCanReallocateTask(any()) } returns true
 
@@ -261,7 +209,7 @@ class TaskServiceTest {
 
     val result = taskService.deallocateTask(requestUser, TaskType.assessment, UUID.randomUUID())
 
-    Assertions.assertThat(result is AuthorisableActionResult.Unauthorised).isTrue
+    assertThatCasResult(result).isUnauthorised()
   }
 
   @Test
@@ -276,18 +224,11 @@ class TaskServiceTest {
       .withAllocatedToUser(assigneeUser)
       .produce()
 
-    every { assessmentServiceMock.deallocateAssessment(assessment.id) } returns AuthorisableActionResult.Success(
-      ValidatableActionResult.Success(
-        assessment,
-      ),
-    )
+    every { assessmentServiceMock.deallocateAssessment(assessment.id) } returns CasResult.Success(assessment)
 
     val result = taskService.deallocateTask(requestUserWithPermission, TaskType.assessment, assessment.id)
 
-    Assertions.assertThat(result is AuthorisableActionResult.Success).isTrue
-    val validationResult = (result as AuthorisableActionResult.Success).entity
-
-    Assertions.assertThat(validationResult is ValidatableActionResult.Success).isTrue
+    assertThatCasResult(result).isSuccess()
   }
 
   @Test
@@ -302,7 +243,6 @@ class TaskServiceTest {
 
     val assessments = List(3) { generateAssessment() }
     val placementApplications = List(4) { generatePlacementApplication() }
-    val placementRequests = List(4) { generatePlacementRequest() }
 
     val assessmentTasks = assessments.map {
       Task(
@@ -326,23 +266,10 @@ class TaskServiceTest {
         it.decision?.name,
       )
     }
-    val placementRequestTasks = placementRequests.map {
-      val (outcomeRecordedAt, outcome) = it.getOutcomeDetails()
-      Task(
-        it.id,
-        it.createdAt.toLocalDateTime(),
-        TaskEntityType.PLACEMENT_REQUEST,
-        it.application.name,
-        it.allocatedToUser?.name,
-        outcomeRecordedAt?.toLocalDateTime(),
-        outcome?.name,
-      )
-    }
 
     val tasks = listOf(
       assessmentTasks,
       placementApplicationTasks,
-      placementRequestTasks,
     ).flatten()
 
     val page = mockk<Page<Task>>()
@@ -369,7 +296,6 @@ class TaskServiceTest {
     } returns page
     every { assessmentRepositoryMock.findAllById(assessments.map { it.id }) } returns assessments
     every { placementApplicationRepositoryMock.findAllById(placementApplications.map { it.id }) } returns placementApplications
-    every { placementRequestRepositoryMock.findAllById(placementRequests.map { it.id }) } returns placementRequests
 
     val pageCriteria = PageCriteria(TaskSortField.createdAt, SortDirection.asc, 1)
 
@@ -392,7 +318,6 @@ class TaskServiceTest {
     val expectedTasks = listOf(
       assessments.map { TypedTask.Assessment(it) },
       placementApplications.map { TypedTask.PlacementApplication(it) },
-      placementRequests.map { TypedTask.PlacementRequest(it) },
     ).flatten()
 
     Assertions.assertThat(result.first).isEqualTo(expectedTasks)
@@ -456,21 +381,6 @@ class TaskServiceTest {
           }
           .produce(),
       )
-      .produce()
-  }
-
-  private fun generatePlacementRequest(): PlacementRequestEntity {
-    val application = generateApplication()
-    val assessment = generateAssessment(application)
-    return PlacementRequestEntityFactory()
-      .withPlacementRequirements(
-        PlacementRequirementsEntityFactory()
-          .withApplication(application as ApprovedPremisesApplicationEntity)
-          .withAssessment(assessment)
-          .produce(),
-      )
-      .withApplication(application)
-      .withAssessment(assessment)
       .produce()
   }
 }

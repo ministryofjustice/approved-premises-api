@@ -75,6 +75,15 @@ class SwaggerConfiguration {
   }
 
   @Bean
+  fun cas2v2Shared(): GroupedOpenApi {
+    return GroupedOpenApi.builder()
+      .group("CAS2v2Shared")
+      .displayName("CAS2v2 & Shared")
+      .pathsToExclude("/**/cas1/**", "/**/cas2/**", "/**/cas3/**", "/**/events/**")
+      .build()
+  }
+
+  @Bean
   fun cas3Shared(): GroupedOpenApi {
     return GroupedOpenApi.builder()
       .group("CAS3Shared")

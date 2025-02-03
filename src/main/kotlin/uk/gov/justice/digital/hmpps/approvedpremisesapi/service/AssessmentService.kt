@@ -51,7 +51,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.ValidationErrors
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.InternalServerErrorProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.CasResult
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.ValidatableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1AssessmentDomainEventService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1AssessmentEmailService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.Cas1DomainEventService
@@ -765,9 +764,9 @@ class AssessmentService(
     return CasResult.Success(savedAssessment)
   }
 
-  fun deallocateAssessment(id: UUID): AuthorisableActionResult<ValidatableActionResult<AssessmentEntity>> {
+  fun deallocateAssessment(id: UUID): CasResult<AssessmentEntity> {
     val currentAssessment = assessmentRepository.findByIdOrNull(id)
-      ?: return AuthorisableActionResult.NotFound()
+      ?: return CasResult.NotFound("assessment", id.toString())
 
     if (currentAssessment !is TemporaryAccommodationAssessmentEntity) {
       throw RuntimeException("Only CAS3 Assessments are currently supported")
@@ -781,11 +780,7 @@ class AssessmentService(
     val savedAssessment = assessmentRepository.save(currentAssessment)
     savedAssessment.addSystemNote(userService.getUserForRequest(), ReferralHistorySystemNoteType.UNALLOCATED)
 
-    return AuthorisableActionResult.Success(
-      ValidatableActionResult.Success(
-        savedAssessment,
-      ),
-    )
+    return CasResult.Success(savedAssessment)
   }
 
   fun addAssessmentClarificationNote(

@@ -83,7 +83,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.ApprovedPremisesTy
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.DomainEvent
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.CasResult
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.ValidatableActionResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.AssessmentService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.JsonSchemaService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.OffenderService
@@ -2119,9 +2118,11 @@ class AssessmentServiceTest {
   fun `deallocateAssessment returns a NotFound error if the assessment could not be found`() {
     every { assessmentRepositoryMock.findByIdOrNull(any()) } returns null
 
-    val result = assessmentService.deallocateAssessment(UUID.randomUUID())
+    val id = UUID.randomUUID()
 
-    assertThat(result is AuthorisableActionResult.NotFound).isTrue
+    val result = assessmentService.deallocateAssessment(id)
+
+    assertThatCasResult(result).isNotFound("assessment", id.toString())
   }
 
   @Test
@@ -2164,14 +2165,10 @@ class AssessmentServiceTest {
 
     val result = assessmentService.deallocateAssessment(previousAssessment.id)
 
-    assertThat(result is AuthorisableActionResult.Success).isTrue
-    val validationResult = (result as AuthorisableActionResult.Success).entity
-
-    assertThat(validationResult is ValidatableActionResult.Success).isTrue
-    validationResult as ValidatableActionResult.Success
-
-    assertThat(validationResult.entity).isEqualTo(previousAssessment)
-    assertAssessmentHasSystemNote(validationResult.entity, user, ReferralHistorySystemNoteType.UNALLOCATED)
+    assertThatCasResult(result).isSuccess().with {
+      assertThat(it).isEqualTo(previousAssessment)
+      assertAssessmentHasSystemNote(it, user, ReferralHistorySystemNoteType.UNALLOCATED)
+    }
 
     verify {
       assessmentRepositoryMock.save(

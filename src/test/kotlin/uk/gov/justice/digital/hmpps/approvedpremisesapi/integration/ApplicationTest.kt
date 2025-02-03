@@ -10,6 +10,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
@@ -261,78 +263,6 @@ class ApplicationTest : IntegrationTestBase() {
       }
     }
 
-    @Test
-    fun `Get all applications returns 200 - when user is CAS3_ASSESSOR then returns submitted applications in region`() {
-      givenAProbationRegion { probationRegion ->
-        givenAUser(roles = listOf(UserRole.CAS3_REFERRER), probationRegion = probationRegion) { otherUser, _ ->
-          givenAUser(
-            roles = listOf(UserRole.CAS3_ASSESSOR),
-            probationRegion = probationRegion,
-          ) { assessorUser, jwt ->
-            givenAnOffender { offenderDetails, _ ->
-              temporaryAccommodationApplicationJsonSchemaRepository.deleteAll()
-
-              val applicationSchema = createApplicationSchema()
-
-              val dateTime = OffsetDateTime.parse("2023-06-01T12:34:56.789+01:00")
-              val application =
-                createTempApplicationEntity(applicationSchema, otherUser, offenderDetails, probationRegion, dateTime)
-
-              val notSubmittedApplication =
-                createTempApplicationEntity(applicationSchema, otherUser, offenderDetails, probationRegion, null)
-
-              val otherProbationRegion = probationRegionEntityFactory.produceAndPersist {
-                withYieldedApArea { givenAnApArea() }
-              }
-
-              val notInRegionApplication =
-                createTempApplicationEntity(
-                  applicationSchema,
-                  otherUser,
-                  offenderDetails,
-                  otherProbationRegion,
-                  dateTime,
-                )
-
-              apDeliusContextAddResponseToUserAccessCall(
-                listOf(
-                  CaseAccessFactory()
-                    .withCrn(offenderDetails.otherIds.crn)
-                    .produce(),
-                ),
-                assessorUser.deliusUsername,
-              )
-
-              val responseBody = webTestClient.get()
-                .uri("/applications")
-                .header("Authorization", "Bearer $jwt")
-                .header("X-Service-Name", ServiceName.temporaryAccommodation.value)
-                .exchange()
-                .expectStatus()
-                .isOk
-                .bodyAsListOfObjects<TemporaryAccommodationApplicationSummary>()
-
-              assertThat(responseBody).anyMatch {
-                application.id == it.id &&
-                  application.crn == it.person.crn &&
-                  application.createdAt.toInstant() == it.createdAt &&
-                  application.createdByUser.id == it.createdByUserId &&
-                  application.submittedAt?.toInstant() == it.submittedAt
-              }
-
-              assertThat(responseBody).noneMatch {
-                notInRegionApplication.id == it.id
-              }
-
-              assertThat(responseBody).noneMatch {
-                notSubmittedApplication.id == it.id
-              }
-            }
-          }
-        }
-      }
-    }
-
     private fun createTempApplicationEntity(
       applicationSchema: TemporaryAccommodationApplicationJsonSchemaEntity,
       user: UserEntity,
@@ -348,16 +278,11 @@ class ApplicationTest : IntegrationTestBase() {
       withProbationRegion(probationRegion)
     }
 
-    private fun createApplicationSchema(): TemporaryAccommodationApplicationJsonSchemaEntity =
-      temporaryAccommodationApplicationJsonSchemaEntityFactory.produceAndPersist {
-        withAddedAt(OffsetDateTime.now())
-        withId(UUID.randomUUID())
-      }
-
-    @Test
-    fun `Get all applications returns 200 for TA - when user is CAS3_REFERRER then returns all applications for user`() {
+    @ParameterizedTest
+    @EnumSource(UserRole::class, names = ["CAS3_REFERRER", "CAS3_ASSESSOR"])
+    fun `Get all applications returns 200 for TA - returns all applications for user`(userRole: UserRole) {
       givenAProbationRegion { probationRegion ->
-        givenAUser(roles = listOf(UserRole.CAS3_REFERRER), probationRegion = probationRegion) { otherUser, _ ->
+        givenAUser(roles = listOf(userRole), probationRegion = probationRegion) { otherUser, _ ->
           givenAUser(
             roles = listOf(UserRole.CAS3_REFERRER),
             probationRegion = probationRegion,

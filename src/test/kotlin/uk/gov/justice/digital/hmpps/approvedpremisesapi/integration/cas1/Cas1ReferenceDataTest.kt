@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model.Cas1CruManagem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.InitialiseDatabasePerClassTestBase
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas1CruManagementAreaEntity
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DepartureReasonEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.DepartureReasonTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.MoveOnCategoryTransformer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.transformer.NonArrivalReasonTransformer
@@ -118,10 +119,15 @@ class Cas1ReferenceDataTest : IntegrationTestBase() {
     fun success() {
       departureReasonRepository.deleteAll()
 
-      val cas1Reasons = departureReasonEntityFactory.produceAndPersistMultiple(3) {
+      val compareByDepartureReasonNameAsc = compareBy(String.CASE_INSENSITIVE_ORDER, DepartureReasonEntity::name)
+      val compareByDepartureReasonNameDesc = compareByDescending(String.CASE_INSENSITIVE_ORDER, DepartureReasonEntity::name)
+
+      // pass comparator to produceAndSortAndPersistMultiple() that will sort descending (before persisting)
+      // we do this so that later we can check they come back sorted in ascending order which tests the sort in the sql query in the implementation
+      val cas1ReasonsPersistedDescending = departureReasonEntityFactory.produceAndSortAndPersistMultiple(3, {
         withServiceScope("approved-premises")
         withIsActive(true)
-      }
+      }, compareByDepartureReasonNameDesc)
 
       // inactive reasons (ignored)
       departureReasonEntityFactory.produceAndPersistMultiple(1) {
@@ -138,13 +144,13 @@ class Cas1ReferenceDataTest : IntegrationTestBase() {
       departureReasonEntityFactory.produceAndPersistMultiple(5) {
         withServiceScope("temporary-accommodation")
       }
-
-      val expectedJson = objectMapper.writeValueAsString(
-        cas1Reasons.map(departureReasonTransformer::transformJpaToApi),
-      )
-
       val jwt = jwtAuthHelper.createValidAuthorizationCodeJwt()
 
+      // sort the data ascending so we can check the sort order and convert to expected results
+      val cas1ReasonsSortedAsc = cas1ReasonsPersistedDescending.sortedWith(compareByDepartureReasonNameAsc)
+      val expectedResultsSortedAscending = cas1ReasonsSortedAsc.map(departureReasonTransformer::transformJpaToApi)
+
+      // assert each individual item to test sort order (as well as values)
       webTestClient.get()
         .uri("/cas1/reference-data/departure-reasons")
         .header("Authorization", "Bearer $jwt")
@@ -152,7 +158,16 @@ class Cas1ReferenceDataTest : IntegrationTestBase() {
         .expectStatus()
         .isOk
         .expectBody()
-        .json(expectedJson)
+        .jsonPath("$.length()").isEqualTo(3)
+        .jsonPath("$[0].name").isEqualTo(expectedResultsSortedAscending[0].name)
+        .jsonPath("$[0].isActive").isEqualTo(expectedResultsSortedAscending[0].isActive)
+        .jsonPath("$[0].serviceScope").isEqualTo(expectedResultsSortedAscending[0].serviceScope)
+        .jsonPath("$[1].name").isEqualTo(expectedResultsSortedAscending[1].name)
+        .jsonPath("$[1].isActive").isEqualTo(expectedResultsSortedAscending[1].isActive)
+        .jsonPath("$[1].serviceScope").isEqualTo(expectedResultsSortedAscending[1].serviceScope)
+        .jsonPath("$[2].name").isEqualTo(expectedResultsSortedAscending[2].name)
+        .jsonPath("$[2].isActive").isEqualTo(expectedResultsSortedAscending[2].isActive)
+        .jsonPath("$[2].serviceScope").isEqualTo(expectedResultsSortedAscending[2].serviceScope)
     }
   }
 

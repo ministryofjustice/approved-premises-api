@@ -1307,7 +1307,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TimelineEvent'
+                  $ref: '#/components/schemas/Cas1TimelineEvent'
         401:
           $ref: '#/components/responses/401Response'
         403:
@@ -1339,7 +1339,7 @@ paths:
           content:
             'application/json':
               schema:
-                $ref: '#/components/schemas/PersonalTimeline'
+                $ref: '#/components/schemas/Cas1PersonalTimeline'
         401:
           $ref: '#/components/responses/401Response'
         403:
@@ -1735,7 +1735,6 @@ components:
       type: string
       enum:
         - Assessment
-        - PlacementRequest
         - PlacementApplication
     LocalAuthorityArea:
       type: object
@@ -4414,6 +4413,7 @@ components:
         - id
         - name
     UserWithWorkload:
+      description: This should be changed to embed the user as a property of this type, instead of 'extending' User. Currently this causes unmarshalling issues in integration tests, if using Jackson, due to discriminators not being logically correct
       allOf:
         - $ref: '#/components/schemas/User'
         - type: object
@@ -4964,8 +4964,6 @@ components:
           type: string
         createdBy:
           $ref: '#/components/schemas/User'
-        payload:
-          $ref: '#/components/schemas/TimelineEventContentPayload'
         associatedUrls:
           type: array
           items:
@@ -5081,7 +5079,7 @@ components:
         - characteristics
         - update_noms_number
         - update_users_from_api
-        - approved_premises_ap_staff_users
+        - users_basic
         - approved_premises_cancel_bookings
         - approved_premises_assessment_more_info_bug_fix
         - approved_premises_redact_assessment_details
@@ -6176,100 +6174,8 @@ components:
         - SHARED_PROPERTY
         - SINGLE_OCCUPANCY
         - WHEELCHAIR_ACCESSIBLE
-    TimelineEventContentPayload:
-      type: object
-      description: "Base schema for all timeline event payloads"
-      properties:
-        type:
-          $ref: '#/components/schemas/TimelineEventType'
-        premises:
-          $ref: '#/components/schemas/NamedId'
-        schemaVersion:
-          type: integer
-      required:
-        - type
-        - premises
-        - schemaVersion
-      discriminator:
-        propertyName: "type"
-        mapping:
-          approved_premises_booking_changed: '#/components/schemas/BookingChangedContentPayload'
-    BookingChangedContentPayload:
-      type: object
-      allOf:
-        - $ref: "#/components/schemas/TimelineEventContentPayload"
-      properties:
-        expectedArrival:
-          type: string
-          format: date
-        expectedDeparture:
-          type: string
-          format: date
-        previousExpectedArrival:
-          description: "Only populated if the new value is different, and where schema version = 2"
-          type: string
-          format: date
-        previousExpectedDeparture:
-          description: "Only populated if the new value is different, and where schema version = 2"
-          type: string
-          format: date
-        characteristics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
-        previousCharacteristics:
-          description: "Only populated if the new value is different, and where schema version = 2"
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
-      required:
-        - expectedArrival
-        - expectedDeparture
-    Cas1SpaceCharacteristic:
-      type: string
-      description: All of the characteristics of both premises and rooms
-      enum:
-        - acceptsChildSexOffenders
-        - acceptsHateCrimeOffenders
-        - acceptsNonSexualChildOffenders
-        - acceptsSexOffenders
-        - additionalRestrictions
-        - hasArsonInsuranceConditions
-        - hasBrailleSignage
-        - hasCallForAssistance
-        - hasCrib7Bedding
-        - hasEnSuite
-        - hasFixedMobilityAids
-        - hasHearingLoop
-        - hasLift
-        - hasNearbySprinkler
-        - hasSmokeDetector
-        - hasStepFreeAccess
-        - hasStepFreeAccessToCommunalAreas
-        - hasTactileFlooring
-        - hasTurningSpace
-        - hasWheelChairAccessibleBathrooms
-        - hasWideAccessToCommunalAreas
-        - hasWideDoor
-        - hasWideStepFreeAccess
-        - isArsonDesignated
-        - isArsonSuitable
-        - isCatered
-        - isESAP
-        - isFullyFm
-        - isGroundFloor
-        - isGroundFloorNrOffice
-        - isIAP
-        - isPIPE
-        - isRecoveryFocussed
-        - isSemiSpecialistMentalHealth
-        - isSingle
-        - isStepFreeDesignated
-        - isSuitableForVulnerable
-        - isSuitedForSexOffenders
-        - isTopFloorVulnerable
-        - isWheelchairAccessible
-        - isWheelchairDesignated
+
+
 
     Cas1PremisesBasicSummary:
       type: object
@@ -7275,3 +7181,224 @@ components:
         - updatedReferenceNumber
         - updatedReason
         - updatedNotes
+    Cas1TimelineEvent:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/Cas1TimelineEventType'
+        id:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        content:
+          type: string
+        createdBy:
+          $ref: '#/components/schemas/User'
+        payload:
+          $ref: '#/components/schemas/Cas1TimelineEventContentPayload'
+        associatedUrls:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1TimelineEventAssociatedUrl'
+        triggerSource:
+          type: string
+          $ref: '#/components/schemas/Cas1TriggerSourceType'
+      required:
+        - type
+        - id
+        - occurredAt
+    Cas1TimelineEventAssociatedUrl:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/Cas1TimelineEventUrlType'
+        url:
+          type: string
+      required:
+        - type
+        - url
+    Cas1TimelineEventType:
+      type: string
+      enum:
+        - application_submitted
+        - application_assessed
+        - booking_made
+        - person_arrived
+        - person_not_arrived
+        - person_departed
+        - booking_not_made
+        - booking_cancelled
+        - booking_changed
+        - booking_keyworker_assigned
+        - application_withdrawn
+        - application_expired
+        - information_request
+        - assessment_appealed
+        - assessment_allocated
+        - placement_application_withdrawn
+        - placement_application_allocated
+        - match_request_withdrawn
+        - request_for_placement_created
+        - request_for_placement_assessed
+        - application_timeline_note
+    Cas1TriggerSourceType:
+      type: string
+      enum:
+        - user
+        - system
+    Cas1TimelineEventUrlType:
+      type: string
+      enum:
+        - application
+        - booking
+        - assessment
+        - assessmentAppeal
+        - spaceBooking
+    Cas1PersonalTimeline:
+      type: object
+      properties:
+        person:
+          $ref: '#/components/schemas/Person'
+        applications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1ApplicationTimeline'
+      required:
+        - person
+        - applications
+    Cas1ApplicationTimeline:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        isOfflineApplication:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/Cas1ApplicationStatus'
+        createdBy:
+          $ref: '#/components/schemas/User'
+        timelineEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1TimelineEvent'
+      required:
+        - id
+        - createdAt
+        - isOfflineApplication
+        - timelineEvents
+    Cas1ApplicationStatus:
+      type: string
+      enum:
+        - started
+        - submitted
+        - rejected
+        - awaitingAssesment
+        - unallocatedAssesment
+        - assesmentInProgress
+        - awaitingPlacement
+        - placementAllocated
+        - inapplicable
+        - withdrawn
+        - requestedFurtherInformation
+        - pendingPlacementRequest
+        - expired
+    Cas1TimelineEventContentPayload:
+      type: object
+      description: "Base schema for all timeline event payloads"
+      properties:
+        type:
+          $ref: '#/components/schemas/Cas1TimelineEventType'
+        premises:
+          $ref: '#/components/schemas/NamedId'
+        schemaVersion:
+          type: integer
+      required:
+        - type
+        - premises
+        - schemaVersion
+      discriminator:
+        propertyName: "type"
+        mapping:
+          booking_changed: '#/components/schemas/Cas1BookingChangedContentPayload'
+    Cas1BookingChangedContentPayload:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/Cas1TimelineEventContentPayload"
+      properties:
+        expectedArrival:
+          type: string
+          format: date
+        expectedDeparture:
+          type: string
+          format: date
+        previousExpectedArrival:
+          description: "Only populated if the new value is different, and where schema version = 2"
+          type: string
+          format: date
+        previousExpectedDeparture:
+          description: "Only populated if the new value is different, and where schema version = 2"
+          type: string
+          format: date
+        characteristics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
+        previousCharacteristics:
+          description: "Only populated if the new value is different, and where schema version = 2"
+          type: array
+          items:
+            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
+      required:
+        - expectedArrival
+        - expectedDeparture
+    Cas1SpaceCharacteristic:
+      type: string
+      description: All of the characteristics of both premises and rooms
+      enum:
+        - acceptsChildSexOffenders
+        - acceptsHateCrimeOffenders
+        - acceptsNonSexualChildOffenders
+        - acceptsSexOffenders
+        - additionalRestrictions
+        - hasArsonInsuranceConditions
+        - hasBrailleSignage
+        - hasCallForAssistance
+        - hasCrib7Bedding
+        - hasEnSuite
+        - hasFixedMobilityAids
+        - hasHearingLoop
+        - hasLift
+        - hasNearbySprinkler
+        - hasSmokeDetector
+        - hasStepFreeAccess
+        - hasStepFreeAccessToCommunalAreas
+        - hasTactileFlooring
+        - hasTurningSpace
+        - hasWheelChairAccessibleBathrooms
+        - hasWideAccessToCommunalAreas
+        - hasWideDoor
+        - hasWideStepFreeAccess
+        - isArsonDesignated
+        - isArsonSuitable
+        - isCatered
+        - isESAP
+        - isFullyFm
+        - isGroundFloor
+        - isGroundFloorNrOffice
+        - isIAP
+        - isPIPE
+        - isRecoveryFocussed
+        - isSemiSpecialistMentalHealth
+        - isSingle
+        - isStepFreeDesignated
+        - isSuitableForVulnerable
+        - isSuitedForSexOffenders
+        - isTopFloorVulnerable
+        - isWheelchairAccessible
+        - isWheelchairDesignated
+

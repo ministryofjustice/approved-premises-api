@@ -4801,7 +4801,6 @@ components:
       type: string
       enum:
         - Assessment
-        - PlacementRequest
         - PlacementApplication
     LocalAuthorityArea:
       type: object
@@ -7480,6 +7479,7 @@ components:
         - id
         - name
     UserWithWorkload:
+      description: This should be changed to embed the user as a property of this type, instead of 'extending' User. Currently this causes unmarshalling issues in integration tests, if using Jackson, due to discriminators not being logically correct
       allOf:
         - $ref: '#/components/schemas/User'
         - type: object
@@ -8030,8 +8030,6 @@ components:
           type: string
         createdBy:
           $ref: '#/components/schemas/User'
-        payload:
-          $ref: '#/components/schemas/TimelineEventContentPayload'
         associatedUrls:
           type: array
           items:
@@ -8147,7 +8145,7 @@ components:
         - characteristics
         - update_noms_number
         - update_users_from_api
-        - approved_premises_ap_staff_users
+        - users_basic
         - approved_premises_cancel_bookings
         - approved_premises_assessment_more_info_bug_fix
         - approved_premises_redact_assessment_details
@@ -9242,98 +9240,6 @@ components:
         - SHARED_PROPERTY
         - SINGLE_OCCUPANCY
         - WHEELCHAIR_ACCESSIBLE
-    TimelineEventContentPayload:
-      type: object
-      description: "Base schema for all timeline event payloads"
-      properties:
-        type:
-          $ref: '#/components/schemas/TimelineEventType'
-        premises:
-          $ref: '#/components/schemas/NamedId'
-        schemaVersion:
-          type: integer
-      required:
-        - type
-        - premises
-        - schemaVersion
-      discriminator:
-        propertyName: "type"
-        mapping:
-          approved_premises_booking_changed: '#/components/schemas/BookingChangedContentPayload'
-    BookingChangedContentPayload:
-      type: object
-      allOf:
-        - $ref: "#/components/schemas/TimelineEventContentPayload"
-      properties:
-        expectedArrival:
-          type: string
-          format: date
-        expectedDeparture:
-          type: string
-          format: date
-        previousExpectedArrival:
-          description: "Only populated if the new value is different, and where schema version = 2"
-          type: string
-          format: date
-        previousExpectedDeparture:
-          description: "Only populated if the new value is different, and where schema version = 2"
-          type: string
-          format: date
-        characteristics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
-        previousCharacteristics:
-          description: "Only populated if the new value is different, and where schema version = 2"
-          type: array
-          items:
-            $ref: '#/components/schemas/Cas1SpaceCharacteristic'
-      required:
-        - expectedArrival
-        - expectedDeparture
-    Cas1SpaceCharacteristic:
-      type: string
-      description: All of the characteristics of both premises and rooms
-      enum:
-        - acceptsChildSexOffenders
-        - acceptsHateCrimeOffenders
-        - acceptsNonSexualChildOffenders
-        - acceptsSexOffenders
-        - additionalRestrictions
-        - hasArsonInsuranceConditions
-        - hasBrailleSignage
-        - hasCallForAssistance
-        - hasCrib7Bedding
-        - hasEnSuite
-        - hasFixedMobilityAids
-        - hasHearingLoop
-        - hasLift
-        - hasNearbySprinkler
-        - hasSmokeDetector
-        - hasStepFreeAccess
-        - hasStepFreeAccessToCommunalAreas
-        - hasTactileFlooring
-        - hasTurningSpace
-        - hasWheelChairAccessibleBathrooms
-        - hasWideAccessToCommunalAreas
-        - hasWideDoor
-        - hasWideStepFreeAccess
-        - isArsonDesignated
-        - isArsonSuitable
-        - isCatered
-        - isESAP
-        - isFullyFm
-        - isGroundFloor
-        - isGroundFloorNrOffice
-        - isIAP
-        - isPIPE
-        - isRecoveryFocussed
-        - isSemiSpecialistMentalHealth
-        - isSingle
-        - isStepFreeDesignated
-        - isSuitableForVulnerable
-        - isSuitedForSexOffenders
-        - isTopFloorVulnerable
-        - isWheelchairAccessible
-        - isWheelchairDesignated
+
+
 

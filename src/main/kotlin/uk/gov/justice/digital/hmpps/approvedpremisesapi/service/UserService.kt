@@ -29,7 +29,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRoleAssig
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRoleAssignmentRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.specification.hasQualificationsAndRoles
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PaginationMetadata
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.UserWorkload
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.StaffDetail
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.InternalServerErrorProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.AuthorisableActionResult
@@ -337,28 +336,6 @@ class UserService(
     }
 
     return userRepository.save(user)
-  }
-
-  fun getUserWorkloads(userIds: List<UUID>): Map<UUID, UserWorkload> {
-    return userRepository.findWorkloadForUserIds(userIds).associate {
-      it.getUserId() to UserWorkload(
-        numTasksPending = listOf(
-          it.getPendingAssessments(),
-          it.getPendingPlacementRequests(),
-          it.getPendingPlacementApplications(),
-        ).sum(),
-        numTasksCompleted7Days = listOf(
-          it.getCompletedAssessmentsInTheLastSevenDays(),
-          it.getCompletedPlacementApplicationsInTheLastSevenDays(),
-          it.getCompletedPlacementRequestsInTheLastSevenDays(),
-        ).sum(),
-        numTasksCompleted30Days = listOf(
-          it.getCompletedAssessmentsInTheLastThirtyDays(),
-          it.getCompletedPlacementApplicationsInTheLastThirtyDays(),
-          it.getCompletedPlacementRequestsInTheLastThirtyDays(),
-        ).sum(),
-      )
-    }
   }
 
   @SuppressWarnings("TooGenericExceptionThrown")
