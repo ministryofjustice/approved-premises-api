@@ -330,12 +330,6 @@ enum class DomainEventType(
     "An application has been submitted for a CAS2 placement",
     null,
   ),
-  CAS2_ALLOCATION_CHANGED(
-    DomainEventCas.CAS2,
-    "offender-management.allocation.changed",
-    "An allocation has been changed for a CAS2 placement",
-    null,
-  ),
   CAS2_APPLICATION_STATUS_UPDATED(
     DomainEventCas.CAS2,
     Cas2EventType.applicationStatusUpdated.value,

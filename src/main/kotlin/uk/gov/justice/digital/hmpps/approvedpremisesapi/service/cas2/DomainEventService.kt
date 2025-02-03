@@ -13,14 +13,10 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.Ca
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.Cas2Event
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.PersonReference
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.config.DomainEventUrlConfig
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2ApplicationRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventType
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TriggerSourceType
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.AllocationData
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.DomainEvent
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.HmppsDomainEvent
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.domainevent.SnsEvent
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.domainevent.SnsEventAdditionalInformation
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.domainevent.SnsEventPersonReference
@@ -41,7 +37,6 @@ class DomainEventService(
   private val hmppsQueueService: HmppsQueueService,
   @Value("\${domain-events.cas2.emit-enabled}") private val emitDomainEventsEnabled: Boolean,
   private val domainEventUrlConfig: DomainEventUrlConfig,
-  private val cas2ApplicationRepository: Cas2ApplicationRepository,
 ) {
   private val log = LoggerFactory.getLogger(this::class.java)
 
@@ -86,54 +81,6 @@ class DomainEventService(
       domainEvent = domainEvent,
       personReference = domainEvent.data.eventDetails.personReference,
     )
-
-  @Transactional
-  fun handlePomAllocationChangedMessage(message: HmppsDomainEvent) {
-    val prisonId = message.prisonId
-    val staffCode = message.staffCode
-    val applications = cas2ApplicationRepository.findAllByNomsNumber(message.personReference.findNomsNumber().toString())
-
-    saveCas2DomainEvent(
-      domainEvent = message,
-      applicationId = applications[0].id,
-      eventType = DomainEventType.CAS2_ALLOCATION_CHANGED,
-      crn = applications[0].crn,
-      data = objectMapper.writeValueAsString(AllocationData(prisonId, staffCode)),
-    )
-  }
-
-  private fun saveCas2DomainEvent(
-    domainEvent: HmppsDomainEvent,
-    applicationId: UUID,
-    eventType: DomainEventType,
-    crn: String,
-    data: String,
-  ) {
-    val domainEventId = UUID.randomUUID()
-    val occurredAt = domainEvent.occurredAt.toInstant().atOffset(ZoneOffset.UTC)
-
-    domainEventRepository.save(
-      DomainEventEntity(
-        id = domainEventId,
-        applicationId = applicationId,
-        assessmentId = null,
-        bookingId = null,
-        cas1SpaceBookingId = null,
-        crn = crn,
-        nomsNumber = null,
-        type = eventType,
-        occurredAt = occurredAt,
-        createdAt = OffsetDateTime.now(),
-        data = objectMapper.writeValueAsString(data),
-        service = "CAS2",
-        triggerSource = TriggerSourceType.SYSTEM,
-        triggeredByUserId = null,
-        schemaVersion = domainEvent.version,
-      ),
-    )
-
-    log.info("Saved domain event with id: $domainEventId and event type: $eventType")
-  }
 
   private fun <T : Cas2Event> saveAndEmit(
     domainEvent: DomainEvent<T>,

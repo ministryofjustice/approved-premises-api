@@ -89,7 +89,6 @@ components:
         mapping:
           applications.cas2.application.submitted: '#/components/schemas/Cas2ApplicationSubmittedEvent'
           applications.cas2.application.status-updated: '#/components/schemas/Cas2ApplicationStatusUpdatedEvent'
-          offender-management.allocation.changed: '#/components/schemas/Cas2AllocationChangedEvent'
     Cas2ApplicationSubmittedEvent:
       allOf:
         - $ref: '#/components/schemas/Cas2Event'
@@ -278,11 +277,9 @@ components:
       enum:
         - applications.cas2.application.submitted
         - applications.cas2.application.status-updated
-        - offender-management.allocation.changed
       x-enum-varnames:
         - applicationSubmitted
         - applicationStatusUpdated
-        - allocationChanged
     Problem:
       type: object
       properties:

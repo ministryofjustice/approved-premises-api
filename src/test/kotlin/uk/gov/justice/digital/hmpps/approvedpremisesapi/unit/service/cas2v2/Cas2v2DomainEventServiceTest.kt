@@ -12,7 +12,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.Ca
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model.EventType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.config.DomainEventUrlConfig
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.events.cas2.Cas2ApplicationSubmittedEventDetailsFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Cas2ApplicationRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.DomainEventType
@@ -30,7 +29,6 @@ import java.util.concurrent.CompletableFuture
 class Cas2v2DomainEventServiceTest {
 
   private val domainEventRepositoryMock = mockk<DomainEventRepository>()
-  private val cas2ApplicationRepositoryMock = mockk<Cas2ApplicationRepository>()
 
   private val hmppsQueueServiceMock = mockk<HmppsQueueService>()
   private val mockDomainEventUrlConfig = mockk<DomainEventUrlConfig>()
@@ -45,7 +43,6 @@ class Cas2v2DomainEventServiceTest {
     hmppsQueueService = hmppsQueueServiceMock,
     emitDomainEventsEnabled = true,
     mockDomainEventUrlConfig,
-    cas2ApplicationRepositoryMock,
   )
 
   @BeforeEach
