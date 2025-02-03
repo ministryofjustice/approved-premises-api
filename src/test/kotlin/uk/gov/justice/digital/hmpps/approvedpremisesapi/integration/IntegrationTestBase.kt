@@ -243,6 +243,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.OfflineApplic
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.PlacementApplicationTestRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.PlacementRequestTestRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.PostCodeDistrictTestRepository
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.PrisonerLocationTestRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.ProbationAreaProbationRegionMappingTestRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.ProbationDeliveryUnitTestRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.ProbationRegionTestRepository
@@ -317,6 +318,9 @@ abstract class IntegrationTestBase {
 
   @Autowired
   lateinit var approvedPremisesRepository: ApprovedPremisesTestRepository
+
+  @Autowired
+  lateinit var prisonerLocationRepository: PrisonerLocationTestRepository
 
   @Autowired
   lateinit var temporaryAccommodationPremisesRepository: TemporaryAccommodationPremisesTestRepository

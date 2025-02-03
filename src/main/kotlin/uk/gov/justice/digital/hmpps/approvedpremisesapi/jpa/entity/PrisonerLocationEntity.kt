@@ -27,7 +27,7 @@ interface PrisonerLocationRepository : JpaRepository<PrisonerLocationEntity, UUI
 }
 
 @Entity
-@Table(name = "prisoner_location")
+@Table(name = "prisoner_locations")
 data class PrisonerLocationEntity(
   @Id
   val id: UUID,
