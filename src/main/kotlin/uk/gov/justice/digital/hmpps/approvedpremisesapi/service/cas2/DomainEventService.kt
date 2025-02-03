@@ -29,7 +29,7 @@ import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.MissingTopicException
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import java.util.*
+import java.util.UUID
 import kotlin.reflect.KClass
 
 @Service(
