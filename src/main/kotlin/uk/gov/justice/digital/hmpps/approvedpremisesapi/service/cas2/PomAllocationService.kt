@@ -74,6 +74,8 @@ class PomAllocationService(
       }
     }
   } catch (e: Exception) {
+    log.error(e.message)
+
     log.error("Failed to handlePomAllocationChangedMessage")
   }
 

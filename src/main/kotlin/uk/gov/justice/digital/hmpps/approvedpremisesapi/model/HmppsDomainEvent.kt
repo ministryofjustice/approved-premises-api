@@ -19,11 +19,6 @@ data class HmppsDomainEvent(
   val staffCode = additionalInformation?.get("staffCode") as String?
 }
 
-data class AllocationData(
-  val prisonId: String?,
-  val staffCode: String?,
-)
-
 data class HmppsDomainEventPersonReference(val identifiers: List<PersonIdentifier> = listOf()) {
   fun findNomsNumber() = get("NOMS")
   operator fun get(key: String) = identifiers.find { it.type == key }?.value
