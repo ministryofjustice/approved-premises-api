@@ -24,8 +24,7 @@ class Cas2PomAllocationServiceTest : IntegrationTestBase() {
     )
     pomAllocationService.handlePomAllocationChangedMessage(message)
 
-    verify(exactly = 1) { prisonerLocationRepository.findLatestByNomsNumber(any()) }
-    verify(exactly = 1) { prisonerLocationRepository.updateEndDate(any(), any()) }
+    verify(exactly = 1) { prisonerLocationRepository.updateEndDateOfLatest(any(), any()) }
     verify(exactly = 1) { prisonerLocationRepository.save(any()) }
   }
 }

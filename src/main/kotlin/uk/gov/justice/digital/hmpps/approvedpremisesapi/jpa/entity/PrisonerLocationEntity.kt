@@ -12,18 +12,15 @@ import java.util.UUID
 
 @Repository
 interface PrisonerLocationRepository : JpaRepository<PrisonerLocationEntity, UUID> {
-  @Query("SELECT p FROM PrisonerLocationEntity p WHERE p.nomsNumber = :nomsNumber ORDER BY p.startDate DESC LIMIT 1")
-  fun findLatestByNomsNumber(nomsNumber: String): List<PrisonerLocationEntity>
-
   @Modifying
   @Query(
     """
     UPDATE PrisonerLocationEntity p set 
     p.endDate = :endDate
-    where p.id = :id
+    where p.nomsNumber = :nomsNumber and p.endDate = NULL
     """,
   )
-  fun updateEndDate(id: UUID, endDate: OffsetDateTime)
+  fun updateEndDateOfLatest(nomsNumber: String, endDate: OffsetDateTime)
 }
 
 @Entity

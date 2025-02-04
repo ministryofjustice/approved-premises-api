@@ -8,6 +8,5 @@ import java.util.UUID
 
 @Repository
 interface PrisonerLocationTestRepository : JpaRepository<PrisonerLocationEntity, UUID> {
-  fun findLatestByNomsNumber(nomsNumber: String): List<PrisonerLocationEntity>
-  fun updateEndDate(id: UUID, endDate: OffsetDateTime)
+  fun updateEndDateOfLatest(nomsNumber: String, endDate: OffsetDateTime)
 }
