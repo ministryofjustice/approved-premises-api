@@ -303,7 +303,6 @@ class Cas2v2PersonSearchTest : Cas2v2IntegrationTestBase() {
 
         @Test
         fun `Searching for a CRN with ROLE_POM as a nomis auth source and is same prison returns 200`() {
-
           givenACas2PomUser(nomisUserDetailsConfigBlock = { withActiveCaseloadId("BRI") }) { _, jwt ->
             val offender = ProbationOffenderDetailFactory()
               .withOtherIds(IDs(crn = "CRN", nomsNumber = "NOMS321", pncNumber = "PNC123"))
