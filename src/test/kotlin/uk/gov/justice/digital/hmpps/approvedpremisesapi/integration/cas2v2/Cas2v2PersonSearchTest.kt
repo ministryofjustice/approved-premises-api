@@ -302,6 +302,64 @@ class Cas2v2PersonSearchTest : Cas2v2IntegrationTestBase() {
       inner class WhenSuccessful {
 
         @Test
+        fun `Searching for a CRN with ROLE_POM as a nomis auth source and is same prison returns 200`() {
+
+          givenACas2PomUser(nomisUserDetailsConfigBlock = { withActiveCaseloadId("BRI") }) { _, jwt ->
+            val offender = ProbationOffenderDetailFactory()
+              .withOtherIds(IDs(crn = "CRN", nomsNumber = "NOMS321", pncNumber = "PNC123"))
+              .withFirstName("James")
+              .withSurname("Someone")
+              .withDateOfBirth(
+                LocalDate
+                  .parse("1985-05-05"),
+              )
+              .withGender("Male")
+              .withOffenderProfile(OffenderProfile(nationality = "English"))
+              .produce()
+
+            val inmateDetail = InmateDetailFactory().withOffenderNo("NOMS321")
+              .withCustodyStatus(InmateStatus.IN)
+              .withAssignedLivingUnit(
+                AssignedLivingUnit(
+                  agencyId = "BRI",
+                  locationId = 5,
+                  description = "B-2F-004",
+                  agencyName = "HMP Bristol",
+                ),
+              )
+              .produce()
+
+            probationOffenderSearchAPIMockSuccessfulOffenderSearchCall("NOMS321", listOf(offender))
+            prisonAPIMockSuccessfulInmateDetailsCall(inmateDetail = inmateDetail)
+
+            webTestClient.get()
+              .uri("/cas2v2/people/search-by-crn/CRN")
+              .header("Authorization", "Bearer $jwt")
+              .exchange()
+              .expectStatus()
+              .isOk
+              .expectBody()
+              .json(
+                objectMapper.writeValueAsString(
+                  FullPerson(
+                    type = PersonType.fullPerson,
+                    crn = "CRN",
+                    name = "James Someone",
+                    dateOfBirth = LocalDate.parse("1985-05-05"),
+                    sex = "Male",
+                    status = PersonStatus.inCustody,
+                    nomsNumber = "NOMS321",
+                    pncNumber = "PNC123",
+                    nationality = "English",
+                    isRestricted = false,
+                    prisonName = "HMP Bristol",
+                  ),
+                ),
+              )
+          }
+        }
+
+        @Test
         fun `Searching for a CRN returns OK with correct body`() {
           givenAUser { _, jwt ->
             givenAnOffender(

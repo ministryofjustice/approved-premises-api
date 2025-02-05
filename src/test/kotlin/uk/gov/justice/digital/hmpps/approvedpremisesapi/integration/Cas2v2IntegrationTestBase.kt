@@ -71,18 +71,14 @@ abstract class Cas2v2IntegrationTestBase : IntegrationTestBase() {
       PersistedFactory({ Cas2v2ApplicationJsonSchemaEntityFactory() }, cas2v2ApplicationJsonSchemaRepository)
   }
 
-  fun mockSomeOtherCall(staffMember: StaffMember, qCode: String) = wiremockServer.stubFor(
-    WireMock.get(urlEqualTo("/approved-premises/$qCode/staff"))
+  fun mockDeliusCall(username: String, responseBody: Any) = wiremockServer.stubFor(
+    WireMock.get(urlEqualTo("/staff/$username"))
       .willReturn(
         aResponse()
           .withHeader("Content-Type", "application/json")
           .withStatus(200)
           .withBody(
-            objectMapper.writeValueAsString(
-              StaffMembersPage(
-                content = listOf(staffMember),
-              ),
-            ),
+            objectMapper.writeValueAsString(responseBody),
           ),
       ),
   )

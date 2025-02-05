@@ -786,5 +786,6 @@ fun UserEntity.cas3LimitedAccessStrategy() = LimitedAccessStrategy.ReturnRestric
 
 fun Cas2v2UserEntity.limitedAccessStrategy() = when (userType) {
   Cas2v2UserType.DELIUS -> LimitedAccessStrategy.ReturnRestrictedIfLimitedAccess(this.username)
+  Cas2v2UserType.NOMIS -> LimitedAccessStrategy.ReturnRestrictedIfLimitedAccess(this.username)
   else -> error("Can't provide strategy for users of type $userType")
 }
