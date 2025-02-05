@@ -1,5 +1,8 @@
 package uk.gov.justice.digital.hmpps.approvedpremisesapi.integration
 
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -26,6 +29,8 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas2v2Applica
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas2v2ApplicationTestRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.repository.Cas2v2StatusUpdateTestRepository
 import java.util.UUID
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.StaffMember
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.deliuscontext.StaffMembersPage
 
 @ExtendWith(IntegrationTestDbManager.IntegrationTestListener::class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
@@ -65,4 +70,20 @@ abstract class Cas2v2IntegrationTestBase : IntegrationTestBase() {
     cas2v2ApplicationJsonSchemaEntityFactory =
       PersistedFactory({ Cas2v2ApplicationJsonSchemaEntityFactory() }, cas2v2ApplicationJsonSchemaRepository)
   }
+
+  fun mockSomeOtherCall(staffMember: StaffMember, qCode: String) = wiremockServer.stubFor(
+    WireMock.get(urlEqualTo("/approved-premises/$qCode/staff"))
+      .willReturn(
+        aResponse()
+          .withHeader("Content-Type", "application/json")
+          .withStatus(200)
+          .withBody(
+            objectMapper.writeValueAsString(
+              StaffMembersPage(
+                content = listOf(staffMember),
+              ),
+            ),
+          ),
+      ),
+  )
 }
