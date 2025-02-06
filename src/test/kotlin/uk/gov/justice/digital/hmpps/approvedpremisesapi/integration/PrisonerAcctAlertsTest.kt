@@ -105,8 +105,6 @@ class PrisonerAcctAlertsTest : InitialiseDatabasePerClassTestBase() {
           empty = false,
         )
 
-        mockFeatureFlagService.setFlag("get-alerts-from-prisoner-alerts-api", true)
-
         prisonerAlertsAPIMockSuccessfulAlertsCall(offenderDetails.otherIds.nomsNumber!!, "HA", alerts)
 
         webTestClient.get()

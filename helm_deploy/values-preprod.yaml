@@ -89,8 +89,6 @@ generic-service:
 
     USER-ALLOCATIONS_RULES_ESAP-ASSESSMENTS_ALLOCATE-TO-USER: KATHRYNHALL1NPS
 
-    FEATURE-FLAGS_GET-ALERTS-FROM-PRISONER-ALERTS-API: true
-
   namespace_secrets:
     hmpps-domain-events-topic:
       HMPPS_SQS_TOPICS_DOMAINEVENTS_ARN: "topic_arn"

@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.httpmocks
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisoneralertsapi.AlertsPage
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.AdjudicationsPage
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.Alert
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.InmateDetail
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.PrisonerInPrisonSummary
 
@@ -23,12 +22,6 @@ fun IntegrationTestBase.prisonAPIMockServerErrorInmateDetailsCall(offenderNo: St
   mockUnsuccessfulGetCall(
     url = "/api/offenders/$offenderNo",
     responseStatus = 500,
-  )
-
-fun IntegrationTestBase.prisonAPIMockSuccessfulAlertsCall(nomsNumber: String, alerts: List<Alert>) =
-  mockSuccessfulGetCallWithJsonResponse(
-    url = "/api/offenders/$nomsNumber/alerts/v2?alertCodes=HA&sort=dateCreated&direction=DESC",
-    responseBody = alerts,
   )
 
 fun IntegrationTestBase.prisonerAlertsAPIMockSuccessfulAlertsCall(nomsNumber: String, alertCode: String, alertsPage: AlertsPage) =

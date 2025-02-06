@@ -38,7 +38,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.oasyscontext.RoshS
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.Adjudication
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.AdjudicationsPage
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.Agency
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.Alert
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.CaseNote
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.CaseNotesPage
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.prisonsapi.InmateDetail
@@ -558,22 +557,6 @@ class OffenderService(
         agencies = allAgencies,
       ),
     )
-  }
-
-  fun getAcctAlertsByNomsNumber(nomsNumber: String): CasResult<List<Alert>> {
-    val alertsResult = prisonsApiClient.getAlerts(nomsNumber, "HA")
-
-    val alerts = when (alertsResult) {
-      is ClientResult.Success -> alertsResult.body
-      is ClientResult.Failure.StatusCode -> when (alertsResult.status) {
-        HttpStatus.NOT_FOUND -> return CasResult.NotFound(entityType = "Alert", id = nomsNumber)
-        HttpStatus.FORBIDDEN -> return CasResult.Unauthorised()
-        else -> alertsResult.throwException()
-      }
-      is ClientResult.Failure -> alertsResult.throwException()
-    }
-
-    return CasResult.Success(alerts)
   }
 
   fun getAcctPrisonerAlertsByNomsNumber(nomsNumber: String): CasResult<List<PrisionerAlert>> {

@@ -88,8 +88,6 @@ generic-service:
     NOTIFY_MODE: DISABLED
     CAS3-REPORT_END-DATE-OVERRIDE: 3
 
-    FEATURE-FLAGS_GET-ALERTS-FROM-PRISONER-ALERTS-API: true
-
   namespace_secrets:
     hmpps-approved-premises-api:
       NOTIFY_APIKEY: "NOTIFY_APIKEY"
