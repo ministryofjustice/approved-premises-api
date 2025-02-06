@@ -1,0 +1,13 @@
+{
+  "Type": "Notification",
+  "MessageId": "63ba0b4b-340e-4853-b343-6429965a3961",
+  "TopicArn": "dynamically set per test",
+  "Message": "{\"eventType\":\"offender-management.allocation.changed\",\"detailUrl\":\"http://localhost:8080/api/pom-allocation/A0123BY/3\",\"occurredAt\":\"2023-10-10T14:25:19.102Z\",\"personReference\":{\"identifiers\":[{\"type\":\"NOMS\",\"value\":\"A0123BY\"}]}}",
+  "Timestamp": "2023-10-10T14:25:20.000Z",
+  "MessageAttributes": {
+    "eventType": {
+      "Type": "String",
+      "Value": "offender-management.allocation.changed"
+    }
+  }
+}

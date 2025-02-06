@@ -65,7 +65,13 @@ hmpps.sqs:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
       subscribeTopicId: domainevents
-
+    castwodomaineventsqueue:
+      dlqName: ${random.uuid}
+      queueName: ${random.uuid}
+      subscribeTopicId: domainevents
+      subscribeFilter: '{"eventType":["offender-management.allocation.changed", "offender-management.handover.changed"]}'
+      dlqMaxReceiveCount: 1
+      errorVisibilityTimeout: 0
 domain-events:
   cas1:
     emit-enabled: true
@@ -208,3 +214,4 @@ scheduling:
 logging.level.org.springframework.jdbc.core.JdbcTemplate: debug
 
 feature-flags:
+  cas2-sqs-listener-enabled: true

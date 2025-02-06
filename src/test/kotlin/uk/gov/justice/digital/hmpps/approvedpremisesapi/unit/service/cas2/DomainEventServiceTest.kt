@@ -35,6 +35,7 @@ import java.util.concurrent.CompletableFuture
 @SuppressWarnings("CyclomaticComplexMethod")
 class DomainEventServiceTest {
   private val domainEventRepositoryMock = mockk<DomainEventRepository>()
+
   private val hmppsQueueServiceMock = mockk<HmppsQueueService>()
   private val mockDomainEventUrlConfig = mockk<DomainEventUrlConfig>()
 

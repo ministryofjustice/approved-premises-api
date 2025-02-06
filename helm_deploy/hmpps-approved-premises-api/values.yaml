@@ -66,6 +66,10 @@ generic-service:
     elasticache-redis:
       SPRING_DATA_REDIS_HOST: "primary_endpoint_address"
       SPRING_DATA_REDIS_PASSWORD: "auth_token"
+    cas-2-domain-events-queue:
+      HMPPS_SQS_QUEUES_CASTWODOMAINEVENTSQUEUE_QUEUE_NAME: "QUEUE_NAME"
+    cas-2-domain-events-dlq:
+      HMPPS_SQS_QUEUES_CASTWODOMAINEVENTSDLQ_DLQ_NAME: "QUEUE_NAME"
 
   allowlist:
     office: "217.33.148.210/32"

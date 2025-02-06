@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture
 class Cas2v2DomainEventServiceTest {
 
   private val domainEventRepositoryMock = mockk<DomainEventRepository>()
+
   private val hmppsQueueServiceMock = mockk<HmppsQueueService>()
   private val mockDomainEventUrlConfig = mockk<DomainEventUrlConfig>()
 
