@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentEnt
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentRepository
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementApplicationEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementApplicationRepository
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementRequestEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.Task
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TaskEntityType
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.TaskRepository
@@ -166,9 +165,6 @@ class TaskService(
       TaskType.placementApplication -> {
         placementApplicationService.reallocateApplication(assigneeUser, taskId)
       }
-      else -> {
-        throw NotAllowedProblem(detail = "The Task Type $taskType is not currently supported")
-      }
     }
 
     return when (result) {
@@ -218,7 +214,6 @@ class TaskService(
 
   private fun entityToReallocation(entity: Any, taskType: TaskType): Reallocation {
     val allocatedToUser = when (entity) {
-      is PlacementRequestEntity -> entity.allocatedToUser
       is AssessmentEntity -> entity.allocatedToUser
       is PlacementApplicationEntity -> entity.allocatedToUser!!
       else -> throw RuntimeException("Unexpected type")
