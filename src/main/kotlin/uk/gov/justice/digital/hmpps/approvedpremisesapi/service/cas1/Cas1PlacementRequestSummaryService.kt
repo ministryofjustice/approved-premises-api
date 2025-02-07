@@ -27,7 +27,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.ApprovedPremisesApplicationStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PaginationMetadata
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.ValidationErrors
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.InternalServerErrorProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.CasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationService
@@ -144,56 +143,6 @@ class PlacementRequestService(
     }
 
     return CasResult.Success(toPlacementRequestAndCancellations(placementRequest))
-  }
-
-  @SuppressWarnings("ReturnCount")
-  @Deprecated("Placement requests are no longer allocated. Can consider removing this and corresponding database fields")
-  fun reallocatePlacementRequest(
-    assigneeUser: UserEntity,
-    id: UUID,
-  ): CasResult<PlacementRequestEntity> {
-    val currentPlacementRequest = placementRequestRepository.findByIdOrNull(id)
-      ?: return CasResult.NotFound("placementRequest", id.toString())
-
-    if (currentPlacementRequest.reallocatedAt != null) {
-      return CasResult.ConflictError(
-        currentPlacementRequest.id,
-        "This placement request has already been reallocated",
-      )
-    }
-
-    if (currentPlacementRequest.booking != null) {
-      return CasResult.GeneralValidationError("This placement request has already been completed")
-    }
-
-    if (!assigneeUser.hasRole(UserRole.CAS1_MATCHER)) {
-      return CasResult.FieldValidationError(
-        ValidationErrors().apply {
-          this["$.userId"] = "lackingMatcherRole"
-        },
-      )
-    }
-
-    currentPlacementRequest.reallocatedAt = OffsetDateTime.now()
-    placementRequestRepository.save(currentPlacementRequest)
-
-    // Make the timestamp precision less precise, so we don't have any issues with microsecond resolution in tests
-    val dateTimeNow = OffsetDateTime.now().withNano(0)
-
-    val newPlacementRequest = currentPlacementRequest.copy(
-      id = UUID.randomUUID(),
-      reallocatedAt = null,
-      allocatedToUser = assigneeUser,
-      createdAt = dateTimeNow,
-      placementRequirements = currentPlacementRequest.placementRequirements,
-      dueAt = null,
-    )
-
-    newPlacementRequest.dueAt = taskDeadlineService.getDeadline(newPlacementRequest)
-
-    placementRequestRepository.save(newPlacementRequest)
-
-    return CasResult.Success(newPlacementRequest)
   }
 
   fun createPlacementRequestsFromPlacementApplication(
