@@ -100,7 +100,7 @@ class PlacementRequestService(
   ): Pair<List<Cas1PlacementRequestSummary>, PaginationMetadata?> {
     val pageable = pageCriteria.toPageable(
       when (pageCriteria.sortBy) {
-        PlacementRequestSortField.applicationSubmittedAt -> "application.submitted_at"
+        PlacementRequestSortField.applicationSubmittedAt -> "applicationSubmittedDate"
         PlacementRequestSortField.createdAt -> "created_at"
         PlacementRequestSortField.expectedArrival -> "requestedPlacementArrivalDate"
         PlacementRequestSortField.duration -> "requestedPlacementDuration"
