@@ -3,63 +3,8 @@ info:
   version: '0.1.0'
   title: 'CAS2 Domain events'
   description: Get information about events in the CAS2 domain
-paths:
-  /events/cas2/application-submitted/{eventId}:
-    parameters:
-      - name: eventId
-        description: UUID of the event
-        in: path
-        required: true
-        schema:
-          $ref: '#/components/schemas/EventId'
-    get:
-      tags:
-        - "CAS2 events"
-      summary: An 'application-submitted' event
-      operationId: eventsCas2ApplicationSubmittedEventIdGet
-      responses:
-        '200':
-          description: The application-submitted corresponding to the provided `eventId`
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Cas2ApplicationSubmittedEvent'
-        404:
-          description: No application-submitted event found for the provided `eventId`
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
-  /events/cas2/application-status-updated/{eventId}:
-    parameters:
-      - name: eventId
-        description: UUID of the event
-        in: path
-        required: true
-        schema:
-          $ref: '#/components/schemas/EventId'
-    get:
-      tags:
-        - "CAS2 events"
-      summary: An 'application-status-updated' event
-      operationId: eventsCas2ApplicationStatusUpdatedEventIdGet
-      responses:
-        '200':
-          description: The application-status-updated corresponding to the provided `eventId`
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Cas2ApplicationStatusUpdatedEvent'
-        404:
-          description: No application-status-updated event found for the provided `eventId`
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/Problem'
-        500:
-          $ref: '#/components/responses/500Response'
+paths: {}
+
 components:
   responses:
     500Response:

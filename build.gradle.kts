@@ -233,7 +233,6 @@ openApiGenerate {
   generatorName.set("kotlin-spring")
   inputSpec.set("$rootDir/src/main/resources/static/codegen/built-api-spec.yml")
   outputDir.set("$buildDir/generated")
-  apiPackage.set("uk.gov.justice.digital.hmpps.approvedpremisesapi.api")
   modelPackage.set("uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model")
   addOpenApiConfigOptions(configOptions)
   typeMappings.put("DateTime", "Instant")
@@ -245,7 +244,6 @@ openApiGenerate {
 registerAdditionalOpenApiGenerateTask(
   name = "openApiGenerateCas1Namespace",
   ymlPath = "$rootDir/src/main/resources/static/codegen/built-cas1-api-spec.yml",
-  apiPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.cas1",
   modelPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model",
   apiSuffix = "Cas1",
   useTags = true,
@@ -254,7 +252,6 @@ registerAdditionalOpenApiGenerateTask(
 registerAdditionalOpenApiGenerateTask(
   name = "openApiGenerateCas2v2Namespace",
   ymlPath = "$rootDir/src/main/resources/static/codegen/built-cas2v2-api-spec.yml",
-  apiPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.cas2v2",
   modelPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model",
   apiSuffix = "Cas2v2",
 )
@@ -262,7 +259,6 @@ registerAdditionalOpenApiGenerateTask(
 registerAdditionalOpenApiGenerateTask(
   name = "openApiGenerateCas2Namespace",
   ymlPath = "$rootDir/src/main/resources/static/codegen/built-cas2-api-spec.yml",
-  apiPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.cas2",
   modelPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model",
   apiSuffix = "Cas2",
 )
@@ -270,7 +266,6 @@ registerAdditionalOpenApiGenerateTask(
 registerAdditionalOpenApiGenerateTask(
   name = "openApiGenerateCas3Namespace",
   ymlPath = "$rootDir/src/main/resources/static/codegen/built-cas3-api-spec.yml",
-  apiPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.cas3",
   modelPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.model",
   apiSuffix = "Cas3",
 )
@@ -278,14 +273,12 @@ registerAdditionalOpenApiGenerateTask(
 registerAdditionalOpenApiGenerateTask(
   name = "openApiGenerateDomainEvents",
   ymlPath = "$rootDir/src/main/resources/static/domain-events-api.yml",
-  apiPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api",
   modelPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas1.model",
 )
 
 registerAdditionalOpenApiGenerateTask(
   name = "openApiGenerateCas2DomainEvents",
   ymlPath = "$rootDir/src/main/resources/static/cas2-domain-events-api.yml",
-  apiPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api",
   modelPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas2.model",
   useTags = true,
 )
@@ -293,7 +286,6 @@ registerAdditionalOpenApiGenerateTask(
 registerAdditionalOpenApiGenerateTask(
   name = "openApiGenerateCas3DomainEvents",
   ymlPath = "$rootDir/src/main/resources/static/cas3-domain-events-api.yml",
-  apiPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api",
   modelPackageName = "uk.gov.justice.digital.hmpps.approvedpremisesapi.api.events.cas3.model",
   useTags = true,
 )
@@ -301,7 +293,6 @@ registerAdditionalOpenApiGenerateTask(
 fun registerAdditionalOpenApiGenerateTask(
   name: String,
   ymlPath: String,
-  apiPackageName: String,
   modelPackageName: String,
   apiSuffix: String? = null,
   useTags: Boolean = false,
@@ -310,7 +301,6 @@ fun registerAdditionalOpenApiGenerateTask(
     generatorName.set("kotlin-spring")
     inputSpec.set(ymlPath)
     outputDir.set("$buildDir/generated")
-    apiPackage.set(apiPackageName)
     modelPackage.set(modelPackageName)
     addOpenApiConfigOptions(configOptions, apiSuffix, useTags)
     typeMappings.put("DateTime", "Instant")
@@ -428,7 +418,10 @@ tasks.get("openApiGenerate").doLast {
 
 ktlint {
   filter {
-    exclude { it.file.path.contains("$buildDir${File.separator}generated${File.separator}") }
+    exclude {
+      it.file.path.contains("$buildDir${File.separator}generated${File.separator}") ||
+        it.file.path.contains("${File.separator}api${File.separator}")
+    }
   }
 }
 
@@ -454,4 +447,10 @@ detekt {
   buildUponDefaultConfig = true
   ignoreFailures = false
   baseline = file("./detekt-baseline.xml")
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+  source = source.asFileTree.matching {
+    exclude("**/uk/gov/justice/digital/hmpps/approvedpremisesapi/api/**")
+  }
 }
