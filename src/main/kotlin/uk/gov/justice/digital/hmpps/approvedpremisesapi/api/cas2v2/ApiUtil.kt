@@ -1,0 +1,19 @@
+package uk.gov.justice.digital.hmpps.approvedpremisesapi.api.cas2v2
+
+import org.springframework.web.context.request.NativeWebRequest
+
+import jakarta.servlet.http.HttpServletResponse
+import java.io.IOException
+
+object ApiUtil {
+    fun setExampleResponse(req: NativeWebRequest, contentType: String, example: String) {
+        try {
+            val res = req.getNativeResponse(HttpServletResponse::class.java)
+            res?.characterEncoding = "UTF-8"
+            res?.addHeader("Content-Type", contentType)
+            res?.writer?.print(example)
+        } catch (e: IOException) {
+            throw RuntimeException(e)
+        }
+    }
+}
