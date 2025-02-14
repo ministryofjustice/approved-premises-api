@@ -111,7 +111,7 @@ class TaskService(
 
     val allocatedFilter = filterCriteria.allocatedFilter
 
-    val isAllocated = allocatedFilter?.let { allocatedFilter == AllocatedFilter.allocated }
+    val isAllocated = allocatedFilter?.let { allocatedFilter == AllocatedFilter.ALLOCATED }
 
     val repoFunction = if (taskTypes.size == 1) {
       when (taskTypes[0]) {
