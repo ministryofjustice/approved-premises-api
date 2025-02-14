@@ -48,7 +48,7 @@ class OpenEntityInTestManager : BeanFactoryAware {
 
   fun clear() {
     val emf = obtainEntityManagerFactory()
-    if (!TransactionSynchronizationManager.hasResource(emf)) {
+    if (TransactionSynchronizationManager.hasResource(emf)) {
       val emHolder =
         TransactionSynchronizationManager.unbindResource(this.obtainEntityManagerFactory()) as EntityManagerHolder
       emHolder.entityManager.clear()
@@ -115,7 +115,6 @@ class OpenEntityInTestManager : BeanFactoryAware {
       if (!isPerClass(context)) {
         getManager().setup()
       }
-      getManager().clear()
     }
 
     override fun afterAll(context: ExtensionContext?) {
