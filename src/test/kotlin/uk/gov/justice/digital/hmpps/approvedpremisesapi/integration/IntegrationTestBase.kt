@@ -104,6 +104,7 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.cas3.Cas3VoidBed
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.asserter.DomainEventAsserter
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.asserter.EmailNotificationAsserter
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.config.IntegrationTestDbManager
+import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.config.OpenEntityInTestManager
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.config.TestPropertiesInitializer
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.mocks.MockFeatureFlagService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.integration.mocks.MutableClockConfiguration
@@ -261,7 +262,12 @@ import java.time.Duration
 import java.util.TimeZone
 import java.util.UUID
 
-@ExtendWith(IntegrationTestDbManager.IntegrationTestListener::class)
+@ExtendWith(value =
+  [
+    IntegrationTestDbManager.IntegrationTestListener::class,
+    OpenEntityInTestManager.IntegrationTestListener::class,
+  ]
+)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ContextConfiguration(initializers = [TestPropertiesInitializer::class])
 @ActiveProfiles("test")
