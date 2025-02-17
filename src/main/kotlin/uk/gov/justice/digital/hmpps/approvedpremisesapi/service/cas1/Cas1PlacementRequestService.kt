@@ -27,14 +27,12 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRole
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.ApprovedPremisesApplicationStatus
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.PaginationMetadata
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.model.ValidationErrors
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.problem.InternalServerErrorProblem
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.results.CasResult
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.ApplicationService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.OffenderService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.TaskDeadlineService
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.UserAccessService
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.allocations.UserAllocator
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1LimitedAccessStrategy
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.PageCriteria
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.util.getMetadata
@@ -50,7 +48,6 @@ class PlacementRequestService(
   private val placementRequirementsRepository: PlacementRequirementsRepository,
   private val placementDateRepository: PlacementDateRepository,
   private val cancellationRepository: CancellationRepository,
-  private val userAllocator: UserAllocator,
   private val userAccessService: UserAccessService,
   @Lazy private val applicationService: ApplicationService,
   private val cas1PlacementRequestEmailService: Cas1PlacementRequestEmailService,
@@ -146,56 +143,6 @@ class PlacementRequestService(
     return CasResult.Success(toPlacementRequestAndCancellations(placementRequest))
   }
 
-  @SuppressWarnings("ReturnCount")
-  @Deprecated("Placement requests are no longer allocated. Can consider removing this and corresponding database fields")
-  fun reallocatePlacementRequest(
-    assigneeUser: UserEntity,
-    id: UUID,
-  ): CasResult<PlacementRequestEntity> {
-    val currentPlacementRequest = placementRequestRepository.findByIdOrNull(id)
-      ?: return CasResult.NotFound("placementRequest", id.toString())
-
-    if (currentPlacementRequest.reallocatedAt != null) {
-      return CasResult.ConflictError(
-        currentPlacementRequest.id,
-        "This placement request has already been reallocated",
-      )
-    }
-
-    if (currentPlacementRequest.booking != null) {
-      return CasResult.GeneralValidationError("This placement request has already been completed")
-    }
-
-    if (!assigneeUser.hasRole(UserRole.CAS1_MATCHER)) {
-      return CasResult.FieldValidationError(
-        ValidationErrors().apply {
-          this["$.userId"] = "lackingMatcherRole"
-        },
-      )
-    }
-
-    currentPlacementRequest.reallocatedAt = OffsetDateTime.now()
-    placementRequestRepository.save(currentPlacementRequest)
-
-    // Make the timestamp precision less precise, so we don't have any issues with microsecond resolution in tests
-    val dateTimeNow = OffsetDateTime.now().withNano(0)
-
-    val newPlacementRequest = currentPlacementRequest.copy(
-      id = UUID.randomUUID(),
-      reallocatedAt = null,
-      allocatedToUser = assigneeUser,
-      createdAt = dateTimeNow,
-      placementRequirements = currentPlacementRequest.placementRequirements,
-      dueAt = null,
-    )
-
-    newPlacementRequest.dueAt = taskDeadlineService.getDeadline(newPlacementRequest)
-
-    placementRequestRepository.save(newPlacementRequest)
-
-    return CasResult.Success(newPlacementRequest)
-  }
-
   fun createPlacementRequestsFromPlacementApplication(
     placementApplicationEntity: PlacementApplicationEntity,
     notes: String?,
@@ -273,9 +220,6 @@ class PlacementRequestService(
       dueAt = null,
     )
 
-    val allocatedUser = userAllocator.getUserForPlacementRequestAllocation(placementRequest)
-
-    placementRequest.allocatedToUser = allocatedUser
     placementRequest.dueAt = taskDeadlineService.getDeadline(placementRequest)
 
     val updatedPlacementRequest = placementRequestRepository.save(placementRequest)

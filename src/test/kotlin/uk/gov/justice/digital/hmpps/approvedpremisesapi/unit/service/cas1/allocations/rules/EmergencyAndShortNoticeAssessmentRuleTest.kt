@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.TemporaryAccommo
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.UserEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.cas1.Cas1CruManagementAreaEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementApplicationEntity
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementRequestEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.allocations.UserAllocatorRuleOutcome
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.service.cas1.allocations.rules.EmergencyAndShortNoticeAssessmentRule
 import java.time.OffsetDateTime
@@ -182,16 +181,6 @@ class EmergencyAndShortNoticeAssessmentRuleTest {
     @Test
     fun `Always returns Skip`() {
       val result = assessmentRule.evaluatePlacementApplication(mockk<PlacementApplicationEntity>())
-
-      assertThat(result).isEqualTo(UserAllocatorRuleOutcome.Skip)
-    }
-  }
-
-  @Nested
-  inner class EvaluatePlacementRequest {
-    @Test
-    fun `Always returns Skip`() {
-      val result = assessmentRule.evaluatePlacementRequest(mockk<PlacementRequestEntity>())
 
       assertThat(result).isEqualTo(UserAllocatorRuleOutcome.Skip)
     }

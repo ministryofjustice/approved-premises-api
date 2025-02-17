@@ -18,13 +18,10 @@ import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ApAreaEntityFact
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ApprovedPremisesApplicationEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ApprovedPremisesAssessmentEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PlacementApplicationEntityFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PlacementRequestEntityFactory
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.PlacementRequirementsEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.ProbationRegionEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.factory.UserEntityFactory
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.AssessmentEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementApplicationEntity
-import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.PlacementRequestEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserEntity
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserQualification
 import uk.gov.justice.digital.hmpps.approvedpremisesapi.jpa.entity.UserRepository
@@ -48,9 +45,6 @@ class UserAllocatorTest {
 
     every { mockUserRepository.findUserWithLeastAssessmentsPendingOrCompletedInLastWeek(listOf(user1.id)) } returns user1
     every { mockUserRepository.findUserWithLeastAssessmentsPendingOrCompletedInLastWeek(listOf(user2.id)) } returns user2
-
-    every { mockUserRepository.findUserWithLeastPlacementRequestsPendingOrCompletedInLastWeek(listOf(user1.id)) } returns user1
-    every { mockUserRepository.findUserWithLeastPlacementRequestsPendingOrCompletedInLastWeek(listOf(user2.id)) } returns user2
 
     every { mockUserRepository.findUserWithLeastPlacementApplicationsPendingOrCompletedInLastWeek(listOf(user1.id)) } returns user1
     every { mockUserRepository.findUserWithLeastPlacementApplicationsPendingOrCompletedInLastWeek(listOf(user2.id)) } returns user2
@@ -110,76 +104,6 @@ class UserAllocatorTest {
       val userAllocator = UserAllocator(rules, mockUserRepository, mockSentryService)
 
       val result = userAllocator.getUserForAssessmentAllocation(assessment)
-
-      assertThat(result).isEqualTo(user2)
-
-      assertThat(capturedLogs).size().isEqualTo(1)
-      assertThat(capturedLogs.first()).matches {
-        it.message.contains("'unknown-user-rule'") &&
-          it.message.contains("'USER-1'") &&
-          it.message.contains("could not be found") &&
-          it.message.contains("skipped") &&
-          it.level == Level.WARN
-      }
-
-      verify { mockSentryService.captureErrorMessage("Rule 'unknown-user-rule' attempted to allocate a task to user 'USER-1', but they could not be found. This rule has been skipped.") }
-    }
-  }
-
-  @Nested
-  inner class GetUserForPlacementRequestAllocation {
-    @Test
-    fun `Returns null when no rules are active`() {
-      val userAllocator = UserAllocator(listOf(), mockUserRepository, mockSentryService)
-
-      val result = userAllocator.getUserForPlacementRequestAllocation(placementRequest)
-
-      assertThat(result).isNull()
-    }
-
-    @ParameterizedTest
-    @MethodSource("uk.gov.justice.digital.hmpps.approvedpremisesapi.unit.service.cas1.allocations.UserAllocatorTest#placementRequestRules")
-    fun `Returns the expected user according to the rules outcome and precedence`(
-      rules: List<UserAllocatorRule>,
-      expectedUserEntity: UserEntity?,
-    ) {
-      val userAllocator = UserAllocator(rules, mockUserRepository, mockSentryService)
-
-      if (expectedUserEntity != null) {
-        every { mockUserRepository.findByDeliusUsername(expectedUserEntity.deliusUsername) } returns expectedUserEntity
-      }
-
-      val result = userAllocator.getUserForPlacementRequestAllocation(placementRequest)
-
-      assertThat(result).isEqualTo(expectedUserEntity)
-
-      if (expectedUserEntity == null) {
-        verify(exactly = 0) { mockUserRepository.findByDeliusUsername(any()) }
-      }
-    }
-
-    @Test
-    fun `A rule is skipped if the user it attempts to allocate to could not be found`() {
-      val appender = mockk<Appender<ILoggingEvent>>()
-      val capturedLogs = mutableListOf<ILoggingEvent>()
-
-      val logger = LoggerFactory.getLogger(UserAllocator::class.java) as ch.qos.logback.classic.Logger
-      logger.addAppender(appender)
-
-      every { appender.doAppend(capture(capturedLogs)) } returns Unit
-
-      val rules = listOf(
-        TestRule.allocateToUser(RuleType.PLACEMENT_REQUEST, user1, priority = 1, name = "unknown-user-rule"),
-        TestRule.allocateToUser(RuleType.PLACEMENT_REQUEST, user2, priority = 2, name = "known-user-rule"),
-      )
-
-      every { mockUserRepository.findByDeliusUsername(user1.deliusUsername) } returns null
-      every { mockUserRepository.findByDeliusUsername(user2.deliusUsername) } returns user2
-      every { mockSentryService.captureErrorMessage(any()) } returns Unit
-
-      val userAllocator = UserAllocator(rules, mockUserRepository, mockSentryService)
-
-      val result = userAllocator.getUserForPlacementRequestAllocation(placementRequest)
 
       assertThat(result).isEqualTo(user2)
 
@@ -297,17 +221,6 @@ class UserAllocatorTest {
       .withApplication(application)
       .produce()
 
-    private val placementRequirements = PlacementRequirementsEntityFactory()
-      .withApplication(application)
-      .withAssessment(assessment)
-      .produce()
-
-    private val placementRequest = PlacementRequestEntityFactory()
-      .withPlacementRequirements(placementRequirements)
-      .withApplication(application)
-      .withAssessment(assessment)
-      .produce()
-
     private val placementApplication = PlacementApplicationEntityFactory()
       .withApplication(application)
       .withCreatedByUser(createdByUser)
@@ -315,9 +228,6 @@ class UserAllocatorTest {
 
     @JvmStatic
     fun assessmentRules(): Stream<Arguments> = generateRules(RuleType.ASSESSMENT)
-
-    @JvmStatic
-    fun placementRequestRules(): Stream<Arguments> = generateRules(RuleType.PLACEMENT_REQUEST)
 
     @JvmStatic
     fun placementApplicationRules(): Stream<Arguments> = generateRules(RuleType.PLACEMENT_APPLICATION)
@@ -433,14 +343,10 @@ data class TestRule(
   override val priority: Int = 0,
   override val name: String = "test rule",
   private val evaluateAssessmentOutcome: UserAllocatorRuleOutcome = UserAllocatorRuleOutcome.Skip,
-  private val evaluatePlacementRequestOutcome: UserAllocatorRuleOutcome = UserAllocatorRuleOutcome.Skip,
   private val evaluatePlacementApplicationOutcome: UserAllocatorRuleOutcome = UserAllocatorRuleOutcome.Skip,
 ) : UserAllocatorRule {
   override fun evaluateAssessment(assessmentEntity: AssessmentEntity): UserAllocatorRuleOutcome =
     evaluateAssessmentOutcome
-
-  override fun evaluatePlacementRequest(placementRequestEntity: PlacementRequestEntity): UserAllocatorRuleOutcome =
-    evaluatePlacementRequestOutcome
 
   override fun evaluatePlacementApplication(placementApplicationEntity: PlacementApplicationEntity): UserAllocatorRuleOutcome =
     evaluatePlacementApplicationOutcome
@@ -448,31 +354,26 @@ data class TestRule(
   companion object {
     fun skip(ruleType: RuleType, priority: Int = 0, name: String = "test rule") = when (ruleType) {
       RuleType.ASSESSMENT -> TestRule(priority = priority, name = name, evaluateAssessmentOutcome = UserAllocatorRuleOutcome.Skip)
-      RuleType.PLACEMENT_REQUEST -> TestRule(priority = priority, name = name, evaluatePlacementRequestOutcome = UserAllocatorRuleOutcome.Skip)
       RuleType.PLACEMENT_APPLICATION -> TestRule(priority = priority, name = name, evaluatePlacementApplicationOutcome = UserAllocatorRuleOutcome.Skip)
     }
 
     fun doNotAllocate(ruleType: RuleType, priority: Int = 0, name: String = "test rule") = when (ruleType) {
       RuleType.ASSESSMENT -> TestRule(priority = priority, name = name, evaluateAssessmentOutcome = UserAllocatorRuleOutcome.DoNotAllocate)
-      RuleType.PLACEMENT_REQUEST -> TestRule(priority = priority, name = name, evaluatePlacementRequestOutcome = UserAllocatorRuleOutcome.DoNotAllocate)
       RuleType.PLACEMENT_APPLICATION -> TestRule(priority = priority, name = name, evaluatePlacementApplicationOutcome = UserAllocatorRuleOutcome.DoNotAllocate)
     }
 
     fun allocateToUser(ruleType: RuleType, user: UserEntity, priority: Int = 0, name: String = "test rule") = when (ruleType) {
       RuleType.ASSESSMENT -> TestRule(priority = priority, name = name, evaluateAssessmentOutcome = UserAllocatorRuleOutcome.AllocateToUser(user.deliusUsername))
-      RuleType.PLACEMENT_REQUEST -> TestRule(priority = priority, name = name, evaluatePlacementRequestOutcome = UserAllocatorRuleOutcome.AllocateToUser(user.deliusUsername))
       RuleType.PLACEMENT_APPLICATION -> TestRule(priority = priority, name = name, evaluatePlacementApplicationOutcome = UserAllocatorRuleOutcome.AllocateToUser(user.deliusUsername))
     }
 
     fun allocateByQualification(ruleType: RuleType, qualification: UserQualification, priority: Int = 0, name: String = "test rule") = when (ruleType) {
       RuleType.ASSESSMENT -> TestRule(priority = priority, name = name, evaluateAssessmentOutcome = UserAllocatorRuleOutcome.AllocateByQualification(qualification))
-      RuleType.PLACEMENT_REQUEST -> TestRule(priority = priority, name = name, evaluatePlacementRequestOutcome = UserAllocatorRuleOutcome.AllocateByQualification(qualification))
       RuleType.PLACEMENT_APPLICATION -> TestRule(priority = priority, name = name, evaluatePlacementApplicationOutcome = UserAllocatorRuleOutcome.AllocateByQualification(qualification))
     }
 
     fun allocateByRole(ruleType: RuleType, role: UserRole, priority: Int = 0, name: String = "test rule") = when (ruleType) {
       RuleType.ASSESSMENT -> TestRule(priority = priority, name = name, evaluateAssessmentOutcome = UserAllocatorRuleOutcome.AllocateByRole(role))
-      RuleType.PLACEMENT_REQUEST -> TestRule(priority = priority, name = name, evaluatePlacementRequestOutcome = UserAllocatorRuleOutcome.AllocateByRole(role))
       RuleType.PLACEMENT_APPLICATION -> TestRule(priority = priority, name = name, evaluatePlacementApplicationOutcome = UserAllocatorRuleOutcome.AllocateByRole(role))
     }
   }
@@ -480,6 +381,5 @@ data class TestRule(
 
 enum class RuleType {
   ASSESSMENT,
-  PLACEMENT_REQUEST,
   PLACEMENT_APPLICATION,
 }

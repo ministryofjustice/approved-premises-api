@@ -126,36 +126,6 @@ interface UserRepository : JpaRepository<UserEntity, UUID>, JpaSpecificationExec
 
   @Query(
     """
-    SELECT u.*,
-    RANK() OVER (
-      ORDER BY
-        (
-          SELECT COUNT(1)
-            FROM placement_requests pr
-            WHERE pr.allocated_to_user_id = u.id
-            AND 
-              (
-                pr.booking_id IS NULL
-                OR (
-                  pr.booking_id IS NOT NULL
-                    AND pr.created_at BETWEEN 
-                      (CURRENT_TIMESTAMP - interval '1 week') AND
-                  		CURRENT_TIMESTAMP
-                )
-            )
-        ) ASC
-     ) as score
-    FROM "users"  u
-    WHERE u.id IN (:userIds)
-    ORDER BY score ASC 
-    LIMIT 1
-    """,
-    nativeQuery = true,
-  )
-  fun findUserWithLeastPlacementRequestsPendingOrCompletedInLastWeek(userIds: List<UUID>): UserEntity?
-
-  @Query(
-    """
     SELECT
       CAST(u.id as TEXT) as userId,
       (
