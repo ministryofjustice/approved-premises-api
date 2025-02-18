@@ -1,0 +1,61 @@
+name: Run E2E tests
+
+on:
+  push:
+    branches:
+      # - main
+      - 'CHORE/**' # only for now...
+
+jobs:
+  cas1_e2e_tests:
+    runs-on: [self-hosted, hmpps-github-actions-runner]
+    strategy:
+      matrix:
+        shard: [0, 1, 2, 3]
+      fail-fast: false
+    defaults:
+      run:
+        working-directory: hmpps-approved-premises-ui
+    steps:
+      - name: Remove existing directory if it already exists
+        run: rm -rf hmpps-approved-premises-ui
+        working-directory: ${{ github.workspace }}
+      - name: Clone E2E repo
+        run: git clone https://github.com/ministryofjustice/hmpps-approved-premises-ui.git
+        working-directory: ${{ github.workspace }}
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      - name: Update npm
+        run: npm install -g npm@9.8.1
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright
+        run: npx playwright install
+      - name: E2E Check
+        run: |
+          SHARD=$(( ${{ matrix.shard }} + 1 ))
+          username="HMPPS_AUTH_USERNAME_$SHARD"
+          password="HMPPS_AUTH_PASSWORD_$SHARD"
+          email="HMPPS_AUTH_EMAIL_$SHARD"
+          name="HMPPS_AUTH_NAME_$SHARD"
+          HMPPS_AUTH_USERNAME="${!username}"
+          HMPPS_AUTH_PASSWORD="${!password}"
+          HMPPS_AUTH_EMAIL="${!email}"
+          HMPPS_AUTH_NAME="${!name}"
+          npm run test:e2e:ci -- --shard=${{ matrix.shard }}/4
+      - name: Store Playwright report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-shard-${{ matrix.shard }}
+          path: playwright-report
+          retention-days: 30
+      - name: Store test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-shard-${{ matrix.shard }}
+          path: test-results
+          retention-days: 30
