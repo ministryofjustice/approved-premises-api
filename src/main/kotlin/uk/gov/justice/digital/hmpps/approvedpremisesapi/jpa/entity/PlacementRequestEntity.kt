@@ -134,6 +134,7 @@ interface PlacementRequestRepository : JpaRepository<PlacementRequestEntity, UUI
 
   @Query(
     """
+    WITH UNFILTERED AS (
       SELECT
       pq.duration AS requestedPlacementDuration,
       pq.expected_arrival AS requestedPlacementArrivalDate,
@@ -142,44 +143,23 @@ interface PlacementRequestRepository : JpaRepository<PlacementRequestEntity, UUI
       apa.risk_ratings -> 'tier' -> 'value' ->> 'level' AS personTier,
       pq.application_id AS applicationId,
       apa.name as personName,
-      CASE
-        WHEN (pq.is_parole) THEN 'parole'
-        ELSE 'standardRequest'
-      END as requestType,      
-      CASE
-        WHEN EXISTS (
-          SELECT
-            1
-          FROM
-            cancellations c
-            right join bookings booking on c.booking_id = booking.id
-          WHERE
-            booking.id = pq.booking_id
-            AND c.id IS NULL
-        ) THEN 'matched'
-        WHEN EXISTS (
-          SELECT 
-              1 
-          FROM 
-              cas1_space_bookings sb 
-          WHERE
-              sb.placement_request_id = pq.id AND
-              sb.cancellation_occurred_at IS NULL
-        ) THEN 'matched'   
-        WHEN EXISTS (
-          SELECT
-            1
-          FROM
-            booking_not_mades bnm
-          WHERE
-            bnm.placement_request_id = pq.id
-        ) THEN 'unableToMatch' 
-        ELSE 'notMatched'
-      END AS placementRequestStatus,
+      pq.reallocated_at as reallocatedAt,
+      pq.is_withdrawn as isWithdrawn,
+      pq.booking_id as bookingId,
+      pq.is_parole as isParole,
+      area.id as apAreaId,
+      pq.created_at as created_at,
+      apa.cas1_cru_management_area_id as cruManagementAreaId,
+      CASE WHEN (pq.is_parole) THEN 'parole' ELSE 'standardRelease' END AS requestType,      
+      (SELECT EXISTS (SELECT 1 FROM cancellations c right join bookings booking on c.booking_id = booking.id WHERE booking.id = pq.booking_id AND c.id IS NULL)) AS hasCancellation,
+      (SELECT EXISTS (SELECT 1 FROM cas1_space_bookings sb WHERE sb.placement_request_id = pq.id AND sb.cancellation_occurred_at IS NULL)) AS hasSpaceBooking,   
+      (SELECT EXISTS (SELECT 1 FROM booking_not_mades bnm WHERE bnm.placement_request_id = pq.id)) AS hasBookingNotMade,
       application.submitted_at::date AS applicationSubmittedDate,
-      pq.is_parole AS isParole,
       premises.name AS bookingPremisesName,
-      bookings.arrival_date AS bookingArrivalDate
+      bookings.arrival_date AS bookingArrivalDate,
+      (SELECT EXISTS (SELECT 1 FROM applications a WHERE a.id = pq.application_id AND a.crn = UPPER(:crn))) as crnHasApplication,
+      (SELECT EXISTS (SELECT 1 FROM applications a WHERE a.id = pq.application_id AND a.crn = UPPER(:crnOrName))) as crnOrNameHasApplication,
+      (SELECT EXISTS (SELECT 1 FROM approved_premises_applications apa WHERE apa.id = pq.application_id AND apa.name LIKE UPPER('%' || :crnOrName || '%'))) as nameHasApplication
       FROM
       placement_requests pq
       LEFT JOIN approved_premises_applications apa ON apa.id = pq.application_id
@@ -187,63 +167,26 @@ interface PlacementRequestRepository : JpaRepository<PlacementRequestEntity, UUI
       LEFT JOIN applications application ON application.id = pq.application_id
       LEFT JOIN bookings ON pq.booking_id = bookings.id
       LEFT JOIN premises ON bookings.premises_id = premises.id
+    ),
+    EXC_STATUS AS (
+      SELECT *,
+      CASE WHEN hasCancellation THEN 'matched' WHEN hasSpaceBooking THEN 'matched' WHEN hasBookingNotMade THEN 'unableToMatch' ELSE 'notMatched' END AS placementRequestStatus
+      FROM UNFILTERED
+      WHERE
+      reallocatedAt IS NULL 
+      AND (:crn IS NULL OR crnHasApplication IS TRUE)
+      AND (:crnOrName IS NULL OR (crnOrNameHasApplication IS TRUE OR nameHasApplication))
+      AND (:tier IS NULL OR personTier = :tier)
+      AND (CAST(:arrivalDateFrom AS DATE) IS NULL OR requestedPlacementArrivalDate >= :arrivalDateFrom) 
+      AND (CAST(:arrivalDateTo AS DATE) IS NULL OR requestedPlacementArrivalDate <= :arrivalDateTo)
+      AND (:requestType IS NULL OR requestType = :requestType)
+      AND (:apAreaId IS NULL OR apAreaId = :apAreaId)
+      AND (:cruManagementAreaId IS NULL OR cruManagementAreaId = :cruManagementAreaId)
+    )
+    SELECT * FROM EXC_STATUS
     WHERE
-      pq.reallocated_at IS NULL 
-      AND (:status IS NULL OR pq.is_withdrawn IS FALSE)
-      AND (:status IS NULL OR (
-        CASE
-          WHEN EXISTS (
-            SELECT
-              1
-            from
-              cancellations c
-              right join bookings booking on c.booking_id = booking.id
-            WHERE
-              booking.id = pq.booking_id
-              AND c.id IS NULL
-          ) THEN 'matched'
-          WHEN EXISTS (
-            SELECT 
-                1 
-            FROM 
-                cas1_space_bookings sb 
-            WHERE
-                sb.placement_request_id = pq.id AND
-                sb.cancellation_occurred_at IS NULL
-          ) THEN 'matched'   
-          WHEN EXISTS (
-            SELECT
-              1
-            from
-              booking_not_mades bnm
-            WHERE
-              bnm.placement_request_id = pq.id
-          ) THEN 'unableToMatch' 
-          ELSE 'notMatched'
-        END
-      ) = :status)
-      AND (:crn IS NULL OR EXISTS (SELECT 1 FROM applications a WHERE a.id = pq.application_id AND a.crn = UPPER(:crn)))
-      AND (
-        :crnOrName IS NULL OR 
-        (
-            (EXISTS (SELECT 1 FROM applications a WHERE a.id = pq.application_id AND a.crn = UPPER(:crnOrName)))
-            OR
-            (EXISTS (SELECT 1 FROM approved_premises_applications apa WHERE apa.id = pq.application_id AND apa.name LIKE UPPER('%' || :crnOrName || '%')))
-        )
-      )
-      AND (:tier IS NULL OR EXISTS (SELECT 1 FROM approved_premises_applications apa WHERE apa.id = pq.application_id AND apa.risk_ratings -> 'tier' -> 'value' ->> 'level' = :tier)) 
-      AND (CAST(:arrivalDateFrom AS date) IS NULL OR pq.expected_arrival >= :arrivalDateFrom) 
-      AND (CAST(:arrivalDateTo AS date) IS NULL OR pq.expected_arrival <= :arrivalDateTo)
-      AND (
-        :requestType IS NULL OR 
-        (
-            (:requestType = 'parole' AND pq.is_parole IS TRUE)
-            OR
-            (:requestType = 'standardRelease' AND pq.is_parole IS FALSE)
-        )
-      )
-      AND ((CAST(:apAreaId AS pg_catalog.uuid) IS NULL) OR area.id = :apAreaId)
-      AND ((CAST(:cruManagementAreaId AS pg_catalog.uuid) IS NULL) OR apa.cas1_cru_management_area_id = :cruManagementAreaId)    
+    (:status IS NULL OR isWithdrawn IS FALSE)
+    AND (:status IS NULL OR placementRequestStatus = :status)    
     """,
     nativeQuery = true,
   )
