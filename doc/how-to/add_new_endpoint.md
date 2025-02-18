@@ -40,9 +40,10 @@ To create a new endpoint on a top-level path:
    In `src/main/kotlin/uk/gov/justice/digital/hmpps/approvedpremisesapi/config/OAuth2ResourceServerSecurityConfiguration.kt::securityFilterChain` add a new entry:
    
    ```
-   .mvcMatchers(HttpMethod.GET, "/premises").permitAll() //Allows any client to access the endpoint (even without a JWT)
-   .mvcMatchers(HttpMethod.GET, "/premises").authenticated() //Allows any client presenting a valid HMPPS JWT to acess the endpoint
-   .mvcMatchers(HttpMethod.GET, "/premises").hasAuthority("ROLE_interventions") //Allows only clients presenting a valid HMPPS JWT with the ROLE_interventions authority to access the endpoint
+   authorize(HttpMethod.GET, "/premises", permitAll) //Allows any client to access the endpoint (even without a JWT)
+   authorize(HttpMethod.GET, "/premises", hasAuthority("ROLE_interventions")) //Allows only clients presenting a valid HMPPS JWT with the ROLE_interventions authority to access the endpoint
+   authorize(HttpMethod.PUT, "/cas2/assessments/**", hasRole("CAS2_ASSESSOR")) // Allows only clients with the specified role
+   authorize(HttpMethod.GET, "/cas2/assessments/**", hasAnyRole("CAS2_ASSESSOR", "CAS2_ADMIN")) // Allows only clients with at least of the specified roles
    ```
 
    If you need to access information about the requester from within the endpoint code, you can do so via the following:
