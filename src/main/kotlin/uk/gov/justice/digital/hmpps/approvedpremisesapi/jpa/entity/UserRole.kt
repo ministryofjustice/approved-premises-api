@@ -114,6 +114,16 @@ enum class UserRole(val service: ServiceName, val cas1ApiValue: ApprovedPremises
       UserPermission.CAS1_REPORTS_VIEW,
     ),
   ),
+
+  CAS1_REPORT_VIEWER_WITH_PII(
+    ServiceName.approvedPremises,
+    ApprovedPremisesUserRole.reportViewerWithPii,
+    listOf(
+      UserPermission.CAS1_REPORTS_VIEW,
+      UserPermission.CAS1_REPORTS_VIEW_WITH_PII,
+    ),
+  ),
+
   CAS1_EXCLUDED_FROM_ASSESS_ALLOCATION(
     ServiceName.approvedPremises,
     ApprovedPremisesUserRole.excludedFromAssessAllocation,

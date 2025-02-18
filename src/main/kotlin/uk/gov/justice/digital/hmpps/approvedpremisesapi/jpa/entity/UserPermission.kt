@@ -33,6 +33,11 @@ enum class UserPermission {
   CAS1_PREMISES_VIEW,
   CAS1_PREMISES_MANAGE,
   CAS1_APPLICATION_WITHDRAW_OTHERS,
+
+  /**
+   * View reports, excluding those containing PII
+   */
   CAS1_REPORTS_VIEW,
+  CAS1_REPORTS_VIEW_WITH_PII,
   CAS1_REQUEST_FOR_PLACEMENT_WITHDRAW_OTHERS,
 }
