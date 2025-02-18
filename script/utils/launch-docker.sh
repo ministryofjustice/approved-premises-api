@@ -4,7 +4,7 @@ if (! docker stats --no-stream > /dev/null 2>&1  ); then
   echo "==> Launching Docker..."
 
   # On Mac OS this would be the terminal command to launch Docker
-  open /Applications/Docker.app
+  systemctl --user start docker-desktop
   printf "Waiting for Docker to launch..."
  #Wait until Docker daemon is running and has completed initialisation
 while (! docker stats --no-stream > /dev/null 2>&1 ); do
