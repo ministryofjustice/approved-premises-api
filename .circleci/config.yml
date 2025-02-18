@@ -310,6 +310,35 @@ jobs:
           event: fail
           channel: << pipeline.parameters.alerts-slack-channel >>
           template: basic_fail_1
+  cas2_bail_e2e_tests:
+    docker:
+      - image: mcr.microsoft.com/playwright:v1.40.0-focal
+    circleci_ip_ranges: true # opt-in to jobs running on a restricted set of IPs
+    steps:
+      - run:
+          name: Clone E2E repo
+          command: |
+            git clone https://github.com/ministryofjustice/hmpps-community-accommodation-tier-2-bail-ui.git .
+      - run:
+          name: Update npm
+          command: 'npm install -g npm@10.1.0'
+      - node/install-packages
+      - run:
+          name: Install Playwright
+          command: npx playwright install
+      - run:
+          name: Run E2E tests
+          command: npm run test:e2e
+      - store_artifacts:
+          path: e2e-tests/playwright-report
+          destination: e2e-tests/playwright-report
+      - store_artifacts:
+          path: e2e-tests/test_results
+          destination: e2e-tests/test_results
+      - slack/notify:
+          event: fail
+          channel: << pipeline.parameters.alerts-slack-channel >>
+          template: basic_fail_1
   cas3_e2e_tests:
     parallelism: 5
     circleci_ip_ranges: true # opt-in to jobs running on a restricted set of IPs
@@ -465,6 +494,12 @@ workflows:
           requires:
             - deploy_dev
       - cas2_e2e_tests:
+          context:
+            - hmpps-common-vars
+            - hmpps-community-accommodation
+          requires:
+            - deploy_dev
+      - cas2_bail_e2e_tests:
           context:
             - hmpps-common-vars
             - hmpps-community-accommodation
